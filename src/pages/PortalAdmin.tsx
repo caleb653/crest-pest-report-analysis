@@ -304,6 +304,22 @@ const PortalAdmin = () => {
     }
   };
 
+  const updatePropertyMapData = async (propId: string, mapData: string) => {
+    const { error } = await supabase.from("portal_properties")
+      .update({ map_data: mapData })
+      .eq("id", propId);
+    if (error) {
+      console.error("Update map data failed:", error);
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    setSelectedProperty(prev =>
+      prev && prev.id === propId
+        ? ({ ...prev, map_data: mapData } as PortalProperty)
+        : prev,
+    );
+  };
+
   const openServiceDialog = (forEdit?: PortalService) => {
     if (forEdit) {
       setServiceForm({
@@ -1006,6 +1022,7 @@ const PortalAdmin = () => {
             onRefresh={loadAll}
             onUpdatePropertyImage={updatePropertyImage}
             uploadingPropertyImage={uploadingPropertyImage}
+            onUpdatePropertyMapData={updatePropertyMapData}
           />
         ) : (
         <PropertyDashboard

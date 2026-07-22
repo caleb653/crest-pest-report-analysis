@@ -489,12 +489,14 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
               <Badge variant="outline" className="text-[10px] border-red-500 text-red-950 bg-white/70">
                 {uniqueOpen.length} open
               </Badge>
-              <div className="ml-auto flex gap-1.5 text-[10px]">
-                <Badge variant="outline" className="border-green-400 text-green-900 bg-green-50">
-                  {uniqueClosed.length} Closed
-                </Badge>
-                <Badge variant="outline" className="bg-white/70">{visitsWithAny.length} Visits Logged</Badge>
-              </div>
+              {!currentServiceId && (
+                <div className="ml-auto flex gap-1.5 text-[10px]">
+                  <Badge variant="outline" className="border-green-400 text-green-900 bg-green-50">
+                    {uniqueClosed.length} Closed
+                  </Badge>
+                  <Badge variant="outline" className="bg-white/70">{visitsWithAny.length} Visits Logged</Badge>
+                </div>
+              )}
             </div>
             <p className="text-[11px] italic text-red-800 px-1">
               Sanitation, structural, and conducive conditions noted during each visit. Items stay <span className="font-semibold">Open</span> until resolved by the responsible party.

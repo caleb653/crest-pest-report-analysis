@@ -38,6 +38,7 @@ import {
   Bug, X,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
+import { MapCanvas } from "@/components/MapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
@@ -112,6 +113,7 @@ interface Props {
   onRefresh?: () => void;
   onUpdatePropertyImage?: (propId: string, file: File) => Promise<void> | void;
   uploadingPropertyImage?: boolean;
+  onUpdatePropertyMapData?: (propId: string, mapData: string) => Promise<void> | void;
   /** When true, hide ALL edit/save/delete/upload affordances —
    * customer-facing read-only mirror of the admin view. */
   readOnly?: boolean;
@@ -356,6 +358,7 @@ export default function CommercialDashboardView({
   property, services, links, onEditService,
   onDeleteService, onCopyLink, onOpenPortal,
   onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
+  onUpdatePropertyMapData,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [tab, setTab] = useState<string>("map");
@@ -997,7 +1000,14 @@ export default function CommercialDashboardView({
               <CardContent className="p-3">
                 {(property.map_data || mapUrl) ? (
                   <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "55vh", minHeight: 360 }}>
-                    {property.map_data ? (
+                    {mapUrl && !readOnly && onUpdatePropertyMapData ? (
+                      <MapCanvas
+                        key={`site-map-${property.id}-${mapUrl}`}
+                        mapUrl={mapUrl}
+                        initialData={property.map_data ? (typeof property.map_data === "string" ? property.map_data : JSON.stringify(property.map_data)) : null}
+                        onSave={(data) => onUpdatePropertyMapData(property.id, data)}
+                      />
+                    ) : property.map_data ? (
                       <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} />
                     ) : mapUrl ? (
                       <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
@@ -1037,7 +1047,6 @@ export default function CommercialDashboardView({
             </Card>
           </div>
           <div className="space-y-6">
-            <ServiceTeamSection services={services as any} />
             <BusinessLicenseSection docs={docs as any} />
             <PropertyEquipmentCard
               propertyId={property.id}
