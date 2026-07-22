@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, MessageSquare, Bug, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
