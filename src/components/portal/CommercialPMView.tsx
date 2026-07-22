@@ -775,6 +775,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                             {c.response_notes && (
                                               <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {c.response_notes}</div>
                                             )}
+                                            {c.resolution_note && (
+                                              <div className="text-[11px] text-emerald-900 italic mt-0.5">"{c.resolution_note}"</div>
+                                            )}
                                           </div>
                                           {(() => {
                                             const pics: string[] = [
