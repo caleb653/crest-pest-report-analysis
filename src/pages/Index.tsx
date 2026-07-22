@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, MessageSquare, Bug, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
@@ -109,23 +109,12 @@ const reportTypes = [
     hoverBg: "hover:bg-indigo-100",
     border: "hover:border-indigo-300",
   },
-  {
-    id: "ask-me-anything",
-    title: "Ask Me Anything",
-    description: "Ask about customers, scheduling & service data",
-    icon: MessageSquare,
-    path: "/ask-me-anything",
-    color: "text-sky-600",
-    bg: "bg-sky-50",
-    hoverBg: "hover:bg-sky-100",
-    border: "hover:border-sky-300",
-  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
-//         row3 = slot-finder, schedule-review, ask-me-anything
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9];
+//         row3 = slot-finder, schedule-review
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8];
 
 const Index = () => {
   const navigate = useNavigate();
@@ -143,7 +132,7 @@ const Index = () => {
     "Jackson Latham",
     "Nick Stovall",
   ]);
-  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review", "ask-me-anything"]);
+  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review"]);
   const isRestricted = RESTRICTED_USERS.has(currentUser);
   useEffect(() => {
     setIsAdmin(!!localStorage.getItem("admin_session"));
