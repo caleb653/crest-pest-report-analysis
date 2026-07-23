@@ -245,7 +245,7 @@ type AspectStatus = { tone: "pass" | "flag" | "manual"; summary: string; items: 
 
 const SPECIAL_KINDS = new Set([
   "special_tech_override", "special_blocked_day", "special_window_violation",
-  "manual_scheduled", "preferred_tech_mismatch",
+  "manual_scheduled", "preferred_tech_mismatch", "attic_position",
 ]);
 
 function aspectStatusesForDate(date: string, result: ReviewResult): Record<AspectKey, AspectStatus> {
@@ -284,7 +284,7 @@ function aspectStatusesForDate(date: string, result: ReviewResult): Record<Aspec
       ? { tone: "flag", summary: `${missingSlots.length} stop${plural(missingSlots.length)} missing a time slot`, items: missingSlots.map(who) }
       : { tone: "pass", summary: "Every stop has a time slot", items: [] },
     special_scheduling: special.length
-      ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.kind.replace(/_/g, " ")}`) }
+      ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.kind === "attic_position" && c.detail ? c.detail : c.kind.replace(/_/g, " ")}`) }
       : { tone: "pass", summary: "No stops contradict special scheduling notes", items: [] },
     equipment: (() => {
       // Backend flags first visits of rodent/mosquito subscriptions — those
@@ -294,11 +294,11 @@ function aspectStatusesForDate(date: string, result: ReviewResult): Record<Aspec
         return {
           tone: "flag" as const,
           summary: `${equip.length} stop${plural(equip.length)} need${equip.length === 1 ? "s" : ""} equipment loaded`,
-          items: equip.map((e) => `${e.customer} (${firstName(e.tech_name)}) — first ${e.service} visit`),
+          items: equip.map((e) => `${e.customer} (${firstName(e.tech_name)}) — ${e.detail || `first ${e.service} visit`}`),
         };
       }
       if (result.equipment) {
-        return { tone: "pass" as const, summary: "No first rodent/mosquito services — no special equipment expected", items: [] };
+        return { tone: "pass" as const, summary: "No first rodent/mosquito visits or trapping/exclusion jobs — no special equipment expected", items: [] };
       }
       // Older backend without equipment data — leave it a manual check.
       return { tone: "manual" as const, summary: "No equipment data — eyeball the stops for special-equipment needs", items: [] };
@@ -371,8 +371,7 @@ function DateChecklist({ date, result }: { date: string; result: ReviewResult })
                 </div>
                 {s.items.length > 0 && (
                   <ul className="text-xs mt-1 pl-4 list-disc marker:text-muted-foreground space-y-0.5">
-                    {s.items.slice(0, 4).map((it, i) => <li key={i}>{it}</li>)}
-                    {s.items.length > 4 && <li className="text-muted-foreground">+{s.items.length - 4} more</li>}
+                    {s.items.map((it, i) => <li key={i}>{it}</li>)}
                   </ul>
                 )}
               </div>
