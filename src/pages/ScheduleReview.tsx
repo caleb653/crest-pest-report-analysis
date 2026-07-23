@@ -218,6 +218,213 @@ function keyToRouteRef(result: ReviewResult, key: string) {
   return result.routes.find((r) => r.date === d && r.route_id === rid);
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Review checklist — the 6 aspects the office checks off per reviewed day.
+// Auto-status comes from the review data where we have it; Equipment is a
+// manual eyeball check (no equipment data comes back from FieldRoutes).
+// ─────────────────────────────────────────────────────────────────────────
+
+const MAX_STOPS_PER_TECH = 12;
+
+const REVIEW_ASPECTS = [
+  { key: "time_slots",         label: "Time Slots",          note: "All routes have time slots" },
+  { key: "special_scheduling", label: "Special Scheduling",  note: "No stops contradict special scheduling" },
+  { key: "equipment",          label: "Equipment",           note: "Flag any stops that require special equipment" },
+  { key: "map_efficiency",     label: "Map View Efficiency", note: "Quick glance — does the route make sense? Anything to adjust?" },
+  { key: "stop_count",         label: "# of Stops",          note: `Max ${MAX_STOPS_PER_TECH} stops per tech` },
+  { key: "time_frames",        label: "Time Frames",         note: "Can the tech reasonably make all stops in the time window?" },
+] as const;
+
+type AspectKey = (typeof REVIEW_ASPECTS)[number]["key"];
+type AspectStatus = { tone: "pass" | "flag" | "manual"; summary: string; items: string[] };
+
+const SPECIAL_KINDS = new Set([
+  "special_tech_override", "special_blocked_day", "special_window_violation",
+  "manual_scheduled", "preferred_tech_mismatch",
+]);
+
+function aspectStatusesForDate(date: string, result: ReviewResult): Record<AspectKey, AspectStatus> {
+  const routes = result.routes.filter((r) => r.date === date);
+  const comp = result.compliance.filter((c) => c.date === date);
+
+  const missingSlots = comp.filter((c) => c.kind === "missing_start_time");
+  const special = comp.filter((c) => SPECIAL_KINDS.has(c.kind));
+  const overCap = routes.filter((r) => r.stop_count > MAX_STOPS_PER_TECH);
+  const misses = Object.entries(result.miss_window)
+    .filter(([k]) => k.startsWith(`${date}|`))
+    .flatMap(([, v]) => v);
+  const dayAlerts = routes.filter((r) => r.day_alert);
+  const reorders = Object.entries(result.route_order).filter(([k]) => k.startsWith(`${date}|`));
+  const moves = (result.cross_day_moves ?? []).filter((m) => m.current_date === date);
+  const longD = computeLongDrives(result).filter((l) => l.date === date);
+
+  const who = (c: ComplianceIssue) => `${c.customer || "?"} (${firstName(c.tech_name)})`;
+  const plural = (n: number) => (n === 1 ? "" : "s");
+
+  const mapItems = [
+    ...longD.map((l) => `${firstName(l.tech_name)}: ~${Math.round(l.avg_leg_min)} min between stops`),
+    ...moves.map((m) => `Move ${m.customer} to ${firstName(m.suggested_tech)} ${shortDate(m.suggested_date)} (saves ${m.improvement_mi.toFixed(1)} mi)`),
+    ...reorders.map(([k, o]) => {
+      const r = keyToRouteRef(result, k);
+      return `Reorder ${r ? firstName(r.tech_name) : "route"} to save ${fmtMinutes(o.savings_sec / 60)}`;
+    }),
+  ];
+  const frameItems = [
+    ...misses.map((f) => `${f.customer} — ${humanTime(f.window)} window, ~${f.late_by_min} min late`),
+    ...dayAlerts.map((r) => `${firstName(r.tech_name)}: ${r.day_alert}`),
+  ];
+
+  return {
+    time_slots: missingSlots.length
+      ? { tone: "flag", summary: `${missingSlots.length} stop${plural(missingSlots.length)} missing a time slot`, items: missingSlots.map(who) }
+      : { tone: "pass", summary: "Every stop has a time slot", items: [] },
+    special_scheduling: special.length
+      ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.kind.replace(/_/g, " ")}`) }
+      : { tone: "pass", summary: "No stops contradict special scheduling notes", items: [] },
+    equipment: {
+      tone: "manual",
+      summary: "No equipment data from FieldRoutes — eyeball the stops for special-equipment needs",
+      items: [],
+    },
+    map_efficiency: mapItems.length
+      ? { tone: "flag", summary: `${mapItems.length} possible routing improvement${plural(mapItems.length)}`, items: mapItems }
+      : { tone: "pass", summary: "No obvious reorder, move, or long-drive issues", items: [] },
+    stop_count: overCap.length
+      ? { tone: "flag", summary: `${overCap.length} route${plural(overCap.length)} over ${MAX_STOPS_PER_TECH} stops`, items: overCap.map((r) => `${firstName(r.tech_name)}: ${r.stop_count} stops`) }
+      : { tone: "pass", summary: `All routes at or under ${MAX_STOPS_PER_TECH} stops`, items: [] },
+    time_frames: frameItems.length
+      ? { tone: "flag", summary: `${frameItems.length} time-window risk${plural(frameItems.length)}`, items: frameItems }
+      : { tone: "pass", summary: "Every stop projects to land inside its window", items: [] },
+  };
+}
+
+function AspectBadge({ tone }: { tone: AspectStatus["tone"] }) {
+  if (tone === "pass") return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Clear</Badge>;
+  if (tone === "flag") return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Flagged</Badge>;
+  return <Badge variant="outline" className="text-muted-foreground">Manual</Badge>;
+}
+
+function DateChecklist({ date, result }: { date: string; result: ReviewResult }) {
+  const storageKey = `schedule-review-checklist:${date}`;
+  const [checked, setChecked] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; }
+  });
+  const toggle = (k: string, v: boolean) =>
+    setChecked((cur) => {
+      const next = { ...cur, [k]: v };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* private mode */ }
+      return next;
+    });
+
+  const statuses = aspectStatusesForDate(date, result);
+  const done = REVIEW_ASPECTS.filter((a) => checked[a.key]).length;
+  const complete = done === REVIEW_ASPECTS.length;
+
+  return (
+    <Card className={`border-l-4 ${complete ? "border-l-emerald-500" : "border-l-primary"}`}>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" /> Route checklist — {shortDate(date)}
+          </span>
+          <span className={`flex items-center gap-1 text-xs font-semibold ${complete ? "text-emerald-700" : "text-muted-foreground"}`}>
+            {complete && <CheckCircle2 className="w-4 h-4" />}
+            {done}/{REVIEW_ASPECTS.length} checked
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0">
+        {REVIEW_ASPECTS.map((a) => {
+          const s = statuses[a.key];
+          return (
+            <div key={a.key} className="flex items-start gap-3 py-2.5 border-b last:border-0">
+              <Checkbox
+                className="mt-0.5"
+                checked={!!checked[a.key]}
+                onCheckedChange={(v) => toggle(a.key, v === true)}
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-sm font-medium ${checked[a.key] ? "line-through text-muted-foreground" : ""}`}>{a.label}</span>
+                  <AspectBadge tone={s.tone} />
+                </div>
+                <div className="text-xs text-muted-foreground">{a.note}</div>
+                <div className={`text-xs mt-0.5 ${s.tone === "flag" ? "text-amber-800" : "text-muted-foreground"}`}>
+                  {s.summary}
+                </div>
+                {s.items.length > 0 && (
+                  <ul className="text-xs mt-1 pl-4 list-disc marker:text-muted-foreground space-y-0.5">
+                    {s.items.slice(0, 4).map((it, i) => <li key={i}>{it}</li>)}
+                    {s.items.length > 4 && <li className="text-muted-foreground">+{s.items.length - 4} more</li>}
+                  </ul>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReviewChecklists({ result }: { result: ReviewResult }) {
+  const dates = [...new Set(result.routes.map((r) => r.date))].sort();
+  if (dates.length === 0) return null;
+  return (
+    <div className={`grid gap-4 ${dates.length > 1 ? "lg:grid-cols-2" : ""}`}>
+      {dates.map((d) => <DateChecklist key={d} date={d} result={result} />)}
+    </div>
+  );
+}
+
+// Business-day helpers for the date-chip picker. Review skips weekends —
+// there are no recurring routes on Sat/Sun.
+function addBusinessDaysIso(n: number): string {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  let added = 0;
+  while (added < n) {
+    d.setDate(d.getDate() + 1);
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6) added++;
+  }
+  return isoFromDate(d);
+}
+
+// Business days within the next 14 calendar days (14 = the edge function's
+// max span, so any combination of chips stays requestable in one call).
+function businessDayOptions(): string[] {
+  const out: string[] = [];
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  for (let i = 0; i < 14; i++) {
+    d.setDate(d.getDate() + 1);
+    const wd = d.getDay();
+    if (wd !== 0 && wd !== 6) out.push(isoFromDate(d));
+  }
+  return out;
+}
+
+// Trim a fetched review down to just the selected dates. The API is called
+// once for the whole span; non-selected days in between get dropped here.
+function filterResultToDates(r: ReviewResult, dates: string[]): ReviewResult {
+  const keep = new Set(dates);
+  const keyKeep = (k: string) => keep.has(k.split("|")[0]);
+  const routes = r.routes.filter((rt) => keep.has(rt.date));
+  return {
+    ...r,
+    start: dates[0],
+    end: dates[dates.length - 1],
+    routes,
+    compliance: r.compliance.filter((c) => keep.has(c.date)),
+    route_order: Object.fromEntries(Object.entries(r.route_order).filter(([k]) => keyKeep(k))),
+    miss_window: Object.fromEntries(Object.entries(r.miss_window).filter(([k]) => keyKeep(k))),
+    snapshot: Object.fromEntries(Object.entries(r.snapshot).filter(([k]) => keyKeep(k))),
+    cross_day_moves: (r.cross_day_moves ?? []).filter((m) => keep.has(m.current_date)),
+    empty: r.empty || routes.length === 0,
+  };
+}
+
 const ScheduleReview = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
@@ -511,25 +718,40 @@ function MonthlyEfficiencyTable({ result, loading }: { result: EfficiencyResult 
 // ─────────────────────────────────────────────────────────────────────────
 
 function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
-  const [days, setDays] = useState<number>(3);
-  const [start, setStart] = useState<string>("");
+  const [dateOptions] = useState<string[]>(businessDayOptions);
+  const [selectedDates, setSelectedDates] = useState<string[]>(() => [addBusinessDaysIso(2)]);
   const [tech, setTech] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ReviewResult | null>(null);
+
+  const toggleDate = (d: string) =>
+    setSelectedDates((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort()));
 
   const run = async () => {
     if (!staff) {
       toast.error("Please sign in again.");
       return;
     }
+    if (selectedDates.length === 0) {
+      toast.error("Pick at least one date to review.");
+      return;
+    }
     setLoading(true);
     setResult(null);
     try {
+      // One call covers first → last selected date; days in between that
+      // aren't selected get filtered out of the result below.
+      const dates = [...selectedDates].sort();
+      const spanDays =
+        Math.round(
+          (new Date(`${dates[dates.length - 1]}T12:00:00`).getTime() -
+            new Date(`${dates[0]}T12:00:00`).getTime()) / 86400000,
+        ) + 1;
       const { data, error } = await supabase.functions.invoke("scheduling-review", {
         body: {
           staffName: staff.fullName,
-          start_date: start || null,
-          days,
+          start_date: dates[0],
+          days: Math.min(14, spanDays),
           tech: tech.trim() || null,
         },
       });
@@ -538,7 +760,7 @@ function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
         toast.error(data?.error || "Failed to run review.");
         return;
       }
-      setResult(data.result as ReviewResult);
+      setResult(filterResultToDates(data.result as ReviewResult, dates));
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Unexpected error.");
@@ -567,21 +789,35 @@ function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
               Schedule Review
             </CardTitle>
             <CardDescription>
-              Quick view of the next 2–4 days out. Today and tomorrow are
-              skipped on purpose — those routes are too close to dispatch
-              to act on cleanly.
+              Pick the exact day(s) to review — defaults to 2 business days
+              out, far enough ahead that there's still time to fix what the
+              review turns up. Each reviewed day gets a route checklist.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Start date (blank = today + 2)</Label>
-                <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Days</Label>
-                <Input type="number" min={1} max={14} value={days}
-                       onChange={(e) => setDays(parseInt(e.target.value, 10) || 3)} />
+              <div className="space-y-2 md:col-span-2">
+                <Label>Dates to review</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {dateOptions.map((d) => {
+                    const on = selectedDates.includes(d);
+                    return (
+                      <Button
+                        key={d}
+                        type="button"
+                        size="sm"
+                        variant={on ? "default" : "outline"}
+                        className="h-8 px-2.5 text-xs"
+                        onClick={() => toggleDate(d)}
+                      >
+                        {shortDate(d)}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Tap to select one or more days.
+                </p>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label>Tech</Label>
@@ -634,6 +870,9 @@ function ReviewMode({ staff }: { staff: { fullName: string } | null }) {
                 }
               />
             </div>
+
+            {/* ── Per-day route checklist ─────────────────────────────── */}
+            <ReviewChecklists result={result} />
 
             {/* ── KEY HIGHLIGHTS (very prominent) ─────────────────────── */}
             <KeyHighlights
