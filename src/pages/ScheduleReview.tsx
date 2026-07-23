@@ -79,11 +79,16 @@ type CrossDayMove = {
   current_distance_from_route_mi: number;
   improvement_mi: number;
 };
+type EquipmentNote = {
+  date: string; tech_name: string; appointment_id?: string;
+  customer: string; city: string; service: string; detail: string;
+};
 type ReviewResult = {
   start: string; end: string;
   tech_filter: string | null;
   routes: { date: string; route_id: number; tech_name: string; stop_count: number; day_alert: string | null }[];
   compliance: ComplianceIssue[];
+  equipment?: EquipmentNote[];
   route_order: Record<string, RouteOrder>;
   miss_window: Record<string, MissWindowEntry[]>;
   snapshot: Record<string, Snapshot>;
@@ -281,11 +286,23 @@ function aspectStatusesForDate(date: string, result: ReviewResult): Record<Aspec
     special_scheduling: special.length
       ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.kind.replace(/_/g, " ")}`) }
       : { tone: "pass", summary: "No stops contradict special scheduling notes", items: [] },
-    equipment: {
-      tone: "manual",
-      summary: "No equipment data from FieldRoutes — eyeball the stops for special-equipment needs",
-      items: [],
-    },
+    equipment: (() => {
+      // Backend flags first visits of rodent/mosquito subscriptions — those
+      // need traps / bait boxes / In2Care stations on the truck.
+      const equip = (result.equipment ?? []).filter((e) => e.date === date);
+      if (equip.length) {
+        return {
+          tone: "flag" as const,
+          summary: `${equip.length} stop${plural(equip.length)} need${equip.length === 1 ? "s" : ""} equipment loaded`,
+          items: equip.map((e) => `${e.customer} (${firstName(e.tech_name)}) — first ${e.service} visit`),
+        };
+      }
+      if (result.equipment) {
+        return { tone: "pass" as const, summary: "No first rodent/mosquito services — no special equipment expected", items: [] };
+      }
+      // Older backend without equipment data — leave it a manual check.
+      return { tone: "manual" as const, summary: "No equipment data — eyeball the stops for special-equipment needs", items: [] };
+    })(),
     map_efficiency: mapItems.length
       ? { tone: "flag", summary: `${mapItems.length} possible routing improvement${plural(mapItems.length)}`, items: mapItems }
       : { tone: "pass", summary: "No obvious reorder, move, or long-drive issues", items: [] },
@@ -417,6 +434,7 @@ function filterResultToDates(r: ReviewResult, dates: string[]): ReviewResult {
     end: dates[dates.length - 1],
     routes,
     compliance: r.compliance.filter((c) => keep.has(c.date)),
+    equipment: r.equipment ? r.equipment.filter((e) => keep.has(e.date)) : r.equipment,
     route_order: Object.fromEntries(Object.entries(r.route_order).filter(([k]) => keyKeep(k))),
     miss_window: Object.fromEntries(Object.entries(r.miss_window).filter(([k]) => keyKeep(k))),
     snapshot: Object.fromEntries(Object.entries(r.snapshot).filter(([k]) => keyKeep(k))),
@@ -1098,6 +1116,13 @@ function PerRouteGrid({
     list.push(i);
     compByKey.set(k, list);
   });
+  const equipByKey   = new Map<string, EquipmentNote[]>();
+  (result.equipment ?? []).forEach((e) => {
+    const k = `${e.date}|${e.tech_name}`;
+    const list = equipByKey.get(k) ?? [];
+    list.push(e);
+    equipByKey.set(k, list);
+  });
   const crossSourceByKey = new Map<string, CrossDayMove[]>();
   const crossTargetByKey = new Map<string, CrossDayMove[]>();
   crossDayMoves.forEach((m) => {
@@ -1167,9 +1192,10 @@ function PerRouteGrid({
                 const comp = compByKey.get(techDayKey) ?? [];
                 const crossOut = crossSourceByKey.get(techDayKey) ?? [];
                 const crossIn  = crossTargetByKey.get(techDayKey) ?? [];
+                const equips = equipByKey.get(techDayKey) ?? [];
                 const longDrive = longDriveByKey.get(routeKey);
                 const clean =
-                  comp.length + misses.length + crossOut.length + crossIn.length === 0 &&
+                  comp.length + misses.length + crossOut.length + crossIn.length + equips.length === 0 &&
                   !order && !longDrive;
 
                 const dot =
@@ -1198,6 +1224,12 @@ function PerRouteGrid({
                             <span className="text-red-600 font-medium">{i.kind.replace(/_/g, " ")}:</span>{" "}
                             {i.customer ? <strong>{i.customer}</strong> : null}
                             {i.customer ? " — " : ""}{humanTime(i.detail) || i.detail}
+                          </li>
+                        ))}
+                        {equips.map((e, idx) => (
+                          <li key={`eq-${idx}`}>
+                            <span className="text-sky-700 font-medium">Equipment:</span>{" "}
+                            <strong>{e.customer}</strong> — first {e.service} visit, load equipment
                           </li>
                         ))}
                         {misses.map((f, idx) => (
