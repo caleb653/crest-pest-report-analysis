@@ -246,6 +246,7 @@ type AspectStatus = { tone: "pass" | "flag" | "manual"; summary: string; items: 
 const SPECIAL_KINDS = new Set([
   "special_tech_override", "special_blocked_day", "special_window_violation",
   "manual_scheduled", "preferred_tech_mismatch", "attic_position",
+  "linked_account", "special_time_mismatch",
 ]);
 
 function aspectStatusesForDate(date: string, result: ReviewResult): Record<AspectKey, AspectStatus> {
@@ -284,7 +285,7 @@ function aspectStatusesForDate(date: string, result: ReviewResult): Record<Aspec
       ? { tone: "flag", summary: `${missingSlots.length} stop${plural(missingSlots.length)} missing a time slot`, items: missingSlots.map(who) }
       : { tone: "pass", summary: "Every stop has a time slot", items: [] },
     special_scheduling: special.length
-      ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.kind === "attic_position" && c.detail ? c.detail : c.kind.replace(/_/g, " ")}`) }
+      ? { tone: "flag", summary: `${special.length} conflict${plural(special.length)} with special scheduling notes`, items: special.map((c) => `${who(c)} — ${c.detail || c.kind.replace(/_/g, " ")}`) }
       : { tone: "pass", summary: "No stops contradict special scheduling notes", items: [] },
     equipment: (() => {
       // Backend flags first visits of rodent/mosquito subscriptions — those
