@@ -1103,6 +1103,35 @@ export default function CommercialDashboardView({
               </CardContent>
             </Card>
           </div>
+          {/* Point of Contact — auto-saves; also used as the recipient for
+              the appointment-completed email when a visit is marked serviced. */}
+          <Card className="shadow-sm border-primary/20">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Phone className="w-5 h-5 text-primary" />
+                Point of Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                <Input value={contactName} disabled={readOnly} onChange={e => setContactName(e.target.value)} placeholder="Primary contact name" className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                <Input value={contactPhone} disabled={readOnly} onChange={e => setContactPhone(e.target.value)} placeholder="(555) 555-5555" className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                <Input type="email" value={contactEmail} disabled={readOnly} onChange={e => setContactEmail(e.target.value)} placeholder="contact@company.com" className="h-10" />
+              </div>
+              {!readOnly && (
+                <p className="md:col-span-3 text-[11px] text-muted-foreground">
+                  Saves automatically. Completion emails go to this email after a visit is marked serviced.
+                </p>
+              )}
+            </CardContent>
+          </Card>
           <div className="space-y-6">
             <BusinessLicenseSection docs={docs as any} />
             <PropertyEquipmentCard
