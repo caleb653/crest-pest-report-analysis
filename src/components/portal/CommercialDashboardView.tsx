@@ -1670,7 +1670,7 @@ export default function CommercialDashboardView({
                             onChange={e => setField(s.id, "summary", e.target.value)}
                             onBlur={() => flushEdits(s.id)}
                             placeholder="What was performed during this visit…"
-                            rows={3}
+                            rows={5}
                             className="text-sm"
                           />
                         </div>
