@@ -124,6 +124,21 @@ const fmtDate = (iso: string | null) =>
       })
     : "—";
 
+// Convert stored 24h "HH:mm" (or "HH:mm - HH:mm") to AM/PM for display.
+const to12h = (t: string) => {
+  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return t.trim();
+  let h = parseInt(m[1], 10);
+  const mm = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${mm} ${ampm}`;
+};
+const fmtTime = (raw: string | null | undefined) => {
+  if (!raw) return "";
+  return raw.split(/\s*[-–]\s*/).map(to12h).join(" – ");
+};
+
 const REQUEST_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   pending: "secondary",
   scheduled: "default",
@@ -484,7 +499,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
                                 <p className="text-sm font-semibold text-foreground">
                                   {fmtDate(s.service_date)}
-                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                   {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
                               </div>
@@ -501,28 +516,19 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                             {/* 2. Service Notes / Prep */}
                             {(s.special_notes || s.summary) && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                 {s.special_notes && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.special_notes}</p>}
                                 {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
                               </div>
                             )}
 
-                            {/* 3. Target Pests */}
-                            {targetPests.length > 0 && (
-                              <div>
-                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {targetPests.map((p, i) => (
-                                    <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            {/* Target Pests removed — the chip list added noise without
+                                helping the reader triage the visit. */}
 
                             {/* 4. Product Used */}
                             {upProducts.length > 0 && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <FlaskConical className="w-3 h-3" /> Product Used
                                 </p>
@@ -532,7 +538,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                             {/* 5. Equipment Used */}
                             {equipment.length > 0 && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <Wrench className="w-3 h-3" /> Equipment Used
                                 </p>
@@ -694,7 +700,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               <p className="font-bold text-sm truncate">{s.service_type}</p>
                               <p className="text-sm font-semibold text-foreground">
                                 {fmtDate(s.service_date)}
-                                {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                 {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                               </p>
                             </div>
@@ -844,7 +850,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 2. Service Notes (summary + findings + notes) */}
                               {(s.summary || s.findings || s.notes) && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                   <div className="space-y-1.5">
                                     {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
@@ -854,21 +860,11 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 3. Target Pests */}
-                              {targetPests.length > 0 && (
-                                <div>
-                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {targetPests.map((p, i) => (
-                                      <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                              {/* Target Pests removed — see note above. */}
 
                               {/* 4. Product Used */}
                               {products.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <FlaskConical className="w-3 h-3" /> Product Used
                                   </p>
@@ -878,7 +874,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 5. Equipment Used */}
                               {equipment.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Wrench className="w-3 h-3" /> Equipment Used
                                   </p>
@@ -898,7 +894,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 7. Other Property Images */}
                               {photos.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Camera className="w-3 h-3" /> Other Property Images
                                   </p>
