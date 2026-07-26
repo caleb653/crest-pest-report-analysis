@@ -499,7 +499,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
                                 <p className="text-sm font-semibold text-foreground">
                                   {fmtDate(s.service_date)}
-                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                   {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
                               </div>
@@ -523,17 +523,8 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               </div>
                             )}
 
-                            {/* 3. Target Pests */}
-                            {targetPests.length > 0 && (
-                              <div>
-                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {targetPests.map((p, i) => (
-                                    <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
+                            {/* Target Pests removed — the chip list added noise without
+                                helping the reader triage the visit. */}
 
                             {/* 4. Product Used */}
                             {upProducts.length > 0 && (
@@ -709,7 +700,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               <p className="font-bold text-sm truncate">{s.service_type}</p>
                               <p className="text-sm font-semibold text-foreground">
                                 {fmtDate(s.service_date)}
-                                {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                 {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                               </p>
                             </div>
@@ -869,17 +860,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 </div>
                               )}
 
-                              {/* 3. Target Pests */}
-                              {targetPests.length > 0 && (
-                                <div>
-                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
-                                  <div className="flex flex-wrap gap-1.5">
-                                    {targetPests.map((p, i) => (
-                                      <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                              {/* Target Pests removed — see note above. */}
 
                               {/* 4. Product Used */}
                               {products.length > 0 && (
