@@ -1191,7 +1191,9 @@ export default function CommercialDashboardView({
                           // service (they were logged earlier, closed here).
                           const resolvedHere: any[] = services.flatMap((os: any) => {
                             const rs = Array.isArray(os.report_data?.conditions) ? os.report_data.conditions : [];
-                            return rs.filter((c: any) => c && c.status === "Closed" && c.closed_on_service_id === s.id);
+                            return rs
+                              .filter((c: any) => c && c.status === "Closed" && c.closed_on_service_id === s.id)
+                              .map((c: any) => ({ ...c, __originDate: os.service_date }));
                           });
                           // Added on this visit but not resolved here.
                           const addedRows = ownedRows.filter((c: any) => !(c && c.status === "Closed" && c.closed_on_service_id === s.id));
@@ -1246,6 +1248,9 @@ export default function CommercialDashboardView({
                                       {c.area && c.condition && <span className="text-green-800"> · {c.area}</span>}
                                       {c.detail && <span> — {c.detail}</span>}
                                       <Badge variant="outline" className="ml-1 text-[9px] border-green-300 text-green-900 bg-white/70">Closed</Badge>
+                                        {c.__originDate && (
+                                          <div className="text-[10px] text-green-800 italic mt-0.5">Originally added {fmtDate(c.__originDate)}</div>
+                                        )}
                                       {c.response_notes && (
                                         <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {c.response_notes}</div>
                                       )}
