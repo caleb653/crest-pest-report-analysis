@@ -482,10 +482,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-sm font-semibold text-foreground">
                                   {fmtDate(s.service_date)}
-                                  {s.service_time && ` • ${s.service_time}`}
-                                  {s.technician && ` • ${s.technician}`}
+                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                  {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
                               </div>
                               <Badge variant="secondary" className="text-[10px] shrink-0">Scheduled</Badge>
@@ -502,7 +502,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 2. Service Notes / Prep */}
                             {(s.special_notes || s.summary) && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Service Notes</p>
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                 {s.special_notes && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.special_notes}</p>}
                                 {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
                               </div>
@@ -511,7 +511,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 3. Target Pests */}
                             {targetPests.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Target Pests</p>
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {targetPests.map((p, i) => (
                                     <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
@@ -523,7 +523,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 4. Product Used */}
                             {upProducts.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <FlaskConical className="w-3 h-3" /> Product Used
                                 </p>
                                 <ProductUsageSummary entries={upProducts} />
@@ -533,7 +533,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 5. Equipment Used */}
                             {equipment.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <Wrench className="w-3 h-3" /> Equipment Used
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
@@ -617,7 +617,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             )}
                             {conditions.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <AlertTriangle className="w-3 h-3" /> Active Conditions
                                 </p>
                                 <ConditionCardsReadOnly services={services as any} />
@@ -637,7 +637,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             {/* 7. Other Property Images */}
                             {photos.length > 0 && (
                               <div>
-                                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <Camera className="w-3 h-3" /> Other Property Images
                                 </p>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -692,8 +692,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                           >
                             <div className="min-w-0">
                               <p className="font-bold text-sm truncate">{s.service_type}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {fmtDate(s.service_date)}{s.technician && ` • ${s.technician}`}
+                              <p className="text-sm font-semibold text-foreground">
+                                {fmtDate(s.service_date)}
+                                {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                               </p>
                             </div>
                             {s.status === "cancelled" && (
@@ -843,7 +845,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {/* 2. Service Notes (summary + findings + notes) */}
                               {(s.summary || s.findings || s.notes) && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Service Notes</p>
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                   <div className="space-y-1.5">
                                     {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
                                     {s.findings && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.findings}</p>}
@@ -855,7 +857,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {/* 3. Target Pests */}
                               {targetPests.length > 0 && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Target Pests</p>
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1">Target Pests</p>
                                   <div className="flex flex-wrap gap-1.5">
                                     {targetPests.map((p, i) => (
                                       <Badge key={`${p}-${i}`} variant="secondary" className="text-[11px]">{p}</Badge>
@@ -867,7 +869,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {/* 4. Product Used */}
                               {products.length > 0 && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <FlaskConical className="w-3 h-3" /> Product Used
                                   </p>
                                   <ProductUsageSummary entries={products} />
@@ -877,7 +879,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {/* 5. Equipment Used */}
                               {equipment.length > 0 && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Wrench className="w-3 h-3" /> Equipment Used
                                   </p>
                                   <div className="flex flex-wrap gap-1.5">
@@ -897,7 +899,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               {/* 7. Other Property Images */}
                               {photos.length > 0 && (
                                 <div>
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Camera className="w-3 h-3" /> Other Property Images
                                   </p>
                                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1024,7 +1026,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                   />
                   <div className="rounded-md border border-dashed border-border bg-muted/30 p-2.5 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 flex items-center gap-1">
                         <Camera className="w-3 h-3" /> Photos
                         {reqPhotos.length > 0 && <Badge variant="secondary" className="ml-1 text-[10px] h-4">{reqPhotos.length}</Badge>}
                       </p>
@@ -1131,7 +1133,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               )}
                               {responseFor(r) && (
                                 <div className="mt-1 pt-1.5 border-t border-border/60">
-                                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Response from Crest</p>
+                                  <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Response from Crest</p>
                                   <p className="text-sm whitespace-pre-wrap leading-relaxed">{responseFor(r)}</p>
                                 </div>
                               )}
