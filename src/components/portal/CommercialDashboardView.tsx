@@ -1570,7 +1570,7 @@ export default function CommercialDashboardView({
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
-                            value={getField(s, "service_date") || ""}
+                            value={getField(s, "service_date") || today}
                             readOnly={readOnly}
                             disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
