@@ -61,6 +61,7 @@ const TECHNICIAN_NAMES = [
   "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall",
 ];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
 import {
   ConditionsReportSection, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
@@ -1105,7 +1106,7 @@ export default function CommercialDashboardView({
                 const hasFollowUp = !!s.follow_up_recommended;
                 const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                 return (
-                  <Card key={s.id} className={hasFollowUp ? "border-2 border-orange-400" : ""}>
+                  <Card key={s.id} id={`visit-pdf-${s.id}`} className={hasFollowUp ? "border-2 border-orange-400" : ""}>
                   <CardContent className="p-0">
                     {hasFollowUp && (
                       <div className="bg-orange-500 text-white px-3 py-1.5 rounded-t-lg flex items-center gap-2">
@@ -1129,13 +1130,19 @@ export default function CommercialDashboardView({
                         </div>
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isOpen ? "rotate-180" : ""}`} />
                       </button>
-                      <div className="flex gap-1 shrink-0">
-                        {!readOnly && (
-                          <Button size="icon" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-8 w-8 text-destructive">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                      </div>
+                       <div className="flex gap-1 shrink-0" data-visit-pdf-hide>
+                         <VisitPdfButton
+                           cardId={`visit-pdf-${s.id}`}
+                           filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
+                           title={`Service Visit — ${fmtDate(s.service_date)}${s.service_type ? " · " + s.service_type : ""}`}
+                           onBeforeCapture={() => setOpenId(s.id)}
+                         />
+                         {!readOnly && (
+                           <Button size="icon" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-8 w-8 text-destructive">
+                             <Trash2 className="w-3.5 h-3.5" />
+                           </Button>
+                         )}
+                       </div>
                     </div>
                     {isOpen && (
                       <div className="px-3 pb-3 pt-2 border-t border-border/60 space-y-3">

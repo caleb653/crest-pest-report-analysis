@@ -28,6 +28,7 @@ import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
 import {
   ConditionsReportSection, ConditionCardsReadOnly, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
@@ -691,10 +692,11 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                     const products = normalizeUsageList(s.products_used);
                     const hasFollowUp = !!s.follow_up_recommended;
                     const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
-                    return (
-                     <Card key={s.id}>
-                        <CardContent className="p-0">
-                          <button
+                     return (
+                      <Card key={s.id} id={`visit-pdf-${s.id}`}>
+                         <CardContent className="p-0">
+                           <div className="flex items-stretch">
+                           <button
                             type="button"
                             onClick={() => setOpenServiceId(isOpen ? null : s.id)}
                             className="w-full flex items-center justify-between gap-2 px-3 py-3 text-left hover:bg-muted/40 transition-colors"
@@ -712,8 +714,17 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 Cancelled
                               </Badge>
                             )}
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                          </button>
+                             <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                           </button>
+                           <div className="pr-3 flex items-center" data-visit-pdf-hide>
+                             <VisitPdfButton
+                               cardId={`visit-pdf-${s.id}`}
+                               filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
+                               title={`Service Visit — ${fmtDate(s.service_date)}${s.service_type ? " · " + s.service_type : ""}`}
+                               onBeforeCapture={() => setOpenServiceId(s.id)}
+                             />
+                           </div>
+                           </div>
                           {isOpen && (() => {
                             const rd: any = (s as any).report_data || {};
                             const targetPests: string[] = Array.isArray(rd.target_pests) ? rd.target_pests : [];
