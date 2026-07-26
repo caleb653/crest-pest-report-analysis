@@ -516,7 +516,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                             {/* 2. Service Notes / Prep */}
                             {(s.special_notes || s.summary) && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                 {s.special_notes && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.special_notes}</p>}
                                 {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
@@ -528,7 +528,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                             {/* 4. Product Used */}
                             {upProducts.length > 0 && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <FlaskConical className="w-3 h-3" /> Product Used
                                 </p>
@@ -538,7 +538,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                             {/* 5. Equipment Used */}
                             {equipment.length > 0 && (
-                              <div>
+                              <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                 <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                   <Wrench className="w-3 h-3" /> Equipment Used
                                 </p>
@@ -850,7 +850,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 2. Service Notes (summary + findings + notes) */}
                               {(s.summary || s.findings || s.notes) && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Service Notes</p>
                                   <div className="space-y-1.5">
                                     {s.summary && <p className="text-sm whitespace-pre-wrap leading-relaxed">{s.summary}</p>}
@@ -864,7 +864,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 4. Product Used */}
                               {products.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <FlaskConical className="w-3 h-3" /> Product Used
                                   </p>
@@ -874,7 +874,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 5. Equipment Used */}
                               {equipment.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Wrench className="w-3 h-3" /> Equipment Used
                                   </p>
@@ -894,7 +894,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
                               {/* 7. Other Property Images */}
                               {photos.length > 0 && (
-                                <div>
+                                <div className="rounded-md border border-border/60 bg-muted/20 p-2.5">
                                   <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                                     <Camera className="w-3 h-3" /> Other Property Images
                                   </p>
