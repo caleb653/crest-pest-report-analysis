@@ -585,88 +585,111 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
             </Card>
           );
         })() : (
-          // Standalone Conditions tab — one card per past visit that had any
-          // conditions present. Open + resolved-on-this-visit render inline.
-          // Same condition may appear on multiple cards (its history).
-          visitsTimeline.map(({ s, presence }) => {
-            const ownRows = conditionsFor(s);
-            const draft = draftFor(s.id);
-            // For the row-edit callbacks we need to target each row's OWNER
-            // service (which is where the condition is persisted), not this
-            // card's service `s`.
-            const rowsSorted = presence
-              .slice()
-              .sort((a, b) => (a.state === b.state ? 0 : a.state === "open" ? -1 : 1));
-            return (
-              <Card key={`visit-${s.id}`}>
-                <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-sm font-semibold flex items-center gap-2 flex-wrap">
-                    <span>
-                      {fmtDay(s.service_date)} <span className="text-muted-foreground">·</span>{" "}
-                      <span className="text-muted-foreground">{s.service_type}</span>
-                      {s.technician && <span className="text-muted-foreground"> · {s.technician}</span>}
-                    </span>
-                  </p>
-                  {!readOnly && !draft && (
-                    <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
-                      onClick={() => setDraftFor(s.id, newConditionRow())}>
-                      <Plus className="w-3 h-3" /> Add Condition
-                    </Button>
-                  )}
-                </div>
-                <CardContent className="p-2 space-y-2">
-                  {draft && !readOnly && (
-                    <ConditionCard row={draft} index={rowsSorted.length} isOpen onToggle={() => {}} serviceDate={s.service_date}>
-                      <ConditionRowEditor
-                        row={draft}
-                        live
-                        onChange={(next) => setDraftFor(s.id, next)}
-                        onRemove={() => setDraftFor(s.id, null)}
-                      />
-                      <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
-                        <Button size="sm" disabled={!draftReady(draft)} className="h-8 text-xs gap-1"
-                          onClick={async () => { await save(s, [...ownRows, draft]); setDraftFor(s.id, null); }}>
-                          <Check className="w-3.5 h-3.5" /> Save Condition
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 text-xs"
-                          onClick={() => setDraftFor(s.id, null)}>
-                          Cancel
-                        </Button>
-                        {!draftReady(draft) && (
-                          <p className="text-[11px] text-amber-900">
-                            Add a condition description and at least one photo to save.
-                          </p>
-                        )}
-                      </div>
-                    </ConditionCard>
-                  )}
-                  {rowsSorted.map(({ c, owner }, i) => {
-                    const ownerRows = conditionsFor(owner);
-                    const idx = ownerRows.findIndex(r => r.id === c.id);
-                    return (
-                      <ConditionCard
-                        key={`${owner.id}-${c.id}`}
-                        row={c}
-                        index={i}
-                        isOpen={openIds.has(c.id)}
-                        onToggle={() => toggleOpen(c.id)}
-                        serviceDate={s.service_date}
-                      >
-                        <ConditionRowEditor
-                          row={c}
-                          readOnly={readOnly}
-                          serviceDate={s.service_date}
-                          closingServiceId={s.id}
-                          onChange={(next) => save(owner, ownerRows.map((r, i2) => i2 === idx ? next : r))}
-                          onRemove={() => save(owner, ownerRows.filter((_, i2) => i2 !== idx))}
-                        />
-                      </ConditionCard>
-                    );
-                  })}
-                </CardContent>
-              </Card>
+          // Standalone Conditions tab — flat lists grouped by state (Active
+          // vs Resolved). Visit-by-visit history is intentionally omitted
+          // here; per-visit rendering still happens on each service card.
+          (() => {
+            const allConditions = past.flatMap(o =>
+              conditionsFor(o).map(c => ({ c, owner: o }))
             );
-          })
+            const activeRows = allConditions.filter(x => x.c.status !== "Closed");
+            const resolvedRows = allConditions.filter(x => x.c.status === "Closed");
+            const addTarget = past[0] || null;
+            const addDraft = addTarget ? draftFor(addTarget.id) : null;
+            const renderRow = ({ c, owner }: { c: ConditionRow; owner: SpragueService }, i: number) => {
+              const ownerRows = conditionsFor(owner);
+              const idx = ownerRows.findIndex(r => r.id === c.id);
+              return (
+                <ConditionCard
+                  key={`${owner.id}-${c.id}`}
+                  row={c}
+                  index={i}
+                  isOpen={openIds.has(c.id)}
+                  onToggle={() => toggleOpen(c.id)}
+                  serviceDate={owner.service_date}
+                >
+                  <ConditionRowEditor
+                    row={c}
+                    readOnly={readOnly}
+                    serviceDate={owner.service_date}
+                    closingServiceId={c.closed_on_service_id || undefined}
+                    onChange={(next) => save(owner, ownerRows.map((r, i2) => i2 === idx ? next : r))}
+                    onRemove={() => save(owner, ownerRows.filter((_, i2) => i2 !== idx))}
+                  />
+                </ConditionCard>
+              );
+            };
+            return (
+              <div className="space-y-4">
+                <Card>
+                  <div className="bg-red-50/60 border-b border-red-200 px-3 py-2 flex items-center justify-between gap-2 flex-wrap">
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <span className="text-red-900">Active</span>
+                      <Badge variant="outline" className="text-[10px] border-red-400 text-red-900 bg-white/70">
+                        {activeRows.length}
+                      </Badge>
+                    </p>
+                    {!readOnly && addTarget && !addDraft && (
+                      <Button size="sm" variant="outline" className="h-8 text-xs gap-1"
+                        onClick={() => setDraftFor(addTarget.id, newConditionRow())}>
+                        <Plus className="w-3 h-3" /> Add Condition
+                      </Button>
+                    )}
+                  </div>
+                  <CardContent className="p-2 space-y-2">
+                    {addDraft && !readOnly && addTarget && (
+                      <ConditionCard row={addDraft} index={activeRows.length} isOpen onToggle={() => {}} serviceDate={addTarget.service_date}>
+                        <ConditionRowEditor
+                          row={addDraft}
+                          live
+                          onChange={(next) => setDraftFor(addTarget.id, next)}
+                          onRemove={() => setDraftFor(addTarget.id, null)}
+                        />
+                        <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
+                          <Button size="sm" disabled={!draftReady(addDraft)} className="h-8 text-xs gap-1"
+                            onClick={async () => { await save(addTarget, [...conditionsFor(addTarget), addDraft]); setDraftFor(addTarget.id, null); }}>
+                            <Check className="w-3.5 h-3.5" /> Save Condition
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-8 text-xs"
+                            onClick={() => setDraftFor(addTarget.id, null)}>
+                            Cancel
+                          </Button>
+                          {!draftReady(addDraft) && (
+                            <p className="text-[11px] text-amber-900">
+                              Add a condition description and at least one photo to save.
+                            </p>
+                          )}
+                        </div>
+                      </ConditionCard>
+                    )}
+                    {activeRows.length === 0 && !addDraft ? (
+                      <p className="text-xs text-muted-foreground italic text-center py-3">No active conditions.</p>
+                    ) : (
+                      activeRows.map(renderRow)
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <div className="bg-emerald-50/60 border-b border-emerald-200 px-3 py-2 flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-semibold flex items-center gap-2">
+                      <span className="text-emerald-900">Resolved</span>
+                      <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-900 bg-white/70">
+                        {resolvedRows.length}
+                      </Badge>
+                    </p>
+                  </div>
+                  <CardContent className="p-2 space-y-2">
+                    {resolvedRows.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic text-center py-3">No resolved conditions yet.</p>
+                    ) : (
+                      resolvedRows.map(renderRow)
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()
         )}
       </div>
 
