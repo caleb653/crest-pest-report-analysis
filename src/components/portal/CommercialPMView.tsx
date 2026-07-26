@@ -482,10 +482,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-sm font-semibold text-foreground">
                                   {fmtDate(s.service_date)}
-                                  {s.service_time && ` • ${s.service_time}`}
-                                  {s.technician && ` • ${s.technician}`}
+                                  {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                  {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
                               </div>
                               <Badge variant="secondary" className="text-[10px] shrink-0">Scheduled</Badge>
