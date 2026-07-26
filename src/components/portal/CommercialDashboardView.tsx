@@ -131,6 +131,23 @@ const fmtDateTime = (iso: string) =>
     hour: "numeric", minute: "2-digit",
   });
 
+// Convert "HH:mm" (or "HH:mm - HH:mm") 24h strings to friendly 12h AM/PM.
+// Falls back to the raw value when it can't parse.
+const to12h = (t: string) => {
+  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return t.trim();
+  let h = parseInt(m[1], 10);
+  const mm = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${mm} ${ampm}`;
+};
+const fmtTime = (raw: string | null | undefined) => {
+  if (!raw) return "";
+  const parts = raw.split(/\s*[-–]\s*/);
+  return parts.map(to12h).join(" – ");
+};
+
 const FREQUENCY_OPTIONS = [
   { key: "weekly",     label: "Weekly" },
   { key: "bi-weekly",  label: "Bi-Weekly" },

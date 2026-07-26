@@ -124,6 +124,21 @@ const fmtDate = (iso: string | null) =>
       })
     : "—";
 
+// Convert stored 24h "HH:mm" (or "HH:mm - HH:mm") to AM/PM for display.
+const to12h = (t: string) => {
+  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return t.trim();
+  let h = parseInt(m[1], 10);
+  const mm = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${mm} ${ampm}`;
+};
+const fmtTime = (raw: string | null | undefined) => {
+  if (!raw) return "";
+  return raw.split(/\s*[-–]\s*/).map(to12h).join(" – ");
+};
+
 const REQUEST_STATUS_VARIANT: Record<string, "default" | "secondary" | "outline"> = {
   pending: "secondary",
   scheduled: "default",
