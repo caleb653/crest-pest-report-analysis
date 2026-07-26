@@ -383,7 +383,7 @@ function PropertyEquipmentCard({
 }
 
 export default function CommercialDashboardView({
-  property, services, links, onEditService,
+  property, services, links, clientName, onEditService,
   onDeleteService, onCopyLink, onOpenPortal,
   onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
   onUpdatePropertyMapData,
