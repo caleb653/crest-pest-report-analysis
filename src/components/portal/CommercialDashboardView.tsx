@@ -35,7 +35,7 @@ import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
   CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
-  Bug, X,
+  Bug, X, Phone,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
