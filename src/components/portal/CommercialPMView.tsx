@@ -740,7 +740,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 const ownedRows: any[] = Array.isArray(rd.conditions) ? rd.conditions : [];
                                 const resolvedHere: any[] = services.flatMap((os: any) => {
                                   const rs = Array.isArray(os.report_data?.conditions) ? os.report_data.conditions : [];
-                                  return rs.filter((c: any) => c && c.status === "Closed" && c.closed_on_service_id === s.id);
+                                  return rs
+                                    .filter((c: any) => c && c.status === "Closed" && c.closed_on_service_id === s.id)
+                                    .map((c: any) => ({ ...c, __originDate: os.service_date }));
                                 });
                                 const addedRows = ownedRows.filter((c: any) => !(c && c.status === "Closed" && c.closed_on_service_id === s.id));
                                 return (
@@ -794,6 +796,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                             {c.area && c.condition && <span className="text-green-800"> · {c.area}</span>}
                                             {c.detail && <span> — {c.detail}</span>}
                                             <Badge variant="outline" className="ml-1 text-[9px] border-green-300 text-green-900 bg-white/70">Closed</Badge>
+                                              {c.__originDate && (
+                                                <div className="text-[10px] text-green-800 italic mt-0.5">Originally added {fmtDate(c.__originDate)}</div>
+                                              )}
                                             {c.response_notes && (
                                               <div className="text-[11px] text-green-900 mt-0.5"><span className="font-semibold">Crest response:</span> {c.response_notes}</div>
                                             )}
@@ -946,7 +951,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                         : (c.closed_at || "").toString().slice(0, 10);
                                       if (closedDate && closedDate <= svcDate) return;
                                     }
-                                    rows.push(c);
+                                  rows.push({ ...c, __originDate: os.service_date });
                                   });
                                 });
                                 if (rows.length === 0) return null;
@@ -966,6 +971,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                             {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
                                             {c.detail && <span> — {c.detail}</span>}
                                             <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">Open</Badge>
+                                            {c.__originDate && (
+                                              <div className="text-[10px] text-red-800 italic mt-0.5">Originally added {fmtDate(c.__originDate)}</div>
+                                            )}
                                           </div>
                                           {Array.isArray(c.photos) && c.photos.length > 0 && (
                                             <div className="flex gap-1 shrink-0">
