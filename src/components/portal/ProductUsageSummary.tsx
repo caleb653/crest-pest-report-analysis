@@ -7,7 +7,6 @@ import {
   normalizeUsageList,
   aggregateUsage,
   findEpaNumber,
-  computeDilution,
 } from "@/lib/productCatalog";
 
 // ─── Display a list of products + full liability detail on a single service card ───
