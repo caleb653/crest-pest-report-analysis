@@ -29,6 +29,10 @@ serve(async (req) => {
       timeIn,
       timeOut,
       portalUrl,
+      activeConditions,
+      resolvedConditions,
+      openSightings,
+      resolvedSightings,
     } = await req.json();
 
     if (!to) {
