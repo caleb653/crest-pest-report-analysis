@@ -826,7 +826,7 @@ export default function CommercialDashboardView({
       <Card className="border-dashed">
         <CardContent className="p-3 space-y-1.5">
           <div className="flex items-center gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Office-Only Notes</p>
+            <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2">Office-Only Notes</p>
             <Badge variant="outline" className="text-[9px] h-4 px-1">Hidden from customer</Badge>
           </div>
           <Textarea
@@ -1254,7 +1254,7 @@ export default function CommercialDashboardView({
                         {/* Inline editable core fields — phone friendly */}
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Date</Label>
+                            <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                             <Input
                               type="date"
                               value={getField(s, "service_date") || ""}
@@ -1266,7 +1266,7 @@ export default function CommercialDashboardView({
                             />
                           </div>
                           <div>
-                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Technician</Label>
+                            <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Technician</Label>
                             <Input
                               value={getField(s, "technician") || ""}
                               readOnly={readOnly}
@@ -1278,7 +1278,7 @@ export default function CommercialDashboardView({
                             />
                           </div>
                           <div className="col-span-2">
-                            <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
+                            <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Service Type</Label>
                             <Select
                               value={getField(s, "service_type") || ""}
                               disabled={readOnly}
@@ -1295,7 +1295,7 @@ export default function CommercialDashboardView({
                           </div>
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
+                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
                           <Textarea
                             value={getField(s, "summary") || ""}
                             readOnly={readOnly}
@@ -1315,7 +1315,7 @@ export default function CommercialDashboardView({
                         />
                         {products.length > 0 && (
                           <div>
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                            <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
                               <FlaskConical className="w-3 h-3" /> Products Used
                             </p>
                             <ProductUsageSummary entries={products} />
@@ -1456,7 +1456,7 @@ export default function CommercialDashboardView({
                     <CardContent className="p-3 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Service Type</Label>
+                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Service Type</Label>
                           <Select
                             value={getField(s, "service_type") || ""}
                             disabled={readOnly}
@@ -1472,7 +1472,7 @@ export default function CommercialDashboardView({
                           </Select>
                         </div>
                         <div>
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Date</Label>
+                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
                             value={getField(s, "service_date") || ""}
@@ -1484,7 +1484,7 @@ export default function CommercialDashboardView({
                           />
                         </div>
                          <div>
-                           <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Time In / Time Out</Label>
+                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Time In / Time Out</Label>
                            {(() => {
                              const raw = (getField(s, "service_time") || "").toString();
                              const parts = raw.split(/\s*[-–]\s*/);
@@ -1520,7 +1520,7 @@ export default function CommercialDashboardView({
                            })()}
                          </div>
                         <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Assigned Technician</Label>
+                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Assigned Technician</Label>
                           <Select
                             value={getField(s, "technician") || ""}
                             disabled={readOnly}
@@ -1536,7 +1536,7 @@ export default function CommercialDashboardView({
                           </Select>
                         </div>
                         <div className="col-span-2">
-                          <Label className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5 block">Summary</Label>
+                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
                           <Textarea
                             value={getField(s, "summary") || ""}
                             readOnly={readOnly}
@@ -1821,7 +1821,7 @@ export default function CommercialDashboardView({
                 <Textarea value={newReq.description} onChange={e => setNewReq(r => ({ ...r, description: e.target.value }))} placeholder="Describe the issue or request…" rows={2} className="text-sm" />
                 <div className="rounded-md border border-dashed border-border p-2 space-y-2">
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1"><Camera className="w-3 h-3" /> Photos</p>
+                    <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 flex items-center gap-1"><Camera className="w-3 h-3" /> Photos</p>
                     <label className="cursor-pointer">
                       <input type="file" accept="image/*" multiple className="hidden" onChange={e => { uploadSightingPhoto(e.target.files); e.currentTarget.value = ""; }} />
                       <span className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs hover:bg-muted">
@@ -1892,7 +1892,7 @@ export default function CommercialDashboardView({
                         )}
                         {r.response_notes && (
                           <div className="rounded-md border border-border bg-muted/40 p-2">
-                            <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-0.5">Last Response</p>
+                            <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5">Last Response</p>
                             <p className="text-sm whitespace-pre-wrap">{r.response_notes}</p>
                           </div>
                         )}
