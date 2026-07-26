@@ -42,6 +42,7 @@ import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoti
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
+import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
