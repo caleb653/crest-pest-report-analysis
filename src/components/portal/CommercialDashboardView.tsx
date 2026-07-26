@@ -1951,6 +1951,49 @@ export default function CommercialDashboardView({
                               const dateVal = getField(s, "service_date") || today;
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
+                              // Send completion email to the on-file Point of Contact
+                              // with a full recap of the visit (products, photos, notes).
+                              try {
+                                const recipient = (contactEmail || "").trim();
+                                if (recipient) {
+                                  const productsList = _normUsage(getField(s, "products_used"));
+                                  const { findEpaNumber, computeDilution } = await import("@/lib/productCatalog");
+                                  const enrichedProducts = (productsList as any[]).map((p: any) => {
+                                    const dil = computeDilution(p);
+                                    return {
+                                      ...p,
+                                      epa: findEpaNumber(p.name) || null,
+                                      dilution_rate_pct: dil.ratePct ?? null,
+                                      mix_ratio_per_gal: dil.mixRatioPerGal ?? null,
+                                      mix_ratio_unit: dil.mixRatioUnit ?? null,
+                                    };
+                                  });
+                                  const photosArr: string[] = Array.isArray(getField(s, "photos"))
+                                    ? (getField(s, "photos") as string[]).filter(u => typeof u === "string")
+                                    : [];
+                                  const rawTime = (getField(s, "service_time") || "").toString();
+                                  const parts = rawTime.split(/\s*[-–]\s*/);
+                                  await supabase.functions.invoke("send-service-completed", {
+                                    body: {
+                                      to: recipient,
+                                      propertyName: property.name,
+                                      clientName: clientName || "",
+                                      serviceType: getField(s, "service_type") || "",
+                                      serviceDate: dateVal,
+                                      technician: getField(s, "technician") || "",
+                                      summary: getField(s, "summary") || "",
+                                      productsList: enrichedProducts,
+                                      photos: photosArr,
+                                      timeIn: parts[0] || null,
+                                      timeOut: parts[1] || null,
+                                      portalUrl: typeof window !== "undefined" ? window.location.origin : "",
+                                    },
+                                  });
+                                  toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
+                                }
+                              } catch (err) {
+                                console.warn("send-service-completed failed", err);
+                              }
                               // Auto-schedule the next visit based on the property's
                               // service frequency (e.g. monthly = same day next month).
                               // Only creates one if there isn't already
