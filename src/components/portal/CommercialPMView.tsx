@@ -1025,6 +1025,22 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 )}
               </CardContent>
             </Card>
+            {(() => {
+              const c = (property?.customer_preferences as any)?.point_of_contact || {};
+              if (!c.name && !c.phone && !c.email) return null;
+              return (
+                <Card className="border-primary/20">
+                  <CardContent className="p-4 space-y-2">
+                    <p className="text-sm font-bold flex items-center gap-2"><Phone className="w-4 h-4 text-primary" /> Point of Contact</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      {c.name && <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Name</p><p className="font-medium">{c.name}</p></div>}
+                      {c.phone && <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p><p className="font-medium">{c.phone}</p></div>}
+                      {c.email && <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Email</p><p className="font-medium break-all">{c.email}</p></div>}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
             <Card>
               <CardContent className="p-4 space-y-1">
                 <p className="text-sm font-bold flex items-center gap-2"><Wrench className="w-4 h-4 text-primary" /> Scope of Work</p>
