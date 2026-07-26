@@ -138,9 +138,9 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
       {value.length > 0 && (
         <div className="rounded-md border border-border/60 bg-muted/20 divide-y divide-border/40">
           <div className="grid grid-cols-12 gap-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40">
-            <div className="col-span-4">Product</div>
+            <div className="col-span-3">Product</div>
             <div className="col-span-4">Applied (diluted)</div>
-            <div className="col-span-3">Undiluted (concentrate)</div>
+            <div className="col-span-4">Undiluted (concentrate)</div>
             <div className="col-span-1"></div>
           </div>
           {value.map((u, idx) => {
@@ -149,7 +149,7 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
             const dil = computeDilution(u);
             return (
               <div key={`${u.name}-${idx}`} className="grid grid-cols-12 gap-1 px-2 py-1.5 items-center">
-                <div className="col-span-4 text-[11px] font-medium truncate" title={u.name}>
+                <div className="col-span-3 text-[11px] font-medium truncate" title={u.name}>
                   {u.name}
                   {std && (
                     <span className="block text-[9px] text-muted-foreground font-normal">
@@ -186,7 +186,7 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
                     {UNIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
-                <div className="col-span-3 flex gap-1">
+                <div className="col-span-4 flex gap-1">
                   <Input
                     type="number"
                     step="0.5"
