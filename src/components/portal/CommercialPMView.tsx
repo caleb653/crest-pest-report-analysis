@@ -399,7 +399,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                 {/* Upcoming visits default their displayed date to TODAY when
                     the office hasn't locked in a specific date yet — mirrors
                     the Route Manager dashboard. */}
-                <p className="font-semibold">{upcoming[0] ? fmtDate(upcoming[0].service_date || new Date().toISOString().slice(0, 10)) : "—"}</p>
+                <p className="font-semibold">{upcoming[0] ? fmtDate(new Date().toISOString().slice(0, 10)) : "—"}</p>
               </div>
             </div>
           </CardContent>

@@ -880,7 +880,7 @@ export default function CommercialDashboardView({
             <ClipboardList className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Next Visit</p>
-              <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date || today) : "—"}</p>
+              <p className="font-medium">{upcoming[0] ? fmtDate(today) : "—"}</p>
             </div>
           </div>
         </CardContent>
@@ -1585,7 +1585,7 @@ export default function CommercialDashboardView({
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
-                            value={getField(s, "service_date") || today}
+                            value={today}
                             readOnly={readOnly}
                             disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
