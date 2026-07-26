@@ -29,6 +29,10 @@ serve(async (req) => {
       timeIn,
       timeOut,
       portalUrl,
+      activeConditions,
+      resolvedConditions,
+      openSightings,
+      resolvedSightings,
     } = await req.json();
 
     if (!to) {
@@ -145,6 +149,34 @@ serve(async (req) => {
          </div>`
       : "";
 
+    // ─── Conditions & Pest Sightings ───
+    const renderCondBlock = (title: string, rows: any[], color: { bg: string; border: string; label: string; }) => {
+      if (!Array.isArray(rows) || rows.length === 0) return "";
+      return `
+        <div style="border:2px solid ${color.border};background:${color.bg};border-radius:8px;padding:12px 14px;margin:0 0 14px;">
+          <p style="margin:0 0 8px;font-size:12px;font-weight:800;color:${color.label};text-transform:uppercase;letter-spacing:0.06em;">${esc(title)} (${rows.length})</p>
+          ${rows.map((c: any) => {
+            const photos = Array.isArray(c.photos) ? c.photos.filter((u: any) => typeof u === "string") : [];
+            return `
+            <div style="background:#fff;border:1px solid ${color.border};border-radius:6px;padding:10px 12px;margin-bottom:8px;">
+              <p style="margin:0;font-size:13px;font-weight:700;color:#111827;">${esc(c.title || c.description || c.pest || "Condition")}</p>
+              ${c.severity ? `<p style="margin:2px 0 0;font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Severity: ${esc(c.severity)}</p>` : ""}
+              ${c.location ? `<p style="margin:2px 0 0;font-size:12px;color:#374151;">Location: ${esc(c.location)}</p>` : ""}
+              ${c.description && c.title ? `<p style="margin:4px 0 0;font-size:12px;color:#374151;white-space:pre-wrap;">${esc(c.description)}</p>` : ""}
+              ${c.resolution_note ? `<p style="margin:4px 0 0;font-size:12px;color:#065f46;white-space:pre-wrap;"><strong>Resolution:</strong> ${esc(c.resolution_note)}</p>` : ""}
+              ${c.response ? `<p style="margin:4px 0 0;font-size:12px;color:#374151;white-space:pre-wrap;"><strong>Response:</strong> ${esc(c.response)}</p>` : ""}
+              ${photos.length > 0 ? `<div style="margin-top:6px;">${photos.map((u: string) => `<img src="${esc(u)}" alt="" style="max-width:140px;max-height:140px;border-radius:6px;margin:0 6px 6px 0;border:1px solid #e5e7eb;" />`).join("")}</div>` : ""}
+            </div>`;
+          }).join("")}
+        </div>`;
+    };
+    const conditionsHtml =
+      renderCondBlock("Active Conditions", activeConditions, { bg: "#fef2f2", border: "#fecaca", label: "#991b1b" }) +
+      renderCondBlock("Conditions Resolved This Visit", resolvedConditions, { bg: "#f0fdf4", border: "#bbf7d0", label: "#166534" });
+    const sightingsHtml =
+      renderCondBlock("Active Pest Sightings", openSightings, { bg: "#fffbeb", border: "#fcd34d", label: "#92400e" }) +
+      renderCondBlock("Pest Sightings Resolved This Visit", resolvedSightings, { bg: "#f0fdf4", border: "#bbf7d0", label: "#166534" });
+
     // ─── Prominent follow-up banner ───
     // When ANY unit was flagged as follow-up needed by the technician, surface
     // it at the very top of the email (above everything else) with the exact
@@ -223,6 +255,8 @@ serve(async (req) => {
               <tbody>${safeProductsRows}</tbody>
             </table>` : ""}
           ${servicePhotos}
+          ${sightingsHtml}
+          ${conditionsHtml}
           ${portalUrl ? `
             <div style="text-align:center;margin:22px 0 8px;">
               <a href="${esc(portalUrl)}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">Open Portal (optional)</a>
