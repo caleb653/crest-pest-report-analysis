@@ -255,6 +255,8 @@ serve(async (req) => {
               <tbody>${safeProductsRows}</tbody>
             </table>` : ""}
           ${servicePhotos}
+          ${sightingsHtml}
+          ${conditionsHtml}
           ${portalUrl ? `
             <div style="text-align:center;margin:22px 0 8px;">
               <a href="${esc(portalUrl)}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">Open Portal (optional)</a>
