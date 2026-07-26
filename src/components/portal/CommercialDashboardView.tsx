@@ -1407,14 +1407,70 @@ export default function CommercialDashboardView({
                                 })}
                               </div>
                             )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
+                           </div>
+                         )}
+                         {/* Conditions PRESENT at this visit but not added or resolved here — carryovers still open at the time of the visit. */}
+                         {(() => {
+                           const svcDate = (s.service_date || "").toString().slice(0, 10);
+                           if (!svcDate) return null;
+                           const svcById: Record<string, any> = Object.fromEntries(services.map((x: any) => [x.id, x]));
+                           const rows: any[] = [];
+                           services.forEach((os: any) => {
+                             if (os.id === s.id) return; // added here handled elsewhere
+                             const osDate = (os.service_date || "").toString().slice(0, 10);
+                             if (!osDate || osDate > svcDate) return; // logged after this visit
+                             const list = Array.isArray(os.report_data?.conditions) ? os.report_data.conditions : [];
+                             list.forEach((c: any) => {
+                               if (!c) return;
+                               if (c.status === "Closed") {
+                                 const closedSvc = c.closed_on_service_id ? svcById[c.closed_on_service_id] : null;
+                                 const closedDate = closedSvc
+                                   ? (closedSvc.service_date || "").toString().slice(0, 10)
+                                   : (c.closed_at || "").toString().slice(0, 10);
+                                 if (closedDate && closedDate <= svcDate) return; // already closed by this visit
+                               }
+                               rows.push(c);
+                             });
+                           });
+                           if (rows.length === 0) return null;
+                           return (
+                             <div className="rounded-md border-2 border-red-400 bg-red-50/70 p-2 space-y-1.5">
+                               <p className="text-[11px] font-bold uppercase tracking-wide text-red-900 flex items-center gap-1">
+                                 <ClipboardList className="w-3 h-3" /> Conditions Present
+                                 <Badge variant="outline" className="ml-auto text-[10px] border-red-400 text-red-900 bg-white/70">
+                                   {rows.length}
+                                 </Badge>
+                               </p>
+                               <div className="space-y-1">
+                                 {rows.map((c: any, i: number) => (
+                                   <div key={c.id || i} className="text-xs text-red-950 leading-snug flex items-start gap-2">
+                                     <div className="flex-1 min-w-0">
+                                       <span className="font-semibold">{c.condition || c.name || c.area || "Condition"}</span>
+                                       {c.area && c.condition && <span className="text-red-800"> · {c.area}</span>}
+                                       {c.detail && <span> — {c.detail}</span>}
+                                       <Badge variant="outline" className="ml-1 text-[9px] border-red-300 text-red-900 bg-white/60">Open</Badge>
+                                     </div>
+                                     {Array.isArray(c.photos) && c.photos.length > 0 && (
+                                       <div className="flex gap-1 shrink-0">
+                                         {c.photos.slice(0, 3).map((u: string, pi: number) => (
+                                           <a key={pi} href={u} target="_blank" rel="noreferrer">
+                                             <img src={u} alt="" className="w-32 h-32 object-cover rounded border border-red-300" />
+                                           </a>
+                                         ))}
+                                       </div>
+                                     )}
+                                   </div>
+                                 ))}
+                               </div>
+                             </div>
+                           );
+                         })()}
+                       </div>
+                     )}
+                   </CardContent>
+                 </Card>
+               );
+             })}
           </div>
         )}
           </CardContent>
