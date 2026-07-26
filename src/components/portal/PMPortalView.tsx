@@ -1801,7 +1801,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                        ? "Ad Hoc Visit"
                        : ((s as any).appointment_service || cadenceLabel || s.service_type);
                     return (
-                      <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                      <Card key={s.id} id={`visit-pdf-${s.id}`} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
                         <div
                           role="button"
                           tabIndex={0}
@@ -1825,7 +1825,13 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0" data-visit-pdf-hide>
+                            <VisitPdfButton
+                              cardId={`visit-pdf-${s.id}`}
+                              filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
+                              title={`Service Visit — ${formatDate(s.service_date)}${displayTitle ? " · " + displayTitle : ""}`}
+                              onBeforeCapture={() => setExpandedPastId(s.id)}
+                            />
                             <Button
                               variant="ghost"
                               size="icon"

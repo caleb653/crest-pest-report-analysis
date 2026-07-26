@@ -5628,8 +5628,9 @@ const PropertyDashboard = ({
                   ? "Ad-Hoc Visit"
                   : ((s as any).appointment_service || cadenceLabel || s.service_type);
                 return (
-                  <Card key={s.id} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
-                    <button className="w-full text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
+                  <Card key={s.id} id={`visit-pdf-${s.id}`} className={`transition-all shadow-sm ${isExpanded ? "border-primary/20" : "hover:border-muted-foreground/30"}`}>
+                    <div className="w-full flex items-center gap-1 pr-2">
+                    <button className="flex-1 text-left p-3 flex items-center justify-between" onClick={() => setExpandedPastId(isExpanded ? null : s.id)}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           {isFirst && <Badge className="text-xs bg-primary text-primary-foreground">Most Recent</Badge>}
@@ -5675,6 +5676,15 @@ const PropertyDashboard = ({
                       </div>
                       <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                     </button>
+                    <div data-visit-pdf-hide>
+                      <VisitPdfButton
+                        cardId={`visit-pdf-${s.id}`}
+                        filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
+                        title={`Service Visit — ${formatDate(s.service_date)}${displayTitle ? " · " + displayTitle : ""}`}
+                        onBeforeCapture={() => setExpandedPastId(s.id)}
+                      />
+                    </div>
+                    </div>
                     {isExpanded && renderServiceDetails(s, false, false)}
                   </Card>
                 );
