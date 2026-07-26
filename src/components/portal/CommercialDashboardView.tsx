@@ -1123,7 +1123,7 @@ export default function CommercialDashboardView({
                           <p className="font-bold text-sm truncate">{s.service_type}</p>
                           <p className="text-sm font-semibold text-foreground">
                             {fmtDate(s.service_date)}
-                            {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                            {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                             {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                           </p>
                         </div>
@@ -1349,12 +1349,9 @@ export default function CommercialDashboardView({
                             className="text-sm"
                           />
                         </div>
-                        {/* Target Pests — chip editor over report_data.target_pests */}
-                        <TargetPestsEditor
-                          value={Array.isArray(getReportData(s).target_pests) ? getReportData(s).target_pests : []}
-                          onChange={(next) => saveReportData(s, { target_pests: next })}
-                          readOnly={readOnly}
-                        />
+                        {/* Target Pests removed per product spec — the target-pest chip
+                            list added noise without meaningfully guiding the reader,
+                            so both past & upcoming cards omit it. */}
                         {products.length > 0 && (
                           <div>
                             <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-1 flex items-center gap-1">
@@ -1670,12 +1667,7 @@ export default function CommercialDashboardView({
                         </div>
                       </div>
 
-                      {/* Target Pests — chip editor over report_data.target_pests */}
-                      <TargetPestsEditor
-                        value={Array.isArray(getReportData(s).target_pests) ? getReportData(s).target_pests : []}
-                        onChange={(next) => saveReportData(s, { target_pests: next })}
-                        readOnly={readOnly}
-                      />
+                      {/* Target Pests intentionally removed — see past-visit note above. */}
 
                       {/* Products + Equipment — side-by-side on the upcoming card */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
