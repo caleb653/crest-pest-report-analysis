@@ -44,6 +44,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
+import { PRESET_NOTES } from "@/lib/presetNotes";
 
 // Same roster as the Initial Pest Report technician dropdown.
 const TECHNICIAN_NAMES = [
@@ -1296,9 +1297,31 @@ export default function CommercialDashboardView({
                             </Select>
                           </div>
                         </div>
-                        <div>
-                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
-                          <Textarea
+                         <div>
+                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
+                           {!readOnly && (
+                             <div className="mb-1.5">
+                               <select
+                                 className="h-7 text-[11px] px-2 rounded border border-primary/40 bg-background cursor-pointer"
+                                 value=""
+                                 onChange={(e) => {
+                                   const preset = PRESET_NOTES.find(p => p.id === e.target.value);
+                                   if (!preset) return;
+                                   const existing = (getField(s, "summary") || "").trim();
+                                   const next = existing ? `${existing}\n\n${preset.text}` : preset.text;
+                                   setField(s.id, "summary", next);
+                                   setTimeout(() => flushEdits(s.id), 0);
+                                   e.target.value = "";
+                                 }}
+                               >
+                                 <option value="">+ Insert preset note…</option>
+                                 {PRESET_NOTES.map(p => (
+                                   <option key={p.id} value={p.id}>{p.label}</option>
+                                 ))}
+                               </select>
+                             </div>
+                           )}
+                           <Textarea
                             value={getField(s, "summary") || ""}
                             readOnly={readOnly}
                             disabled={readOnly}
@@ -1537,9 +1560,31 @@ export default function CommercialDashboardView({
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="col-span-2">
-                          <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
-                          <Textarea
+                         <div className="col-span-2">
+                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Summary</Label>
+                           {!readOnly && (
+                             <div className="mb-1.5">
+                               <select
+                                 className="h-7 text-[11px] px-2 rounded border border-primary/40 bg-background cursor-pointer"
+                                 value=""
+                                 onChange={(e) => {
+                                   const preset = PRESET_NOTES.find(p => p.id === e.target.value);
+                                   if (!preset) return;
+                                   const existing = (getField(s, "summary") || "").trim();
+                                   const next = existing ? `${existing}\n\n${preset.text}` : preset.text;
+                                   setField(s.id, "summary", next);
+                                   setTimeout(() => flushEdits(s.id), 0);
+                                   e.target.value = "";
+                                 }}
+                               >
+                                 <option value="">+ Insert preset note…</option>
+                                 {PRESET_NOTES.map(p => (
+                                   <option key={p.id} value={p.id}>{p.label}</option>
+                                 ))}
+                               </select>
+                             </div>
+                           )}
+                           <Textarea
                             value={getField(s, "summary") || ""}
                             readOnly={readOnly}
                             disabled={readOnly}
