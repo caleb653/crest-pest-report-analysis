@@ -2023,7 +2023,12 @@ export default function CommercialDashboardView({
                                       photos: photosArr,
                                       timeIn: parts[0] || null,
                                       timeOut: parts[1] || null,
-                                      portalUrl: typeof window !== "undefined" ? window.location.origin : "",
+                                      portalUrl: (() => {
+                                        if (typeof window === "undefined") return "";
+                                        const origin = window.location.origin;
+                                        const pmLink = propertyLinks.find(l => l.link_type === "sub") || propertyLinks[0];
+                                        return pmLink ? `${origin}/pm/${pmLink.token}` : origin;
+                                      })(),
                                       activeConditions,
                                       resolvedConditions,
                                       openSightings,
