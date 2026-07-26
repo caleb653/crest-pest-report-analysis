@@ -879,7 +879,7 @@ export default function CommercialDashboardView({
             <ClipboardList className="w-4 h-4 text-primary mt-0.5 shrink-0" />
             <div>
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">Next Visit</p>
-              <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date) : "—"}</p>
+              <p className="font-medium">{upcoming[0] ? fmtDate(upcoming[0].service_date || today) : "—"}</p>
             </div>
           </div>
         </CardContent>
