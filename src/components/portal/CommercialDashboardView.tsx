@@ -1981,10 +1981,21 @@ export default function CommercialDashboardView({
                                     rows.forEach((c: any) => allCondRows.push({ ...c, _ownerId: os.id }));
                                   });
                                   const isClosed = (c: any) => String(c.status || "").toLowerCase() === "closed";
-                                  const activeConditions = allCondRows.filter((c) => !isClosed(c));
+                                  const normCond = (c: any) => ({
+                                    title: c.condition || c.title || "Condition",
+                                    severity: c.severity || "",
+                                    location: c.area || c.location || "",
+                                    description: c.detail || c.description || "",
+                                    resolution_note: c.resolution_note || "",
+                                    photos: [
+                                      ...(Array.isArray(c.photos) ? c.photos : []),
+                                      ...(Array.isArray(c.resolution_photos) ? c.resolution_photos : []),
+                                    ].filter((u: any) => typeof u === "string"),
+                                  });
+                                  const activeConditions = allCondRows.filter((c) => !isClosed(c)).map(normCond);
                                   const resolvedConditions = allCondRows.filter((c) =>
                                     isClosed(c) && (c.closed_on_service_id === s.id || (!c.closed_on_service_id && c._ownerId === s.id))
-                                  );
+                                  ).map(normCond);
                                   // Sightings on this visit
                                   const openSightings = requests.filter((r: any) => {
                                     const st = (r.sighting_status || r.status || "").toLowerCase();
