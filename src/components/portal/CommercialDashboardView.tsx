@@ -534,22 +534,11 @@ export default function CommercialDashboardView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [officeNotes]);
 
-  // Backfill any existing upcoming visit that was created before the default
-  // date logic existed, so the admin/customer portals stop showing a blank
-  // next-service date.
-  useEffect(() => {
-    if (readOnly || propertyFrequencyDays <= 0) return;
-    const missingDateUpcoming = services.filter(s => s.status === "scheduled" && !s.service_date);
-    if (missingDateUpcoming.length === 0) return;
-    const nextDate = defaultNextServiceDate();
-    Promise.all(missingDateUpcoming.map(s =>
-      supabase.from("portal_services").update({
-        service_date: nextDate,
-        frequency_days: propertyFrequencyDays,
-      } as any).eq("id", s.id)
-    )).then(() => onRefresh?.());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readOnly, property.id, propertyFrequencyDays, latestScheduledServiceDate, services]);
+  // Upcoming visits intentionally leave `service_date` NULL in the database —
+  // the card displays TODAY() as the default (see the date <Input> below), and
+  // a real date is only persisted when the tech edits it or marks the visit
+  // completed. This keeps "Next Visit" fluid instead of locking to a projected
+  // future date the office may not honor.
 
   // Debounced auto-save for property notes (rich text editor doesn't fire onBlur naturally)
   useEffect(() => {
