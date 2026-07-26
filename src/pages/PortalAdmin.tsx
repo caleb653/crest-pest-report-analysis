@@ -1053,7 +1053,16 @@ const PortalAdmin = () => {
               <DialogHeader><DialogTitle className="text-base">{selectedService.service_type}</DialogTitle></DialogHeader>
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-2">
-                  <div><p className="text-xs text-muted-foreground">Date</p><p>{selectedService.service_date ? new Date(selectedService.service_date + "T00:00:00").toLocaleDateString() : "—"}</p></div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Date</p>
+                    {/* Upcoming (scheduled) visits store a NULL service_date until
+                        they're completed — default the display to TODAY so the
+                        dialog never shows "—" for the next visit. */}
+                    <p>{(() => {
+                      const iso = selectedService.service_date || (selectedService.status === "scheduled" ? new Date().toISOString().slice(0, 10) : null);
+                      return iso ? new Date(iso + "T00:00:00").toLocaleDateString() : "—";
+                    })()}</p>
+                  </div>
                   {selectedService.service_time && <div><p className="text-xs text-muted-foreground">Time</p><p>{selectedService.service_time}</p></div>}
                   {selectedService.technician && <div><p className="text-xs text-muted-foreground">Technician</p><p>{selectedService.technician}</p></div>}
                   <div><p className="text-xs text-muted-foreground">Status</p><Badge variant={selectedService.status === "completed" ? "default" : "secondary"}>{selectedService.status}</Badge></div>
