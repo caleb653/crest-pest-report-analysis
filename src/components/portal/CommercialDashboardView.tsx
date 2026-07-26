@@ -44,7 +44,9 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { normalizeUsageList as _normUsage } from "@/lib/productCatalog";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { normalizeUsageList } from "@/lib/productCatalog";
-import { PRESET_NOTES } from "@/lib/presetNotes";
+import { PRESET_NOTES as ALL_PRESET_NOTES } from "@/lib/presetNotes";
+// Commercial portal: hide vacant-unit preset notes (apartment-only workflow).
+const PRESET_NOTES = ALL_PRESET_NOTES.filter(p => !p.id.startsWith("vacant-"));
 
 // Same roster as the Initial Pest Report technician dropdown.
 const TECHNICIAN_NAMES = [
