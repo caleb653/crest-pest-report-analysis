@@ -576,7 +576,9 @@ export default function CommercialDashboardView({
       property_id: property.id,
       service_type: "Commercial General Pest",
       status,
-      service_date: status === "completed" ? today : defaultNextServiceDate(),
+      // Scheduled visits leave service_date NULL — the card defaults display to
+      // TODAY and only persists a date on edit or on completion.
+      service_date: status === "completed" ? today : null,
       frequency_days: status === "scheduled" ? propertyFrequencyDays : null,
     } as any);
     if (error) {
