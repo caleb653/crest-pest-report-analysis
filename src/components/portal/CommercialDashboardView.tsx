@@ -35,7 +35,7 @@ import {
   Calendar, ClipboardList, MapPin, Edit, Trash2, FileText, Wrench,
   Plus, Copy, ExternalLink, ChevronDown, FlaskConical, Camera, Image as ImageIcon,
   CheckCircle2, AlertTriangle, Send, Upload, Save, FileDown, Eye, Download,
-  Bug, X,
+  Bug, X, Phone,
 } from "lucide-react";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { MapCanvas } from "@/components/MapCanvas";
@@ -383,7 +383,7 @@ function PropertyEquipmentCard({
 }
 
 export default function CommercialDashboardView({
-  property, services, links, onEditService,
+  property, services, links, clientName, onEditService,
   onDeleteService, onCopyLink, onOpenPortal,
   onRefresh, onUpdatePropertyImage, uploadingPropertyImage, readOnly,
   onUpdatePropertyMapData,
@@ -405,6 +405,12 @@ export default function CommercialDashboardView({
   const [officeNotes, setOfficeNotes] = useState<string>(
     (property.customer_preferences as any)?.office_notes || ""
   );
+  // Point of Contact — stored in customer_preferences.point_of_contact so
+  // the completion email can auto-deliver a full recap to the on-file PM.
+  const initialContact = (property.customer_preferences as any)?.point_of_contact || {};
+  const [contactName, setContactName] = useState<string>(initialContact.name || "");
+  const [contactPhone, setContactPhone] = useState<string>(initialContact.phone || "");
+  const [contactEmail, setContactEmail] = useState<string>(initialContact.email || "");
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
@@ -514,6 +520,38 @@ export default function CommercialDashboardView({
   useEffect(() => {
     setOfficeNotes((property.customer_preferences as any)?.office_notes || "");
   }, [property.id]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const c = (property.customer_preferences as any)?.point_of_contact || {};
+    setContactName(c.name || "");
+    setContactPhone(c.phone || "");
+    setContactEmail(c.email || "");
+  }, [property.id]);
+
+  // Debounced auto-save for point of contact
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.point_of_contact || {};
+    const next = {
+      name: contactName || "",
+      phone: contactPhone || "",
+      email: contactEmail || "",
+    };
+    if ((current.name || "") === next.name && (current.phone || "") === next.phone && (current.email || "") === next.email) return;
+    const t = setTimeout(async () => {
+      const merged = { ...(property.customer_preferences || {}), point_of_contact: next };
+      const { error } = await supabase.from("portal_properties")
+        .update({ customer_preferences: merged }).eq("id", property.id);
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      (property as any).customer_preferences = merged;
+      onRefresh?.();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactName, contactPhone, contactEmail]);
 
   // Debounced auto-save for property-level office notes (stored in
   // customer_preferences JSON so no migration is needed).
@@ -1065,6 +1103,35 @@ export default function CommercialDashboardView({
               </CardContent>
             </Card>
           </div>
+          {/* Point of Contact — auto-saves; also used as the recipient for
+              the appointment-completed email when a visit is marked serviced. */}
+          <Card className="shadow-sm border-primary/20">
+            <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Phone className="w-5 h-5 text-primary" />
+                Point of Contact
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Name</Label>
+                <Input value={contactName} disabled={readOnly} onChange={e => setContactName(e.target.value)} placeholder="Primary contact name" className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Phone</Label>
+                <Input value={contactPhone} disabled={readOnly} onChange={e => setContactPhone(e.target.value)} placeholder="(555) 555-5555" className="h-10" />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Email</Label>
+                <Input type="email" value={contactEmail} disabled={readOnly} onChange={e => setContactEmail(e.target.value)} placeholder="contact@company.com" className="h-10" />
+              </div>
+              {!readOnly && (
+                <p className="md:col-span-3 text-[11px] text-muted-foreground">
+                  Saves automatically. Completion emails go to this email after a visit is marked serviced.
+                </p>
+              )}
+            </CardContent>
+          </Card>
           <div className="space-y-6">
             <BusinessLicenseSection docs={docs as any} />
             <PropertyEquipmentCard
@@ -1884,6 +1951,49 @@ export default function CommercialDashboardView({
                               const dateVal = getField(s, "service_date") || today;
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
+                              // Send completion email to the on-file Point of Contact
+                              // with a full recap of the visit (products, photos, notes).
+                              try {
+                                const recipient = (contactEmail || "").trim();
+                                if (recipient) {
+                                  const productsList = _normUsage(getField(s, "products_used"));
+                                  const { findEpaNumber, computeDilution } = await import("@/lib/productCatalog");
+                                  const enrichedProducts = (productsList as any[]).map((p: any) => {
+                                    const dil = computeDilution(p);
+                                    return {
+                                      ...p,
+                                      epa: findEpaNumber(p.name) || null,
+                                      dilution_rate_pct: dil.ratePct ?? null,
+                                      mix_ratio_per_gal: dil.mixRatioPerGal ?? null,
+                                      mix_ratio_unit: dil.mixRatioUnit ?? null,
+                                    };
+                                  });
+                                  const photosArr: string[] = Array.isArray(getField(s, "photos"))
+                                    ? (getField(s, "photos") as string[]).filter(u => typeof u === "string")
+                                    : [];
+                                  const rawTime = (getField(s, "service_time") || "").toString();
+                                  const parts = rawTime.split(/\s*[-–]\s*/);
+                                  await supabase.functions.invoke("send-service-completed", {
+                                    body: {
+                                      to: recipient,
+                                      propertyName: property.name,
+                                      clientName: clientName || "",
+                                      serviceType: getField(s, "service_type") || "",
+                                      serviceDate: dateVal,
+                                      technician: getField(s, "technician") || "",
+                                      summary: getField(s, "summary") || "",
+                                      productsList: enrichedProducts,
+                                      photos: photosArr,
+                                      timeIn: parts[0] || null,
+                                      timeOut: parts[1] || null,
+                                      portalUrl: typeof window !== "undefined" ? window.location.origin : "",
+                                    },
+                                  });
+                                  toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
+                                }
+                              } catch (err) {
+                                console.warn("send-service-completed failed", err);
+                              }
                               // Auto-schedule the next visit based on the property's
                               // service frequency (e.g. monthly = same day next month).
                               // Only creates one if there isn't already
