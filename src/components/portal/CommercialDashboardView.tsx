@@ -1968,9 +1968,10 @@ export default function CommercialDashboardView({
                                       mix_ratio_unit: dil.mixRatioUnit ?? null,
                                     };
                                   });
-                                  const photosArr: string[] = Array.isArray(getField(s, "photos"))
-                                    ? (getField(s, "photos") as string[]).filter(u => typeof u === "string")
-                                    : [];
+                                  const photosArr = (Array.isArray(getField(s, "photos"))
+                                    ? (getField(s, "photos") as any[])
+                                    : []
+                                  ).map((u: any) => (typeof u === "string" ? { url: u } : u)).filter((p: any) => p?.url);
                                   const rawTime = (getField(s, "service_time") || "").toString();
                                   const parts = rawTime.split(/\s*[-–]\s*/);
                                   // Conditions: gather active carry-overs + those resolved on this visit
