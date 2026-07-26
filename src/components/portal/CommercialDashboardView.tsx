@@ -1973,6 +1973,42 @@ export default function CommercialDashboardView({
                                     : [];
                                   const rawTime = (getField(s, "service_time") || "").toString();
                                   const parts = rawTime.split(/\s*[-–]\s*/);
+                                  // Conditions: gather active carry-overs + those resolved on this visit
+                                  const allCondRows: any[] = [];
+                                  services.forEach((os: any) => {
+                                    const rows = Array.isArray(os.report_data?.conditions) ? os.report_data.conditions : [];
+                                    rows.forEach((c: any) => allCondRows.push({ ...c, _ownerId: os.id }));
+                                  });
+                                  const isClosed = (c: any) => String(c.status || "").toLowerCase() === "closed";
+                                  const activeConditions = allCondRows.filter((c) => !isClosed(c));
+                                  const resolvedConditions = allCondRows.filter((c) =>
+                                    isClosed(c) && (c.closed_on_service_id === s.id || (!c.closed_on_service_id && c._ownerId === s.id))
+                                  );
+                                  // Sightings on this visit
+                                  const openSightings = requests.filter((r: any) => {
+                                    const st = (r.sighting_status || r.status || "").toLowerCase();
+                                    return st === "open" || st === "in_progress";
+                                  }).map((r: any) => ({
+                                    title: r.pest_type || r.title || "Pest sighting",
+                                    location: r.location || "",
+                                    description: r.description || "",
+                                    response: r.response || "",
+                                    photos: Array.isArray(r.images) ? r.images : (Array.isArray(r.photos) ? r.photos : []),
+                                  }));
+                                  const resolvedSightings = requests.filter((r: any) => {
+                                    const st = (r.sighting_status || r.status || "").toLowerCase();
+                                    if (!(st === "closed" || st === "completed" || st === "cancelled")) return false;
+                                    if (r.resolved_service_id) return r.resolved_service_id === s.id;
+                                    const closedAt = (r.closed_at || r.updated_at || "").toString().slice(0, 10);
+                                    return dateVal && closedAt === dateVal;
+                                  }).map((r: any) => ({
+                                    title: r.pest_type || r.title || "Pest sighting",
+                                    location: r.location || "",
+                                    description: r.description || "",
+                                    response: r.response || "",
+                                    resolution_note: r.resolution_note || "",
+                                    photos: Array.isArray(r.images) ? r.images : (Array.isArray(r.photos) ? r.photos : []),
+                                  }));
                                   await supabase.functions.invoke("send-service-completed", {
                                     body: {
                                       to: recipient,
@@ -1987,6 +2023,10 @@ export default function CommercialDashboardView({
                                       timeIn: parts[0] || null,
                                       timeOut: parts[1] || null,
                                       portalUrl: typeof window !== "undefined" ? window.location.origin : "",
+                                      activeConditions,
+                                      resolvedConditions,
+                                      openSightings,
+                                      resolvedSightings,
                                     },
                                   });
                                   toast({ title: "Completion email sent", description: `Sent to ${recipient}` });
