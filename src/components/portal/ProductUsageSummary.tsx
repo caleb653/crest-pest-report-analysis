@@ -19,12 +19,10 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
         <div className="col-span-4">Product</div>
         <div className="col-span-3">Diluted</div>
         <div className="col-span-3">Concentrated</div>
-        <div className="col-span-1">Dilution</div>
-        <div className="col-span-1 text-right">EPA #</div>
+        <div className="col-span-2 text-right">EPA #</div>
       </div>
       {entries.map((u, j) => {
         const epa = findEpaNumber(u.name);
-        const { ratePct, mixRatioPerGal, mixRatioUnit } = computeDilution(u);
         return (
           <div
             key={`${u.name}-${j}`}
@@ -41,12 +39,7 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
                 ? <span className="text-primary"><span className="font-medium">{u.undiluted_amount}</span> <span className="opacity-80">{u.undiluted_unit}</span></span>
                 : <span className="text-muted-foreground">—</span>}
             </div>
-            <div className="col-span-1">
-              {ratePct != null
-                ? <span className="font-medium">{ratePct.toFixed(2)}%</span>
-                : <span className="text-muted-foreground">—</span>}
-            </div>
-            <div className="col-span-1 text-right text-[12px] font-mono">
+            <div className="col-span-2 text-right text-[12px] font-mono">
               {epa
                 ? <span title={`EPA Reg # ${epa}`}>{epa}</span>
                 : <span className="text-muted-foreground">—</span>}
