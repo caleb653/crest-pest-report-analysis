@@ -16,11 +16,10 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
   return (
     <div className="rounded-md border border-border/60 overflow-hidden">
       <div className="grid grid-cols-12 gap-1 px-3 py-2 text-[12px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40 border-b border-border/60">
-        <div className="col-span-3">Product</div>
-        <div className="col-span-2">Diluted</div>
-        <div className="col-span-2">Concentrated</div>
-        <div className="col-span-2">Dilution Rate</div>
-        <div className="col-span-2">Mix Ratio</div>
+        <div className="col-span-4">Product</div>
+        <div className="col-span-3">Diluted</div>
+        <div className="col-span-3">Concentrated</div>
+        <div className="col-span-1">Dilution</div>
         <div className="col-span-1 text-right">EPA #</div>
       </div>
       {entries.map((u, j) => {
@@ -31,25 +30,20 @@ export const ProductUsageSummary = ({ entries }: { entries: ProductUsage[] }) =>
             key={`${u.name}-${j}`}
             className={`grid grid-cols-12 gap-1 px-3 py-2 text-[14px] items-center ${j % 2 === 1 ? "bg-muted/20" : ""}`}
           >
-            <div className="col-span-3 font-semibold truncate" title={u.name}>{u.name}</div>
-            <div className="col-span-2">
+            <div className="col-span-4 font-semibold truncate" title={u.name}>{u.name}</div>
+            <div className="col-span-3">
               {u.applied_amount != null
                 ? <span><span className="font-medium">{u.applied_amount}</span> <span className="text-muted-foreground">{u.applied_unit}</span></span>
                 : <span className="text-muted-foreground">—</span>}
             </div>
-            <div className="col-span-2">
+            <div className="col-span-3">
               {u.undiluted_amount != null
                 ? <span className="text-primary"><span className="font-medium">{u.undiluted_amount}</span> <span className="opacity-80">{u.undiluted_unit}</span></span>
                 : <span className="text-muted-foreground">—</span>}
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1">
               {ratePct != null
                 ? <span className="font-medium">{ratePct.toFixed(2)}%</span>
-                : <span className="text-muted-foreground">—</span>}
-            </div>
-            <div className="col-span-2">
-              {mixRatioPerGal != null && mixRatioUnit
-                ? <span><span className="font-medium">{mixRatioPerGal}</span> <span className="text-muted-foreground">{mixRatioUnit} / 1 gal</span></span>
                 : <span className="text-muted-foreground">—</span>}
             </div>
             <div className="col-span-1 text-right text-[12px] font-mono">
