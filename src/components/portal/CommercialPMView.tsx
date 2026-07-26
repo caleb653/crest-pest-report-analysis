@@ -28,6 +28,7 @@ import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
+import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
 import {
   ConditionsReportSection, ConditionCardsReadOnly, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
