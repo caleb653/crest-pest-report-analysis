@@ -692,8 +692,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                           >
                             <div className="min-w-0">
                               <p className="font-bold text-sm truncate">{s.service_type}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {fmtDate(s.service_date)}{s.technician && ` • ${s.technician}`}
+                              <p className="text-sm font-semibold text-foreground">
+                                {fmtDate(s.service_date)}
+                                {s.service_time && <span className="text-muted-foreground font-normal"> • {s.service_time}</span>}
+                                {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                               </p>
                             </div>
                             {s.status === "cancelled" && (
