@@ -1010,9 +1010,9 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
             <Card>
               <CardContent className="p-3">
                 {property.map_data || mapUrl ? (
-                  <div className="w-full bg-background rounded-md overflow-hidden border border-border h-[45vh] min-h-[320px] md:h-[60vh] md:min-h-[380px]">
+                  <div className="w-full bg-background rounded-md overflow-hidden border border-border" style={{ height: "55vh", minHeight: 360 }}>
                     {property.map_data ? (
-                      <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} imageFit="contain" />
+                      <ReadOnlyMapCanvas mapUrl={mapUrl || ""} mapData={property.map_data} />
                     ) : mapUrl ? (
                       <img src={mapUrl} alt="Site map" className="w-full h-full object-contain" />
                     ) : null}
