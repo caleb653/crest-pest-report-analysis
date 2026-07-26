@@ -405,6 +405,12 @@ export default function CommercialDashboardView({
   const [officeNotes, setOfficeNotes] = useState<string>(
     (property.customer_preferences as any)?.office_notes || ""
   );
+  // Point of Contact — stored in customer_preferences.point_of_contact so
+  // the completion email can auto-deliver a full recap to the on-file PM.
+  const initialContact = (property.customer_preferences as any)?.point_of_contact || {};
+  const [contactName, setContactName] = useState<string>(initialContact.name || "");
+  const [contactPhone, setContactPhone] = useState<string>(initialContact.phone || "");
+  const [contactEmail, setContactEmail] = useState<string>(initialContact.email || "");
   const [newReq, setNewReq] = useState({ pest: "", location: "", description: "" });
   const [newReqPhotos, setNewReqPhotos] = useState<string[]>([]);
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
@@ -514,6 +520,38 @@ export default function CommercialDashboardView({
   useEffect(() => {
     setOfficeNotes((property.customer_preferences as any)?.office_notes || "");
   }, [property.id]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const c = (property.customer_preferences as any)?.point_of_contact || {};
+    setContactName(c.name || "");
+    setContactPhone(c.phone || "");
+    setContactEmail(c.email || "");
+  }, [property.id]);
+
+  // Debounced auto-save for point of contact
+  useEffect(() => {
+    const current = (property.customer_preferences as any)?.point_of_contact || {};
+    const next = {
+      name: contactName || "",
+      phone: contactPhone || "",
+      email: contactEmail || "",
+    };
+    if ((current.name || "") === next.name && (current.phone || "") === next.phone && (current.email || "") === next.email) return;
+    const t = setTimeout(async () => {
+      const merged = { ...(property.customer_preferences || {}), point_of_contact: next };
+      const { error } = await supabase.from("portal_properties")
+        .update({ customer_preferences: merged }).eq("id", property.id);
+      if (error) {
+        toast({ title: "Save failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      (property as any).customer_preferences = merged;
+      onRefresh?.();
+    }, 800);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contactName, contactPhone, contactEmail]);
 
   // Debounced auto-save for property-level office notes (stored in
   // customer_preferences JSON so no migration is needed).
