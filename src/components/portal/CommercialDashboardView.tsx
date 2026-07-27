@@ -1888,6 +1888,7 @@ export default function CommercialDashboardView({
                         onSaveServiceReportData={saveConditionsPatch}
                         propertyName={property?.name}
                         readOnly={readOnly}
+                        includeUndated
                       />
 
                       {/* Photos — moved to the bottom, below Active Conditions */}
