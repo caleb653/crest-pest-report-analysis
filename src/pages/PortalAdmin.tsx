@@ -763,8 +763,19 @@ const PortalAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType)} className="mb-4">
+                  <div className="mb-3">
+                    <Input
+                      placeholder="Search properties, clients, addresses…"
+                      value={propertySearch}
+                      onChange={e => setPropertySearch(e.target.value)}
+                    />
+                  </div>
+                  <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType | "all")} className="mb-4">
                     <TabsList>
+                      <TabsTrigger value="all">
+                        All
+                        <span className="ml-1.5 text-xs text-muted-foreground">({allProperties.length})</span>
+                      </TabsTrigger>
                       {PROPERTY_TYPES.map(t => {
                         const count = allProperties.filter(p => getPropertyType(p) === t.value).length;
                         return (
@@ -777,19 +788,21 @@ const PortalAdmin = () => {
                     </TabsList>
                   </Tabs>
                   {(() => {
-                    const filtered = allProperties.filter(p => getPropertyType(p) === propertySubTab);
+                    const q = propertySearch.trim().toLowerCase();
+                    const filtered = allProperties.filter(p => {
+                      if (propertySubTab !== "all" && getPropertyType(p) !== propertySubTab) return false;
+                      if (!q) return true;
+                      const hay = [p.name, p.address, getClientName(p.client_id)].filter(Boolean).join(" ").toLowerCase();
+                      return hay.includes(q);
+                    });
                     return filtered.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">
                       <MapPin className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="font-medium">No {PROPERTY_TYPES.find(t => t.value === propertySubTab)?.label} properties yet</p>
-                      <p className="text-xs mt-1">Click "Add Property" and choose this type</p>
+                      <p className="font-medium">No properties found</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
                       {filtered.map(p => {
-                        const propServices = allServices.filter(s => s.property_id === p.id);
-                        const propPast = propServices.filter(s => s.status === "completed" || (s.service_date && s.service_date <= today));
-                        const propFuture = propServices.filter(s => s.status === "scheduled" && (!s.service_date || s.service_date > today));
                         return (
                           <div key={p.id} className="flex items-center justify-between border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-muted/30 transition-colors group"
                             onClick={() => { setSelectedProperty(p); ensurePropertyLink(p); }}>
@@ -807,9 +820,6 @@ const PortalAdmin = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <div className="text-right text-xs text-muted-foreground">
-                                <p>{propPast.length} past · {propFuture.length} upcoming</p>
-                              </div>
                               <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                               <ChevronRight className="w-5 h-5 text-muted-foreground" />
                             </div>
