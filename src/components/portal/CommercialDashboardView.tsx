@@ -391,7 +391,7 @@ export default function CommercialDashboardView({
   onUpdatePropertyMapData,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const [tab, setTab] = useState<string>("map");
+  const [tab, setTab] = useState<string>("upcoming");
   const [requests, setRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
@@ -984,7 +984,24 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
+        {/* Mobile: compact dropdown toggle. Desktop: full tab bar. */}
+        <div className="sm:hidden sticky top-0 z-30 mb-4 bg-background/95 backdrop-blur p-2 border-2 border-primary/60 rounded-xl shadow-md">
+          <Select value={tab} onValueChange={setTab}>
+            <SelectTrigger className="h-12 text-sm font-semibold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upcoming">Upcoming Services ({upcoming.length})</SelectItem>
+              <SelectItem value="past">Previous Services ({past.length}){followUpCount > 0 ? ` — ${followUpCount} follow-up` : ""}</SelectItem>
+              <SelectItem value="requests">Pest Sightings ({openRequests.length})</SelectItem>
+              <SelectItem value="conditions">Conditions{activeConditionsCount > 0 ? ` (${activeConditionsCount})` : ""}</SelectItem>
+              <SelectItem value="map">Site Map, Plan &amp; Team</SelectItem>
+              <SelectItem value="materials">Safety Data Sheets</SelectItem>
+              <SelectItem value="help">Help</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <TabsList className="hidden sm:grid sticky top-0 z-30 w-full h-auto p-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
           <TabsTrigger value="map" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map, Plan &amp; Team</span>
@@ -1667,87 +1684,6 @@ export default function CommercialDashboardView({
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
-                      {/* Admin-only office notes — pinned to the top of the card. */}
-                      {!readOnly && (
-                        <div className="rounded-lg border-2 border-blue-300 bg-blue-50/60 p-2 space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <ClipboardList className="w-4 h-4 text-blue-600" />
-                              <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
-                                Notes FROM Office — Admin Only
-                              </Label>
-                            </div>
-                            <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
-                              Confidential
-                            </span>
-                          </div>
-                          {(() => {
-                            const persisted = (s.report_data as any)?.notes_from_office || "";
-                            const draft = officeInboundDrafts[s.id];
-                            const value = draft !== undefined ? draft : persisted;
-                            const dirty = draft !== undefined && draft !== persisted;
-                            return (
-                              <>
-                                <Textarea
-                                  value={value}
-                                  onChange={(e) =>
-                                    setOfficeInboundDrafts(d => ({ ...d, [s.id]: e.target.value }))
-                                  }
-                                  placeholder="e.g. Gate code changed to 4421. Skip back patio — dog will be out."
-                                  className="min-h-[64px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
-                                />
-                                <div className="flex justify-end">
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={savingOfficeInbound === s.id || !dirty}
-                                    onClick={() => saveOfficeInbound(s)}
-                                    className="gap-1"
-                                  >
-                                    <Save className="w-3.5 h-3.5" />
-                                    {savingOfficeInbound === s.id ? "Saving…" : dirty ? "Save Note" : "Saved"}
-                                  </Button>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      )}
-                      {!readOnly && (
-                        <div className="rounded-lg border-2 border-red-300 bg-red-50/60 p-2 space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <AlertTriangle className="w-4 h-4 text-red-600" />
-                              <Label className="text-sm font-black uppercase tracking-wider text-red-800">
-                                Notes TO Office — Admin Only
-                              </Label>
-                            </div>
-                            <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
-                              Confidential
-                            </span>
-                          </div>
-                          <Textarea
-                            value={officeFlagDrafts[s.id] ?? s.office_notes ?? ""}
-                            onChange={(e) =>
-                              setOfficeFlagDrafts(d => ({ ...d, [s.id]: e.target.value }))
-                            }
-                            placeholder="e.g. Customer requested a follow-up call about ant activity in break room…"
-                            className="min-h-[64px] text-sm bg-white border-red-200 focus-visible:ring-red-400"
-                          />
-                          <div className="flex justify-end">
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={sendingOfficeFlag === s.id}
-                              onClick={() => sendOfficeFlag(s)}
-                              className="gap-1"
-                            >
-                              <Send className="w-3.5 h-3.5" />
-                              {sendingOfficeFlag === s.id ? "Sending…" : "Notify Office"}
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Service Type</Label>
@@ -2057,6 +1993,87 @@ export default function CommercialDashboardView({
                         )}
                       </div>
 
+                      {/* Admin-only office notes — kept at the bottom, right above the action row. */}
+                      {!readOnly && (
+                        <div className="rounded-lg border-2 border-blue-300 bg-blue-50/60 p-2 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-blue-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
+                                Notes FROM Office — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
+                              Confidential
+                            </span>
+                          </div>
+                          {(() => {
+                            const persisted = (s.report_data as any)?.notes_from_office || "";
+                            const draft = officeInboundDrafts[s.id];
+                            const value = draft !== undefined ? draft : persisted;
+                            const dirty = draft !== undefined && draft !== persisted;
+                            return (
+                              <>
+                                <Textarea
+                                  value={value}
+                                  onChange={(e) =>
+                                    setOfficeInboundDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                                  }
+                                  placeholder="e.g. Gate code changed to 4421. Skip back patio — dog will be out."
+                                  className="min-h-[64px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
+                                />
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={savingOfficeInbound === s.id || !dirty}
+                                    onClick={() => saveOfficeInbound(s)}
+                                    className="gap-1"
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {savingOfficeInbound === s.id ? "Saving…" : dirty ? "Save Note" : "Saved"}
+                                  </Button>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+                      {!readOnly && (
+                        <div className="rounded-lg border-2 border-red-300 bg-red-50/60 p-2 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-red-800">
+                                Notes TO Office — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
+                              Confidential
+                            </span>
+                          </div>
+                          <Textarea
+                            value={officeFlagDrafts[s.id] ?? s.office_notes ?? ""}
+                            onChange={(e) =>
+                              setOfficeFlagDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                            }
+                            placeholder="e.g. Customer requested a follow-up call about ant activity in break room…"
+                            className="min-h-[64px] text-sm bg-white border-red-200 focus-visible:ring-red-400"
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={sendingOfficeFlag === s.id}
+                              onClick={() => sendOfficeFlag(s)}
+                              className="gap-1"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              {sendingOfficeFlag === s.id ? "Sending…" : "Notify Office"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                       {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
                       {!readOnly && (
                         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
