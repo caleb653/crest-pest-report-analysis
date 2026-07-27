@@ -1684,6 +1684,52 @@ export default function CommercialDashboardView({
                   return (
                   <Card key={s.id}>
                     <CardContent className="p-3 space-y-2">
+                      {/* Notes FROM Office — pinned to the top of the report. */}
+                      {!readOnly && (
+                        <div className="rounded-lg border-2 border-blue-300 bg-blue-50/60 p-2 space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-blue-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
+                                Notes FROM Office — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
+                              Confidential
+                            </span>
+                          </div>
+                          {(() => {
+                            const persisted = (s.report_data as any)?.notes_from_office || "";
+                            const draft = officeInboundDrafts[s.id];
+                            const value = draft !== undefined ? draft : persisted;
+                            const dirty = draft !== undefined && draft !== persisted;
+                            return (
+                              <>
+                                <Textarea
+                                  value={value}
+                                  onChange={(e) =>
+                                    setOfficeInboundDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                                  }
+                                  placeholder="e.g. Gate code changed to 4421. Skip back patio — dog will be out."
+                                  className="min-h-[64px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
+                                />
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={savingOfficeInbound === s.id || !dirty}
+                                    onClick={() => saveOfficeInbound(s)}
+                                    className="gap-1"
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {savingOfficeInbound === s.id ? "Saving…" : dirty ? "Save Note" : "Saved"}
+                                  </Button>
+                                </div>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Service Type</Label>
@@ -1993,52 +2039,7 @@ export default function CommercialDashboardView({
                         )}
                       </div>
 
-                      {/* Admin-only office notes — kept at the bottom, right above the action row. */}
-                      {!readOnly && (
-                        <div className="rounded-lg border-2 border-blue-300 bg-blue-50/60 p-2 space-y-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <ClipboardList className="w-4 h-4 text-blue-600" />
-                              <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
-                                Notes FROM Office — Admin Only
-                              </Label>
-                            </div>
-                            <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
-                              Confidential
-                            </span>
-                          </div>
-                          {(() => {
-                            const persisted = (s.report_data as any)?.notes_from_office || "";
-                            const draft = officeInboundDrafts[s.id];
-                            const value = draft !== undefined ? draft : persisted;
-                            const dirty = draft !== undefined && draft !== persisted;
-                            return (
-                              <>
-                                <Textarea
-                                  value={value}
-                                  onChange={(e) =>
-                                    setOfficeInboundDrafts(d => ({ ...d, [s.id]: e.target.value }))
-                                  }
-                                  placeholder="e.g. Gate code changed to 4421. Skip back patio — dog will be out."
-                                  className="min-h-[64px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
-                                />
-                                <div className="flex justify-end">
-                                  <Button
-                                    size="sm"
-                                    variant="secondary"
-                                    disabled={savingOfficeInbound === s.id || !dirty}
-                                    onClick={() => saveOfficeInbound(s)}
-                                    className="gap-1"
-                                  >
-                                    <Save className="w-3.5 h-3.5" />
-                                    {savingOfficeInbound === s.id ? "Saving…" : dirty ? "Save Note" : "Saved"}
-                                  </Button>
-                                </div>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      )}
+                      {/* Notes TO Office stays at the bottom, right above the action row. */}
                       {!readOnly && (
                         <div className="rounded-lg border-2 border-red-300 bg-red-50/60 p-2 space-y-1.5">
                           <div className="flex items-center justify-between gap-2">
