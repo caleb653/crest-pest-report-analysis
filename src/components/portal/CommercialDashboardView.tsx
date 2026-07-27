@@ -925,16 +925,16 @@ export default function CommercialDashboardView({
 
   return (
     <div className="space-y-4">
-      {/* Top tag — mirrors HOA / apartment portal badge */}
-      <div className="rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold bg-amber-50 border-amber-300 text-amber-900">
+      {/* Top tag — mirrors HOA / apartment portal badge. Hidden on mobile to save space. */}
+      <div className="hidden sm:flex rounded-lg border-2 px-3.5 py-2 items-center gap-2 text-xs font-semibold bg-amber-50 border-amber-300 text-amber-900">
         <span className="px-1.5 py-0.5 rounded bg-white/70 border border-current/30 text-[10px] uppercase tracking-wider">
           Commercial Portal
         </span>
         <span className="text-amber-800/80">Single-location account · no units / sub-locations</span>
       </div>
 
-      {/* Location summary */}
-      <Card>
+      {/* Location summary — hidden on mobile to keep the tabs above the fold. */}
+      <Card className="hidden sm:block">
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div className="flex items-start gap-2">
             <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -962,7 +962,7 @@ export default function CommercialDashboardView({
 
       {/* Portal links for this property */}
       {!readOnly && propertyLinks.length > 0 && (
-        <Card>
+        <Card className="hidden sm:block">
           <CardContent className="p-4 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Portal Links</p>
             <div className="space-y-1.5">
