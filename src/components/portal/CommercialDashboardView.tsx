@@ -416,6 +416,38 @@ export default function CommercialDashboardView({
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   // Per-upcoming-service photo uploading state
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  // Per-upcoming-service internal office notes draft + send state.
+  // These are admin-only flags that get emailed to office@crestpestcontrol.com.
+  const [officeFlagDrafts, setOfficeFlagDrafts] = useState<Record<string, string>>({});
+  const [sendingOfficeFlag, setSendingOfficeFlag] = useState<string | null>(null);
+  const sendOfficeFlag = async (s: ServiceData) => {
+    const note = (officeFlagDrafts[s.id] ?? s.office_notes ?? "").trim();
+    if (!note) {
+      toast({ title: "Add a note first", variant: "destructive" });
+      return;
+    }
+    setSendingOfficeFlag(s.id);
+    try {
+      await saveServiceField(s.id, { office_notes: note });
+      const { error } = await supabase.functions.invoke("flag-office-note", {
+        body: {
+          propertyName: property.name,
+          serviceDate: getUpcomingServiceDate(s),
+          serviceType: getField(s, "service_type") || s.service_type,
+          technician: getField(s, "technician") || s.technician,
+          note,
+          flaggedBy: clientName,
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Office notified", description: "Sent to office@crestpestcontrol.com" });
+      setOfficeFlagDrafts(d => { const n = { ...d }; delete n[s.id]; return n; });
+    } catch (e: any) {
+      toast({ title: "Failed to notify office", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSendingOfficeFlag(null);
+    }
+  };
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
@@ -1941,6 +1973,48 @@ export default function CommercialDashboardView({
                           </div>
                         )}
                       </div>
+
+                      {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
+                      {!readOnly && (
+                        <div className="rounded-lg border-2 border-red-300 bg-red-50/60 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-red-800">
+                                Internal Office Notes — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
+                              Not visible to customer
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-red-700/90 leading-snug">
+                            Anything typed here notifies the office team (office@crestpestcontrol.com).
+                            Use for follow-ups, callbacks, billing flags, or anything the technician wants
+                            the office to action.
+                          </p>
+                          <Textarea
+                            value={officeFlagDrafts[s.id] ?? s.office_notes ?? ""}
+                            onChange={(e) =>
+                              setOfficeFlagDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                            }
+                            placeholder="e.g. Customer requested a follow-up call about ant activity in break room…"
+                            className="min-h-[80px] text-sm bg-white border-red-200 focus-visible:ring-red-400"
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={sendingOfficeFlag === s.id}
+                              onClick={() => sendOfficeFlag(s)}
+                              className="gap-1"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              {sendingOfficeFlag === s.id ? "Sending…" : "Notify Office"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
                       {!readOnly && (
