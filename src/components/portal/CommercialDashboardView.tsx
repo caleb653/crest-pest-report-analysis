@@ -2053,20 +2053,20 @@ export default function CommercialDashboardView({
                               } catch (err) {
                                 console.warn("send-service-completed failed", err);
                               }
-                              // Auto-schedule the next visit based on the property's
-                              // service frequency (e.g. monthly = same day next month).
+                              // Auto-create the next visit as an upcoming placeholder.
+                              // Upcoming commercial visits intentionally do NOT store a
+                              // future date; both portals display TODAY until completed.
                               // Only creates one if there isn't already
                               // an upcoming scheduled visit.
                               const hasUpcoming = services.some(
                                 (x) => x.id !== s.id && x.status === "scheduled"
                               );
                               if (!hasUpcoming && propertyFrequencyDays > 0) {
-                                const nextDate = defaultNextServiceDate(dateVal);
                                 await supabase.from("portal_services").insert({
                                   property_id: property.id,
                                   service_type: getField(s, "service_type") || "Commercial General Pest",
                                   status: "scheduled",
-                                  service_date: nextDate,
+                                  service_date: null,
                                   frequency_days: propertyFrequencyDays,
                                 } as any);
                                 onRefresh?.();
@@ -2075,7 +2075,7 @@ export default function CommercialDashboardView({
                                 title: "Visit marked serviced ✓",
                                 description: hasUpcoming
                                   ? "Moved to Previous Services."
-                                  : "Next visit scheduled from this service date.",
+                                  : "Next upcoming visit added.",
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
