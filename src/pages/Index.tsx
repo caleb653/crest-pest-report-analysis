@@ -43,14 +43,14 @@ const reportTypes = [
   },
   {
     id: "client-portal",
-    title: "Client Portal",
+    title: "Client Portals",
     description: "Manage commercial & property portals",
     icon: Building2,
     path: "/portal-admin",
     color: "text-amber-600",
     bg: "bg-amber-50",
     hoverBg: "hover:bg-amber-100",
-    border: "hover:border-amber-300",
+    border: "border-2 border-amber-400 hover:border-amber-500",
   },
   {
     id: "created-initial",
