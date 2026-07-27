@@ -2260,7 +2260,7 @@ const PropertyDashboard = ({
             propertyName: property.name,
             clientName: (client as any)?.name || clientName || "",
             serviceType: svc?.service_type || "",
-            serviceDate: today,
+            serviceDate: (svc as any)?.service_date || today,
             technician: data?.technician || svc?.technician || "",
             summary,
             unitsCount,
