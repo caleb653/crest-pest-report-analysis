@@ -420,6 +420,8 @@ export default function CommercialDashboardView({
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
     edits[s.id]?.[k] !== undefined ? edits[s.id]![k] : (s[k] as any) ?? "";
+  const getUpcomingServiceDate = (s: ServiceData) =>
+    edits[s.id]?.service_date !== undefined ? (edits[s.id]?.service_date || todayISO()) : todayISO();
   const setField = (id: string, k: keyof ServiceData, v: any) =>
     setEdits(e => ({ ...e, [id]: { ...(e[id] || {}), [k]: v } }));
 
