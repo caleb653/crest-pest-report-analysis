@@ -116,6 +116,14 @@ const COMMERCIAL_SERVICE_DESCRIPTIONS: Record<string, string[]> = {
   "De-webbing": [
     "Thoroughly de-web the entire exterior of the property including eaves and high-visibility areas",
   ],
+  "Drain Fly Treatment": [
+    "Applied pest controlling foam treatments to drains to control breeding sites",
+    "Recommend routine drain maintenance to prevent recurring activity",
+  ],
+  "Fly Light Service": [
+    "Inspected all fly light units, replaced glue boards, and documented insect activity",
+    "Confirmed units are functioning properly and positioned for maximum effectiveness",
+  ],
 };
 
 const fmtDate = (iso: string | null) =>
