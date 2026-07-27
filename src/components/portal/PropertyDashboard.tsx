@@ -402,7 +402,7 @@ const PropertyDashboard = ({
       setUploadingWorkOrderPhotos(false);
     }
   };
-  const [activeTab, setActiveTab] = useState<string>("map");
+  const [activeTab, setActiveTab] = useState<string>("upcoming");
   const [addingServiceDate, setAddingServiceDate] = useState("");
   const [addingServiceType, setAddingServiceType] = useState("Commercial General Pest Control");
   const [showQuickAdd, setShowQuickAdd] = useState(false);
