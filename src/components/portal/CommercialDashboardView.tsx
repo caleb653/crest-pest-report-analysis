@@ -420,6 +420,25 @@ export default function CommercialDashboardView({
   // These are admin-only flags that get emailed to office@crestpestcontrol.com.
   const [officeFlagDrafts, setOfficeFlagDrafts] = useState<Record<string, string>>({});
   const [sendingOfficeFlag, setSendingOfficeFlag] = useState<string | null>(null);
+  // "Notes FROM office" — persisted per-service, admin-only, no email.
+  const [officeInboundDrafts, setOfficeInboundDrafts] = useState<Record<string, string>>({});
+  const [savingOfficeInbound, setSavingOfficeInbound] = useState<string | null>(null);
+  const saveOfficeInbound = async (s: ServiceData) => {
+    const val = (officeInboundDrafts[s.id] ?? "").trim();
+    setSavingOfficeInbound(s.id);
+    try {
+      const current = (s.report_data && typeof s.report_data === "object") ? s.report_data : {};
+      await saveServiceField(s.id, {
+        report_data: { ...current, notes_from_office: val || null },
+      });
+      toast({ title: "Saved", duration: 1200 });
+      setOfficeInboundDrafts(d => { const n = { ...d }; delete n[s.id]; return n; });
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSavingOfficeInbound(null);
+    }
+  };
   const sendOfficeFlag = async (s: ServiceData) => {
     const note = (officeFlagDrafts[s.id] ?? s.office_notes ?? "").trim();
     if (!note) {
