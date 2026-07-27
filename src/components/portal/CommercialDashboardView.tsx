@@ -1691,7 +1691,7 @@ export default function CommercialDashboardView({
                             <div className="flex items-center gap-2">
                               <ClipboardList className="w-4 h-4 text-blue-600" />
                               <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
-                                Notes FROM Office — Admin Only
+                                Notes FROM Office
                               </Label>
                             </div>
                             <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
@@ -2046,7 +2046,7 @@ export default function CommercialDashboardView({
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="w-4 h-4 text-red-600" />
                               <Label className="text-sm font-black uppercase tracking-wider text-red-800">
-                                Notes TO Office — Admin Only
+                                Notes TO Office
                               </Label>
                             </div>
                             <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
