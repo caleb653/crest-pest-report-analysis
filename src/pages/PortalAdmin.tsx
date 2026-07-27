@@ -113,7 +113,8 @@ const PortalAdmin = () => {
   const [newProperty, setNewProperty] = useState<{ name: string; address: string; notes: string; image_url: string; client_id: string; property_type: PropertyType }>({ name: "", address: "", notes: "", image_url: "", client_id: "", property_type: "apartments" });
   const [newPropertyOwnerTech, setNewPropertyOwnerTech] = useState<string>("");
   const [newPrepSheet, setNewPrepSheet] = useState({ title: "", description: "", treatment_type: "", file_url: "" });
-  const [propertySubTab, setPropertySubTab] = useState<PropertyType>("apartments");
+  const [propertySubTab, setPropertySubTab] = useState<PropertyType | "all">("all");
+  const [propertySearch, setPropertySearch] = useState("");
 
   const emptyServiceForm = {
     property_id: "", service_date: "", service_time: "", service_type: "", technician: "",
