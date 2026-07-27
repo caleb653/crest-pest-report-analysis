@@ -6408,7 +6408,7 @@ const PropertyDashboard = ({
         <div className="space-y-4 max-w-7xl mx-auto">
         {/* Quick Add Service */}
         {!showQuickAdd ? (
-          <div className="flex gap-1.5">
+          <div className="hidden sm:flex gap-1.5">
             <Button variant="outline" size="sm" className="flex-1 h-8 text-xs" onClick={() => setShowQuickAdd(true)}>
               <CalendarPlus className="w-3.5 h-3.5 mr-1" />Add Service to Date
             </Button>
