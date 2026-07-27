@@ -933,25 +933,6 @@ export default function CommercialDashboardView({
         <span className="text-amber-800/80">Single-location account · no units / sub-locations</span>
       </div>
 
-      {/* Property-level Office-Only Notes — applies to the account, not a single visit */}
-      {!readOnly && (
-      <Card className="border-dashed">
-        <CardContent className="p-3 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2">Office-Only Notes</p>
-            <Badge variant="outline" className="text-[9px] h-4 px-1">Hidden from customer</Badge>
-          </div>
-          <Textarea
-            value={officeNotes}
-            onChange={e => setOfficeNotes(e.target.value)}
-            placeholder="Internal notes about this account — never shown to the client…"
-            rows={2}
-            className="text-sm"
-          />
-        </CardContent>
-      </Card>
-      )}
-
       {/* Location summary */}
       <Card>
         <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
