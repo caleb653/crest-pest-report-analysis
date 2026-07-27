@@ -279,9 +279,8 @@ serve(async (req) => {
           ${conditionsHtml}
           ${portalUrl ? `
             <div style="text-align:center;margin:22px 0 8px;">
-              <a href="${esc(portalUrl)}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">Open Portal (optional)</a>
+              <a href="${esc(portalUrl)}" style="display:inline-block;background:#2A2A2A;color:#ffffff;text-decoration:none;padding:12px 26px;border-radius:6px;font-weight:600;font-size:14px;">Open Portal</a>
             </div>
-            <p style="text-align:center;margin:0;font-size:12px;color:#6b7280;">All details are included above — the portal is just for history &amp; messaging.</p>
           ` : ""}
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:22px 0 12px;" />
           <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:12px 14px;margin:0 0 14px;">
