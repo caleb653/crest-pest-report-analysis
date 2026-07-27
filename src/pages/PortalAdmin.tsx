@@ -941,11 +941,11 @@ const PortalAdmin = () => {
           <Button variant="ghost" size="sm" className="text-background hover:text-background/80 h-7 px-2" onClick={() => { setSelectedProperty(null); }}>
             <ArrowLeft className="w-3.5 h-3.5 mr-1" />All Properties
           </Button>
-          <span className="text-background/60 font-medium">
+          <span className="hidden sm:inline text-background/60 font-medium">
             Admin Portal — Full View
           </span>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="hidden sm:flex items-center gap-2 flex-wrap">
           {propLinks[0] && (
             <>
               <span className="hidden sm:inline text-background/60 font-mono text-[10px] truncate max-w-[260px]">
