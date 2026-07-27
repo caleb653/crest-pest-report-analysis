@@ -416,6 +416,38 @@ export default function CommercialDashboardView({
   const [uploadingReqPhoto, setUploadingReqPhoto] = useState(false);
   // Per-upcoming-service photo uploading state
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  // Per-upcoming-service internal office notes draft + send state.
+  // These are admin-only flags that get emailed to office@crestpestcontrol.com.
+  const [officeFlagDrafts, setOfficeFlagDrafts] = useState<Record<string, string>>({});
+  const [sendingOfficeFlag, setSendingOfficeFlag] = useState<string | null>(null);
+  const sendOfficeFlag = async (s: ServiceData) => {
+    const note = (officeFlagDrafts[s.id] ?? s.office_notes ?? "").trim();
+    if (!note) {
+      toast({ title: "Add a note first", variant: "destructive" });
+      return;
+    }
+    setSendingOfficeFlag(s.id);
+    try {
+      await saveServiceField(s.id, { office_notes: note });
+      const { error } = await supabase.functions.invoke("flag-office-note", {
+        body: {
+          propertyName: property.name,
+          serviceDate: getUpcomingServiceDate(s),
+          serviceType: getField(s, "service_type") || s.service_type,
+          technician: getField(s, "technician") || s.technician,
+          note,
+          flaggedBy: clientName,
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Office notified", description: "Sent to office@crestpestcontrol.com" });
+      setOfficeFlagDrafts(d => { const n = { ...d }; delete n[s.id]; return n; });
+    } catch (e: any) {
+      toast({ title: "Failed to notify office", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSendingOfficeFlag(null);
+    }
+  };
   // Per-service local edit state (so inputs don't lose focus on rerenders)
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
