@@ -6443,7 +6443,7 @@ const PropertyDashboard = ({
         {!showAdHocAdd && (
           <Button
             onClick={() => setShowAdHocAdd(true)}
-            className="w-full h-16 text-base font-bold gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-md border-2 border-dashed border-secondary-foreground/40"
+            className="hidden sm:flex w-full h-16 text-base font-bold gap-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-md border-2 border-dashed border-secondary-foreground/40"
           >
             <CalendarPlus className="w-5 h-5" />
             <span className="flex flex-col items-center leading-tight">
