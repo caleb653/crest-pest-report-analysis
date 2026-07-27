@@ -57,10 +57,31 @@ serve(async (req) => {
           <td style="padding:6px 10px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;">${p.epa || "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit || ""}` : "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#2A2A2A;">${p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit || ""}` : "—"}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.dilution_rate_pct != null ? `${Number(p.dilution_rate_pct).toFixed(2)}%` : "—"}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.mix_ratio_per_gal != null && p.mix_ratio_unit ? `${p.mix_ratio_per_gal} ${p.mix_ratio_unit} / 1 gal` : "—"}</td>
         </tr>`).join("")
       : "";
+
+    // Convert "HH:MM" (24h) or "H:MM AM/PM" to a friendly "h:MM AM/PM".
+    const to12h = (v: any): string => {
+      const s = String(v ?? "").trim();
+      if (!s) return "";
+      if (/am|pm/i.test(s)) return s.toUpperCase().replace(/\s+/g, " ");
+      const m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return s;
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const suffix = h >= 12 ? "PM" : "AM";
+      h = h % 12; if (h === 0) h = 12;
+      return `${h}:${min} ${suffix}`;
+    };
+
+    // Format an ISO date (YYYY-MM-DD) to "Mon D, YYYY" without TZ shift.
+    const fmtDate = (v: any): string => {
+      const s = String(v ?? "").trim();
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (!m) return s;
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+    };
 
     const esc = (v: any) => String(v ?? "")
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -214,9 +235,10 @@ serve(async (req) => {
         </div>`
       : "";
 
-    const timeRange = timeIn && timeOut
-      ? `${timeIn} - ${timeOut}`
-      : (timeIn || timeOut || "");
+    const tIn = to12h(timeIn);
+    const tOut = to12h(timeOut);
+    const timeRange = tIn && tOut ? `${tIn} - ${tOut}` : (tIn || tOut || "");
+    const dateDisplay = fmtDate(serviceDate);
 
     const html = `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;">
@@ -232,7 +254,7 @@ serve(async (req) => {
           </p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1f2937;margin-bottom:16px;">
             ${serviceType ? `<tr><td style="padding:6px 0;color:#6b7280;width:140px;">Service</td><td style="padding:6px 0;font-weight:600;">${esc(serviceType)}</td></tr>` : ""}
-            ${serviceDate ? `<tr><td style="padding:6px 0;color:#6b7280;">Date</td><td style="padding:6px 0;font-weight:600;">${esc(serviceDate)}</td></tr>` : ""}
+            ${dateDisplay ? `<tr><td style="padding:6px 0;color:#6b7280;">Date</td><td style="padding:6px 0;font-weight:600;">${esc(dateDisplay)}</td></tr>` : ""}
             ${technician ? `<tr><td style="padding:6px 0;color:#6b7280;">Technician</td><td style="padding:6px 0;font-weight:600;">${esc(technician)}</td></tr>` : ""}
             ${timeRange ? `<tr><td style="padding:6px 0;color:#6b7280;">On site</td><td style="padding:6px 0;font-weight:600;">${esc(timeRange)}</td></tr>` : ""}
             ${unitsCount != null ? `<tr><td style="padding:6px 0;color:#6b7280;">Areas serviced</td><td style="padding:6px 0;font-weight:600;">${unitsCount}</td></tr>` : ""}
@@ -249,8 +271,6 @@ serve(async (req) => {
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">EPA #</th>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Diluted</th>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Concentrated</th>
-                <th style="text-align:left;padding:6px 10px;font-weight:700;">Dilution Rate</th>
-                <th style="text-align:left;padding:6px 10px;font-weight:700;">Mix Ratio</th>
               </tr></thead>
               <tbody>${safeProductsRows}</tbody>
             </table>` : ""}
