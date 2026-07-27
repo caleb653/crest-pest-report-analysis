@@ -4984,7 +4984,7 @@ const PropertyDashboard = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       {(propertyType === "hoa" || propertyType === "apartments") && (
-        <div className={`mb-3 rounded-lg border-2 px-3.5 py-2 flex items-center gap-2 text-xs font-semibold ${
+        <div className={`hidden sm:flex mb-3 rounded-lg border-2 px-3.5 py-2 items-center gap-2 text-xs font-semibold ${
           propertyType === "hoa"
             ? "bg-emerald-50 border-emerald-300 text-emerald-900"
             : "bg-sky-50 border-sky-300 text-sky-900"
@@ -4994,7 +4994,24 @@ const PropertyDashboard = ({
           </span>
         </div>
       )}
-      <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-6" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+      {/* Mobile: compact dropdown toggle. Desktop: full tab bar. */}
+      <div className="sm:hidden sticky top-0 z-30 mb-4 bg-background/95 backdrop-blur p-2 border-2 border-primary/60 rounded-xl shadow-md">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="h-12 text-sm font-semibold">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="upcoming">{isHOA ? "Upcoming Visits" : "Upcoming Services"} ({allUpcoming.length})</SelectItem>
+            <SelectItem value="past">{isHOA ? "Community Visits" : "Previous Services"} ({pastServicesForDisplay.length})</SelectItem>
+            <SelectItem value="request">Add work order</SelectItem>
+            <SelectItem value="map">{isHOA ? "Community Overview" : "Site Map and Plan"}</SelectItem>
+            {!isHOA && <SelectItem value="prep">Prep / Auth / Docs ({prepSheets.length})</SelectItem>}
+            <SelectItem value="survey">Survey ({surveys.length})</SelectItem>
+            {isHOA && <SelectItem value="quarterly">Video Reviews</SelectItem>}
+          </SelectContent>
+        </Select>
+      </div>
+      <TabsList className={`hidden sm:grid w-full h-auto p-1.5 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-6" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
