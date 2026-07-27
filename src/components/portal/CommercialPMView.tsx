@@ -124,6 +124,7 @@ const fmtDate = (iso: string | null) =>
         weekday: "short", month: "short", day: "numeric", year: "numeric",
       })
     : "—";
+const todayISO = () => new Date().toISOString().slice(0, 10);
 
 // Convert stored 24h "HH:mm" (or "HH:mm - HH:mm") to AM/PM for display.
 const to12h = (t: string) => {
@@ -475,7 +476,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                       const photos: any[] = Array.isArray(s.photos) ? s.photos : [];
                       // Include any sighting resolved on this visit's date so the
                       // report where it got closed keeps a record of it.
-                      const svcDate = (s.service_date || "").toString().slice(0, 10);
+                      const svcDate = todayISO();
                       const closedOnThisDate = requests.filter((r: any) => {
                         const st = ((r as any).sighting_status || r.status || "").toLowerCase();
                         const isClosed = st === "closed" || st === "completed" || st === "cancelled";
@@ -502,7 +503,7 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                               <div className="min-w-0">
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
                                 <p className="text-sm font-semibold text-foreground">
-                                  {fmtDate(s.service_date || new Date().toISOString().slice(0, 10))}
+                                  {fmtDate(todayISO())}
                                   {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                   {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
