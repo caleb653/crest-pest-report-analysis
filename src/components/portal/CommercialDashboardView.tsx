@@ -1976,6 +1976,48 @@ export default function CommercialDashboardView({
 
                       {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
                       {!readOnly && (
+                        <div className="rounded-lg border-2 border-red-300 bg-red-50/60 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-red-800">
+                                Internal Office Notes — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
+                              Not visible to customer
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-red-700/90 leading-snug">
+                            Anything typed here notifies the office team (office@crestpestcontrol.com).
+                            Use for follow-ups, callbacks, billing flags, or anything the technician wants
+                            the office to action.
+                          </p>
+                          <Textarea
+                            value={officeFlagDrafts[s.id] ?? s.office_notes ?? ""}
+                            onChange={(e) =>
+                              setOfficeFlagDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                            }
+                            placeholder="e.g. Customer requested a follow-up call about ant activity in break room…"
+                            className="min-h-[80px] text-sm bg-white border-red-200 focus-visible:ring-red-400"
+                          />
+                          <div className="flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              disabled={sendingOfficeFlag === s.id}
+                              onClick={() => sendOfficeFlag(s)}
+                              className="gap-1"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              {sendingOfficeFlag === s.id ? "Sending…" : "Notify Office"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action row — prominent green "Mark Serviced" sits at the bottom */}
+                      {!readOnly && (
                         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border">
                           <Button
                             size="lg"
