@@ -420,6 +420,25 @@ export default function CommercialDashboardView({
   // These are admin-only flags that get emailed to office@crestpestcontrol.com.
   const [officeFlagDrafts, setOfficeFlagDrafts] = useState<Record<string, string>>({});
   const [sendingOfficeFlag, setSendingOfficeFlag] = useState<string | null>(null);
+  // "Notes FROM office" — persisted per-service, admin-only, no email.
+  const [officeInboundDrafts, setOfficeInboundDrafts] = useState<Record<string, string>>({});
+  const [savingOfficeInbound, setSavingOfficeInbound] = useState<string | null>(null);
+  const saveOfficeInbound = async (s: ServiceData) => {
+    const val = (officeInboundDrafts[s.id] ?? "").trim();
+    setSavingOfficeInbound(s.id);
+    try {
+      const current = (s.report_data && typeof s.report_data === "object") ? s.report_data : {};
+      await saveServiceField(s.id, {
+        report_data: { ...current, notes_from_office: val || null },
+      });
+      toast({ title: "Saved", duration: 1200 });
+      setOfficeInboundDrafts(d => { const n = { ...d }; delete n[s.id]; return n; });
+    } catch (e: any) {
+      toast({ title: "Save failed", description: e?.message || "Try again", variant: "destructive" });
+    } finally {
+      setSavingOfficeInbound(null);
+    }
+  };
   const sendOfficeFlag = async (s: ServiceData) => {
     const note = (officeFlagDrafts[s.id] ?? s.office_notes ?? "").trim();
     if (!note) {
@@ -1981,11 +2000,11 @@ export default function CommercialDashboardView({
                             <div className="flex items-center gap-2">
                               <AlertTriangle className="w-4 h-4 text-red-600" />
                               <Label className="text-sm font-black uppercase tracking-wider text-red-800">
-                                Internal Office Notes — Admin Only
+                                Notes TO Office — Admin Only
                               </Label>
                             </div>
                             <span className="text-[10px] uppercase tracking-wider text-red-700/80 font-semibold">
-                              Not visible to customer
+                              Confidential · Not visible to customer
                             </span>
                           </div>
                           <p className="text-[11px] text-red-700/90 leading-snug">
@@ -2013,6 +2032,57 @@ export default function CommercialDashboardView({
                               {sendingOfficeFlag === s.id ? "Sending…" : "Notify Office"}
                             </Button>
                           </div>
+                        </div>
+                      )}
+
+                      {/* Notes FROM office — admin-only, persisted only (no email). */}
+                      {!readOnly && (
+                        <div className="rounded-lg border-2 border-blue-300 bg-blue-50/60 p-3 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <ClipboardList className="w-4 h-4 text-blue-600" />
+                              <Label className="text-sm font-black uppercase tracking-wider text-blue-800">
+                                Notes FROM Office — Admin Only
+                              </Label>
+                            </div>
+                            <span className="text-[10px] uppercase tracking-wider text-blue-700/80 font-semibold">
+                              Confidential · Not visible to customer
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-blue-700/90 leading-snug">
+                            Office team can leave context for the technician here (special instructions,
+                            reminders, callbacks handled). Saved to the visit — no email is sent.
+                          </p>
+                          {(() => {
+                            const persisted = (s.report_data as any)?.notes_from_office || "";
+                            const draft = officeInboundDrafts[s.id];
+                            const value = draft !== undefined ? draft : persisted;
+                            const dirty = draft !== undefined && draft !== persisted;
+                            return (
+                              <>
+                                <Textarea
+                                  value={value}
+                                  onChange={(e) =>
+                                    setOfficeInboundDrafts(d => ({ ...d, [s.id]: e.target.value }))
+                                  }
+                                  placeholder="e.g. Gate code changed to 4421. Skip back patio — dog will be out."
+                                  className="min-h-[80px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
+                                />
+                                <div className="flex justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    disabled={savingOfficeInbound === s.id || !dirty}
+                                    onClick={() => saveOfficeInbound(s)}
+                                    className="gap-1"
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {savingOfficeInbound === s.id ? "Saving…" : dirty ? "Save Note" : "Saved"}
+                                  </Button>
+                                </div>
+                              </>
+                            );
+                          })()}
                         </div>
                       )}
 
