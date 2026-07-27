@@ -763,13 +763,15 @@ const PortalAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-3">
-                    <Input
-                      placeholder="Search properties, clients, addresses…"
-                      value={propertySearch}
-                      onChange={e => setPropertySearch(e.target.value)}
-                    />
-                  </div>
+                  {propertySubTab === "commercial" && (
+                    <div className="mb-3">
+                      <Input
+                        placeholder="Search commercial properties, clients, addresses…"
+                        value={propertySearch}
+                        onChange={e => setPropertySearch(e.target.value)}
+                      />
+                    </div>
+                  )}
                   <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType | "all")} className="mb-4">
                     <TabsList>
                       <TabsTrigger value="all">
@@ -788,7 +790,7 @@ const PortalAdmin = () => {
                     </TabsList>
                   </Tabs>
                   {(() => {
-                    const q = propertySearch.trim().toLowerCase();
+                    const q = propertySubTab === "commercial" ? propertySearch.trim().toLowerCase() : "";
                     const filtered = allProperties.filter(p => {
                       if (propertySubTab !== "all" && getPropertyType(p) !== propertySubTab) return false;
                       if (!q) return true;
