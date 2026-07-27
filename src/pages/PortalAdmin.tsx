@@ -688,7 +688,7 @@ const PortalAdmin = () => {
 
         <div className="p-4 max-w-7xl mx-auto">
           <Tabs value={globalTab} onValueChange={setGlobalTab}>
-            <TabsList className="mb-4">
+            <TabsList className="mb-4 hidden sm:inline-flex">
               <TabsTrigger value="properties"><MapPin className="w-4 h-4 mr-1" />Properties</TabsTrigger>
               <TabsTrigger value="billing"><DollarSign className="w-4 h-4 mr-1" />Billing &amp; Schedule</TabsTrigger>
               <TabsTrigger value="regional"><Users className="w-4 h-4 mr-1" />Regional Managers</TabsTrigger>
@@ -698,7 +698,7 @@ const PortalAdmin = () => {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-base">Properties</CardTitle>
-                  <div className="flex gap-2">
+                  <div className="hidden sm:flex gap-2">
                     <Dialog open={showAddClient} onOpenChange={setShowAddClient}>
                       <DialogTrigger asChild><Button size="sm" variant="outline"><Plus className="w-4 h-4 mr-1" />Add Client</Button></DialogTrigger>
                       <DialogContent>
