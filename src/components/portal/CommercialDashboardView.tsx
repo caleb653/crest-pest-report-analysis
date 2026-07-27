@@ -1701,7 +1701,7 @@ export default function CommercialDashboardView({
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
+                        <div className="col-span-2 sm:col-span-1">
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
@@ -1713,7 +1713,7 @@ export default function CommercialDashboardView({
                             className="h-11 text-sm"
                           />
                         </div>
-                         <div>
+                         <div className="col-span-2 sm:col-span-1">
                            <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Time In / Time Out</Label>
                            {(() => {
                              const raw = (getField(s, "service_time") || "").toString();
