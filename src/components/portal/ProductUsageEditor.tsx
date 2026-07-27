@@ -137,7 +137,7 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
       {/* Per-product amount rows */}
       {value.length > 0 && (
         <div className="rounded-md border border-border/60 bg-muted/20 divide-y divide-border/40">
-          <div className="grid grid-cols-12 gap-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40">
+          <div className="hidden sm:grid grid-cols-12 gap-1 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-muted-foreground bg-muted/40">
             <div className="col-span-3">Product</div>
             <div className="col-span-4">Applied (diluted)</div>
             <div className="col-span-4">Undiluted (concentrate)</div>
@@ -148,8 +148,9 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
             const epa = findEpaNumber(u.name);
             const dil = computeDilution(u);
             return (
-              <div key={`${u.name}-${idx}`} className="grid grid-cols-12 gap-1 px-2 py-1.5 items-center">
-                <div className="col-span-3 text-[11px] font-medium truncate" title={u.name}>
+              <div key={`${u.name}-${idx}`} className="flex flex-col sm:grid sm:grid-cols-12 gap-1.5 sm:gap-1 px-2 py-1.5 sm:items-center">
+                <div className="sm:col-span-3 flex items-start justify-between gap-2 text-[11px] font-medium" title={u.name}>
+                  <div className="min-w-0 flex-1 truncate">
                   {u.name}
                   {std && (
                     <span className="block text-[9px] text-muted-foreground font-normal">
@@ -164,21 +165,33 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
                       {dil.ratePct.toFixed(2)}% dilution
                     </span>
                   )}
+                  </div>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      onClick={() => removeAt(idx)}
+                      className="sm:hidden text-muted-foreground hover:text-destructive p-0.5 shrink-0"
+                      title="Remove product"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-                <div className="col-span-4 flex gap-1">
+                <div className="sm:col-span-4 flex gap-1 items-center">
+                  <span className="sm:hidden text-[9px] font-bold uppercase tracking-wide text-muted-foreground w-16 shrink-0">Applied</span>
                   <Input
                     type="number"
                     step="0.5"
                     inputMode="decimal"
                     placeholder="0"
-                    className="h-7 text-[11px] px-1.5 w-full"
+                    className="h-8 text-[11px] px-1.5 w-full min-w-0"
                     value={u.applied_amount ?? ""}
                     readOnly={readOnly}
                     disabled={readOnly}
                     onChange={e => updateAt(idx, { applied_amount: e.target.value === "" ? null : Number(e.target.value) })}
                   />
                   <select
-                    className="h-7 text-[10px] px-1 rounded border border-input bg-background w-16"
+                    className="h-8 text-[10px] px-1 rounded border border-input bg-background w-16 shrink-0"
                     value={u.applied_unit}
                     disabled={readOnly}
                     onChange={e => updateAt(idx, { applied_unit: e.target.value })}
@@ -186,13 +199,14 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
                     {UNIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
-                <div className="col-span-4 flex gap-1">
+                <div className="sm:col-span-4 flex gap-1 items-center">
+                  <span className="sm:hidden text-[9px] font-bold uppercase tracking-wide text-muted-foreground w-16 shrink-0">Undiluted</span>
                   <Input
                     type="number"
                     step="0.5"
                     inputMode="decimal"
                     placeholder="0"
-                    className="h-7 text-[11px] px-1.5 w-full"
+                    className="h-8 text-[11px] px-1.5 w-full min-w-0"
                     value={u.undiluted_amount ?? ""}
                     title={std ? "Auto-calculated from applied gallons (editable)" : ""}
                     readOnly={readOnly}
@@ -200,7 +214,7 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
                     onChange={e => updateAt(idx, { undiluted_amount: e.target.value === "" ? null : Number(e.target.value) })}
                   />
                   <select
-                    className="h-7 text-[10px] px-1 rounded border border-input bg-background w-16"
+                    className="h-8 text-[10px] px-1 rounded border border-input bg-background w-16 shrink-0"
                     value={u.undiluted_unit}
                     disabled={readOnly}
                     onChange={e => updateAt(idx, { undiluted_unit: e.target.value })}
@@ -208,7 +222,7 @@ export const ProductUsageEditor = ({ value, onChange, compact, readOnly }: Props
                     {UNIT_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                   </select>
                 </div>
-                <div className="col-span-1 flex justify-end">
+                <div className="hidden sm:flex sm:col-span-1 justify-end">
                   {!readOnly && (
                     <button
                       type="button"
