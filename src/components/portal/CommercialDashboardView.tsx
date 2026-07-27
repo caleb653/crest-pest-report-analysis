@@ -984,7 +984,24 @@ export default function CommercialDashboardView({
 
       {/* ─── Tabs (mirrors HOA admin layout, scaled for one location) ─── */}
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="sticky top-0 z-30 w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
+        {/* Mobile: compact dropdown toggle. Desktop: full tab bar. */}
+        <div className="sm:hidden sticky top-0 z-30 mb-4 bg-background/95 backdrop-blur p-2 border-2 border-primary/60 rounded-xl shadow-md">
+          <Select value={tab} onValueChange={setTab}>
+            <SelectTrigger className="h-12 text-sm font-semibold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upcoming">Upcoming Services ({upcoming.length})</SelectItem>
+              <SelectItem value="past">Previous Services ({past.length}){followUpCount > 0 ? ` — ${followUpCount} follow-up` : ""}</SelectItem>
+              <SelectItem value="requests">Pest Sightings ({openRequests.length})</SelectItem>
+              <SelectItem value="conditions">Conditions{activeConditionsCount > 0 ? ` (${activeConditionsCount})` : ""}</SelectItem>
+              <SelectItem value="map">Site Map, Plan &amp; Team</SelectItem>
+              <SelectItem value="materials">Safety Data Sheets</SelectItem>
+              <SelectItem value="help">Help</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <TabsList className="hidden sm:grid sticky top-0 z-30 w-full h-auto p-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 bg-background/95 backdrop-blur border-2 border-primary/60 rounded-xl shadow-md mb-5">
           <TabsTrigger value="map" className="bg-muted/70 hover:bg-muted border border-border/70 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-md font-semibold text-xs lg:text-sm whitespace-normal text-center leading-tight px-2 py-3 rounded-lg transition-all flex flex-col items-center justify-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>Site Map, Plan &amp; Team</span>
