@@ -43,6 +43,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { buildApartmentVisitPdfData } from "@/lib/visitPdf";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
@@ -1299,6 +1300,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             size="sm"
                             variant="outline"
                             className="h-7 text-[10px] px-2"
+                            data-visit-pdf-hide
                             onClick={(e) => {
                               e.stopPropagation();
                               generateFreeAndClearCertificatePdf({
@@ -1828,10 +1830,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           </div>
                           <div className="flex items-center gap-1 shrink-0" data-visit-pdf-hide>
                             <VisitPdfButton
-                              cardId={`visit-pdf-${s.id}`}
                               filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
-                              title={`Service Visit — ${formatDate(s.service_date)}${displayTitle ? " · " + displayTitle : ""}`}
-                              onBeforeCapture={() => setExpandedPastId(s.id)}
+                              getData={() => buildApartmentVisitPdfData({
+                                service: s,
+                                propertyName: property?.name,
+                                isHOA,
+                              })}
                             />
                             <Button
                               variant="ghost"

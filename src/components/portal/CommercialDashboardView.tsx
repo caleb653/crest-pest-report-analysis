@@ -62,6 +62,7 @@ const TECHNICIAN_NAMES = [
 ];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { buildCommercialVisitPdfData } from "@/lib/visitPdf";
 import {
   ConditionsReportSection, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
@@ -1252,10 +1253,13 @@ export default function CommercialDashboardView({
                       </button>
                        <div className="flex gap-1 shrink-0" data-visit-pdf-hide>
                          <VisitPdfButton
-                           cardId={`visit-pdf-${s.id}`}
                            filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
-                           title={`Service Visit — ${fmtDate(s.service_date)}${s.service_type ? " · " + s.service_type : ""}`}
-                           onBeforeCapture={() => setOpenId(s.id)}
+                           getData={() => buildCommercialVisitPdfData({
+                             service: s,
+                             services,
+                             requests,
+                             propertyName: property?.name,
+                           })}
                          />
                          {!readOnly && (
                            <Button size="icon" variant="outline" onClick={() => onDeleteService?.(s.id)} className="h-8 w-8 text-destructive">

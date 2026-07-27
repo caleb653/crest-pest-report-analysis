@@ -2,26 +2,22 @@ import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { downloadVisitPdf } from "@/lib/visitPdf";
+import { downloadVisitPdf, type VisitPdfData } from "@/lib/visitPdf";
 
 /**
  * Small "Download PDF" button attached to any past-visit card in the
- * apartment or commercial portal. The parent card must have a matching
- * `id={cardId}` attribute and be expanded (or opened via `onBeforeCapture`)
- * so the full body is visible in the DOM before html2canvas runs.
+ * apartment or commercial portal. Builds a clean print-style report from
+ * the visit's data via `getData` (see buildCommercialVisitPdfData /
+ * buildApartmentVisitPdfData in @/lib/visitPdf).
  */
 export function VisitPdfButton({
-  cardId,
+  getData,
   filename,
-  title,
-  onBeforeCapture,
   className,
   compact = true,
 }: {
-  cardId: string;
+  getData: () => VisitPdfData;
   filename?: string;
-  title?: string;
-  onBeforeCapture?: () => void | Promise<void>;
   className?: string;
   compact?: boolean;
 }) {
@@ -31,13 +27,10 @@ export function VisitPdfButton({
     if (busy) return;
     try {
       setBusy(true);
-      if (onBeforeCapture) await onBeforeCapture();
-      // Give React a beat to render the expanded body before capture.
-      await new Promise(r => setTimeout(r, 250));
-      await downloadVisitPdf({ cardId, filename, title });
+      await downloadVisitPdf({ ...getData(), filename });
       toast.success("PDF downloaded");
     } catch (err) {
-      console.error(err);
+      console.error("Visit PDF failed:", err);
       toast.error("Could not generate PDF");
     } finally {
       setBusy(false);

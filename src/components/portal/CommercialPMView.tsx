@@ -29,6 +29,7 @@ import { normalizeUsageList } from "@/lib/productCatalog";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { buildCommercialVisitPdfData } from "@/lib/visitPdf";
 import {
   ConditionsReportSection, ConditionCardsReadOnly, ServiceTeamSection,
   BusinessLicenseSection, HelpTutorialSection,
@@ -727,10 +728,13 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                            </button>
                            <div className="pr-3 flex items-center" data-visit-pdf-hide>
                              <VisitPdfButton
-                               cardId={`visit-pdf-${s.id}`}
                                filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
-                               title={`Service Visit — ${fmtDate(s.service_date)}${s.service_type ? " · " + s.service_type : ""}`}
-                               onBeforeCapture={() => setOpenServiceId(s.id)}
+                               getData={() => buildCommercialVisitPdfData({
+                                 service: s,
+                                 services,
+                                 requests,
+                                 propertyName: property?.name,
+                               })}
                              />
                            </div>
                            </div>

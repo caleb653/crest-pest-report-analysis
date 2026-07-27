@@ -25,6 +25,7 @@ import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { buildApartmentVisitPdfData } from "@/lib/visitPdf";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
@@ -2896,6 +2897,7 @@ const PropertyDashboard = ({
                         size="sm"
                         variant="outline"
                         className="h-7 text-[10px] px-2"
+                        data-visit-pdf-hide
                         onClick={(e) => {
                           e.stopPropagation();
                           generateFreeAndClearCertificatePdf({
@@ -2995,7 +2997,7 @@ const PropertyDashboard = ({
           <p className="text-xs font-semibold text-muted-foreground">
             {isHOA ? `Common Areas & Units Serviced (${unitDetails.length})` : `Areas Treated (${unitDetails.length})`}
           </p>
-          <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" onClick={() => {
+          <Button variant="outline" size="sm" className="h-7 text-xs px-2.5" data-visit-pdf-hide onClick={() => {
             setAddingUnitToService(s.id);
             setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" } as any);
           }}>
@@ -5696,10 +5698,12 @@ const PropertyDashboard = ({
                     </button>
                     <div data-visit-pdf-hide>
                       <VisitPdfButton
-                        cardId={`visit-pdf-${s.id}`}
                         filename={`service-${(s.service_date || "visit").toString().slice(0,10)}`}
-                        title={`Service Visit — ${formatDate(s.service_date)}${displayTitle ? " · " + displayTitle : ""}`}
-                        onBeforeCapture={() => setExpandedPastId(s.id)}
+                        getData={() => buildApartmentVisitPdfData({
+                          service: s,
+                          propertyName: property?.name,
+                          isHOA,
+                        })}
                       />
                     </div>
                     </div>
