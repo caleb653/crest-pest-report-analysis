@@ -264,7 +264,7 @@ serve(async (req) => {
           ${notes ? `<div style="background:#f9fafb;border-left:3px solid #95A197;border-radius:6px;padding:12px 14px;margin-bottom:16px;"><p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Service Notes</p><p style="margin:0;font-size:13px;color:#374151;white-space:pre-wrap;line-height:1.55;">${esc(notes)}</p></div>` : ""}
           ${unitCards ? `<p style="margin:18px 0 8px;font-size:13px;font-weight:700;color:#111827;">Areas Treated</p>${unitCards}` : ""}
           ${safeProductsRows ? `
-            <p style="margin:18px 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used (with EPA Reg # &amp; dilution detail)</p>
+            <p style="margin:18px 0 6px;font-size:13px;font-weight:700;color:#111827;">Products used (EPA Reg #)</p>
             <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1f2937;border:1px solid #eee;border-radius:6px;overflow:hidden;margin-bottom:16px;">
               <thead style="background:#f3f4f6;"><tr>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Product</th>
@@ -301,8 +301,8 @@ serve(async (req) => {
       </div>`;
 
     const subject = followUpUnits.length > 0
-      ? `⚠ Follow-up Needed (${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}) — ${propertyName || "Service Completed"}${serviceDate ? ` (${serviceDate})` : ""}`
-      : `Service Completed${propertyName ? ` — ${propertyName}` : ""}${serviceDate ? ` (${serviceDate})` : ""}`;
+      ? `⚠ Follow-up Needed (${followUpUnits.length} ${followUpUnits.length === 1 ? "unit" : "units"}) — ${propertyName || "Service Completed"}${dateDisplay ? ` (${dateDisplay})` : ""}`
+      : `Service Completed${propertyName ? ` — ${propertyName}` : ""}${dateDisplay ? ` (${dateDisplay})` : ""}`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

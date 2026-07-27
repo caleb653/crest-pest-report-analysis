@@ -420,6 +420,8 @@ export default function CommercialDashboardView({
   const [edits, setEdits] = useState<Record<string, Partial<ServiceData>>>({});
   const getField = <K extends keyof ServiceData>(s: ServiceData, k: K): any =>
     edits[s.id]?.[k] !== undefined ? edits[s.id]![k] : (s[k] as any) ?? "";
+  const getUpcomingServiceDate = (s: ServiceData) =>
+    edits[s.id]?.service_date !== undefined ? (edits[s.id]?.service_date || todayISO()) : todayISO();
   const setField = (id: string, k: keyof ServiceData, v: any) =>
     setEdits(e => ({ ...e, [id]: { ...(e[id] || {}), [k]: v } }));
 
@@ -1607,7 +1609,7 @@ export default function CommercialDashboardView({
                   //   • every still-open sighting (carry-forward), PLUS
                   //   • any sighting whose closed_at falls on this service's date,
                   //     so the report where it got resolved keeps a record of it.
-                  const svcDate = (getField(s, "service_date") || "").toString().slice(0, 10);
+                  const svcDate = getUpcomingServiceDate(s).toString().slice(0, 10);
                   // A closed sighting belongs on this upcoming card only if:
                   //   (a) it was explicitly resolved on this service, OR
                   //   (b) the user just clicked Close on it in this session
@@ -1652,7 +1654,7 @@ export default function CommercialDashboardView({
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
-                            value={today}
+                            value={getUpcomingServiceDate(s)}
                             readOnly={readOnly}
                             disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
@@ -1948,7 +1950,7 @@ export default function CommercialDashboardView({
                               // Capture the date BEFORE flushing (flush clears local edit
                               // state and the prop won't have refreshed yet), flush any
                               // un-blurred edits so nothing typed is lost, then complete.
-                              const dateVal = getField(s, "service_date") || today;
+                              const dateVal = getUpcomingServiceDate(s);
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
                               // Send completion email to the on-file Point of Contact
@@ -2051,20 +2053,20 @@ export default function CommercialDashboardView({
                               } catch (err) {
                                 console.warn("send-service-completed failed", err);
                               }
-                              // Auto-schedule the next visit based on the property's
-                              // service frequency (e.g. monthly = same day next month).
+                              // Auto-create the next visit as an upcoming placeholder.
+                              // Upcoming commercial visits intentionally do NOT store a
+                              // future date; both portals display TODAY until completed.
                               // Only creates one if there isn't already
                               // an upcoming scheduled visit.
                               const hasUpcoming = services.some(
                                 (x) => x.id !== s.id && x.status === "scheduled"
                               );
                               if (!hasUpcoming && propertyFrequencyDays > 0) {
-                                const nextDate = defaultNextServiceDate(dateVal);
                                 await supabase.from("portal_services").insert({
                                   property_id: property.id,
                                   service_type: getField(s, "service_type") || "Commercial General Pest",
                                   status: "scheduled",
-                                  service_date: nextDate,
+                                  service_date: null,
                                   frequency_days: propertyFrequencyDays,
                                 } as any);
                                 onRefresh?.();
@@ -2073,7 +2075,7 @@ export default function CommercialDashboardView({
                                 title: "Visit marked serviced ✓",
                                 description: hasUpcoming
                                   ? "Moved to Previous Services."
-                                  : "Next visit scheduled from this service date.",
+                                  : "Next upcoming visit added.",
                               });
                             }}
                             className="flex-1 h-12 gap-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
