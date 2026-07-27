@@ -391,7 +391,7 @@ export default function CommercialDashboardView({
   onUpdatePropertyMapData,
 }: Props) {
   const [openId, setOpenId] = useState<string | null>(null);
-  const [tab, setTab] = useState<string>("map");
+  const [tab, setTab] = useState<string>("upcoming");
   const [requests, setRequests] = useState<any[]>([]);
   const [prepSheets, setPrepSheets] = useState<any[]>([]);
   const [docs, setDocs] = useState<any[]>([]);
