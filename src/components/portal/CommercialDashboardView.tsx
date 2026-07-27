@@ -1725,7 +1725,7 @@ export default function CommercialDashboardView({
                                setField(s.id, "service_time", combined);
                              };
                              return (
-                               <div className="flex items-center gap-1">
+                               <div className="flex items-center gap-1.5 min-w-0">
                                  <Input
                                    type="time"
                                    value={timeIn}
@@ -1733,9 +1733,9 @@ export default function CommercialDashboardView({
                                    disabled={readOnly}
                                    onChange={e => commit(e.target.value, timeOut)}
                                    onBlur={() => flushEdits(s.id)}
-                                   className="h-11 text-sm flex-1"
+                                    className="h-11 text-sm flex-1 min-w-0 px-2"
                                  />
-                                 <span className="text-xs text-muted-foreground">→</span>
+                                  <span className="text-xs text-muted-foreground shrink-0">→</span>
                                  <Input
                                    type="time"
                                    value={timeOut}
@@ -1743,7 +1743,7 @@ export default function CommercialDashboardView({
                                    disabled={readOnly}
                                    onChange={e => commit(timeIn, e.target.value)}
                                    onBlur={() => flushEdits(s.id)}
-                                   className="h-11 text-sm flex-1"
+                                    className="h-11 text-sm flex-1 min-w-0 px-2"
                                  />
                                </div>
                              );
