@@ -1609,7 +1609,7 @@ export default function CommercialDashboardView({
                   //   • every still-open sighting (carry-forward), PLUS
                   //   • any sighting whose closed_at falls on this service's date,
                   //     so the report where it got resolved keeps a record of it.
-                  const svcDate = (getField(s, "service_date") || "").toString().slice(0, 10);
+                  const svcDate = getUpcomingServiceDate(s).toString().slice(0, 10);
                   // A closed sighting belongs on this upcoming card only if:
                   //   (a) it was explicitly resolved on this service, OR
                   //   (b) the user just clicked Close on it in this session
@@ -1654,7 +1654,7 @@ export default function CommercialDashboardView({
                           <Label className="text-sm font-black uppercase tracking-wider text-foreground border-l-4 border-primary pl-2 mb-0.5 block">Date</Label>
                           <Input
                             type="date"
-                            value={today}
+                            value={getUpcomingServiceDate(s)}
                             readOnly={readOnly}
                             disabled={readOnly}
                             onChange={e => setField(s.id, "service_date", e.target.value)}
@@ -1950,7 +1950,7 @@ export default function CommercialDashboardView({
                               // Capture the date BEFORE flushing (flush clears local edit
                               // state and the prop won't have refreshed yet), flush any
                               // un-blurred edits so nothing typed is lost, then complete.
-                              const dateVal = getField(s, "service_date") || today;
+                              const dateVal = getUpcomingServiceDate(s);
                               await flushEdits(s.id);
                               await saveServiceField(s.id, { status: "completed", service_date: dateVal });
                               // Send completion email to the on-file Point of Contact
