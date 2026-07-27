@@ -1001,11 +1001,11 @@ function ConditionRowEditor({
                 </Badge>
               )}
             </p>
-            <label className="cursor-pointer">
+            <label className="cursor-pointer w-full sm:w-auto">
               <input type="file" accept="image/*" multiple className="hidden"
                 onChange={e => { uploadTo("resolution_photos", e.target.files); e.currentTarget.value = ""; }} />
-              <span className="inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-background px-2 py-1 text-[11px] hover:bg-emerald-100">
-                <Upload className="w-3 h-3" /> {uploading === "res" ? "Uploading…" : "Add Resolution Photo"}
+              <span className="flex sm:inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-md border border-emerald-300 bg-background px-3 py-2.5 sm:py-1 text-sm sm:text-[11px] font-medium hover:bg-emerald-100">
+                <Upload className="w-4 h-4 sm:w-3 sm:h-3" /> {uploading === "res" ? "Uploading…" : "Add Resolution Photo"}
               </span>
             </label>
           </div>
