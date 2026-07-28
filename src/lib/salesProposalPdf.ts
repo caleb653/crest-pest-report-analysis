@@ -776,11 +776,11 @@ export async function buildSalesProposalPdf(
       y = startY;
       const hx = prodX + hi * (halfW + 10);
       for (const p of half) {
-        setFont(7.6, "normal", C.soft);
+        setFont(6.6, "normal", C.soft);
         const label = p.chemical ? `${p.name} (${p.chemical})` : p.name;
         const lines: string[] = pdf.splitTextToSize(label, halfW);
-        lines.forEach((ln, li) => pdf.text(ln, hx, y + 7 + li * 9));
-        y += lines.length * 9 + 1.5;
+        lines.forEach((ln, li) => pdf.text(ln, hx, y + 6.2 + li * 8));
+        y += lines.length * 8 + 1.2;
       }
       bottomY = Math.max(bottomY, y);
     });
