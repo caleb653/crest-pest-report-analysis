@@ -52,7 +52,8 @@ import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
-import { buildMergedPDF, buildSimplePDF, downloadPDF } from "@/lib/pdfExport";
+import { downloadPDF } from "@/lib/pdfExport";
+import { buildSalesProposalPdf, type SalesProposalPdfData } from "@/lib/salesProposalPdf";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   RODENT_GUARANTEE_HTML,
@@ -1763,30 +1764,107 @@ const Report = () => {
     }
   };
 
-  // Capture the on-screen report pages and build the PDF bytes (no download).
-  // Shared by the PDF download and the "Send to FieldRoutes" upload.
-  const capturePdfBytes = async (mode: "short" | "full" = "short"): Promise<Uint8Array> => {
-    await captureFreshRenderedMap();
-    setPdfExportMode(true);
-    try {
-      // Wait for all rendered map images to appear in DOM
-      await new Promise((r) => setTimeout(r, 600));
-      const pageEls = Array.from(
-        document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-      ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-      const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-      if (mode === "full") {
-        return await buildMergedPDF({
-          customerName: editableCustomer || "",
-          technicianName: editableTech || "",
-          address: editableAddress || extractedAddress || address || "",
-          reportPages,
-        });
+  // Assemble the report's DATA into the shape the PDF generator consumes.
+  // The PDF is built from data (crisp vector text, proper flow) — NOT from
+  // html2canvas screenshots of the on-screen editor. Mirrors the on-screen
+  // logic for which map/services/details each option shows.
+  const assembleSalesPdfData = (freshMainMap: string | null): SalesProposalPdfData => {
+    const buildScheduleChips = (frequency: number): string[] => {
+      if (frequency <= 0) return [];
+      const isHighFreq = frequency === 7 || frequency === 14;
+      const today = new Date();
+      const count = isHighFreq ? 8 : 6;
+      return Array.from({ length: count }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() + i * frequency);
+        return formatScheduleChip(d, isHighFreq);
+      });
+    };
+
+    const mapForOption = (i: number): string | null => {
+      if (i === 0) {
+        return (freshMainMap || renderedMapImage) ?? customMapImage ?? (mapUrl || null);
       }
-      return await buildSimplePDF({ reportPages });
-    } finally {
-      setPdfExportMode(false);
-    }
+      const d = i - 1;
+      const ownMap = duplicateCustomMapImages[d] ?? null;
+      const rendered =
+        duplicateRenderedMapImagesRef.current[d] ??
+        duplicateRenderedMapImages[d] ??
+        (ownMap ? null : freshMainMap || renderedMapImage);
+      return rendered ?? ownMap ?? customMapImage ?? (mapUrl || null);
+    };
+
+    const servicesHtmlForOption = (i: number): string => {
+      const edited = proposalFindings[i] ?? "";
+      const content = edited || (i === 0 ? editableFindings[0] || "" : getProposalServicesText(i));
+      return formatProposedServices(stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(content)));
+    };
+
+    const options = proposals.map((proposal, i) => {
+      const exLabels = proposalSelectedExclusions[i] ?? [];
+      return {
+        name: proposal.name.trim() || PROPOSAL_NAMES[i] || `Option ${i + 1}`,
+        recommended: proposals.length > 1 && recommendedProposal === i,
+        recurringLabel: resolveRecurringLabel(proposal),
+        services: proposal.services
+          .filter((s) => s.serviceType)
+          .map((s) => ({
+            serviceType: s.serviceType,
+            initial: parseFloat(s.initialPrice) || 0,
+            recurring: parseFloat(s.recurringPrice) || 0,
+            frequencyLabel: FREQUENCY_OPTIONS.find((o) => o.days === s.frequency)?.label || "One-Time",
+            scheduleChips: buildScheduleChips(s.frequency),
+          })),
+        mapImage: mapForOption(i),
+        servicesHtml: servicesHtmlForOption(i),
+        guaranteeBoxes: (proposalGuaranteeBoxes[i] ?? []).map((b) => ({ title: b.title, html: b.html })),
+        targetPests: getProposalTargetPests(i),
+        additionalDetailsHtml: formatProposedServices(
+          proposalAdditionalDetails[i] ?? (i === 0 ? additionalDetails : ""),
+        ),
+        setupMaterials: getProposalSetupMaterials(i),
+        exclusions: EXCLUSION_PRESETS.filter((p) => exLabels.includes(p.label)),
+        invoiceNote: getInvoiceNoteForProposal(i),
+        signature: perProposalSignatures[i] ?? null,
+      };
+    });
+
+    return {
+      title: editableTitle || "Proposal",
+      reportNumber: "PR #9859",
+      customerName: editableCustomer || "",
+      address: editableAddress || extractedAddress || address || "",
+      fieldroutesId: fieldroutesCustomerId,
+      serviceDate: editableServiceDate,
+      propertyType,
+      companyName,
+      technicianName: editableTech || "",
+      licenseNumber: editableLicenseNumber,
+      scheduling: {
+        day: preferredServiceDay,
+        time: preferredServiceTime,
+        contact: mainPointOfContact,
+        phone: contactPhone,
+      },
+      products: displayedProducts,
+      options,
+      propertyImages,
+      fourWeekCycleNote: proposals.some((p) =>
+        p.services.some((s) => s.frequency === 7 || s.frequency === 14 || s.frequency === 28),
+      ),
+    };
+  };
+
+  // Build the PDF bytes (no download). Shared by the PDF download, the email
+  // attachment, and the "Send to FieldRoutes" upload.
+  const capturePdfBytes = async (
+    mode: "short" | "full" = "short",
+    opts?: { compact?: boolean },
+  ): Promise<Uint8Array> => {
+    // Bake the latest map annotations into images before reading them.
+    const freshMainMap = await captureFreshRenderedMap();
+    const data = assembleSalesPdfData(freshMainMap);
+    return await buildSalesProposalPdf(data, { fullTemplate: mode === "full", compact: opts?.compact });
   };
 
   const exportToPDF = async (mode: "short" | "full" = "short") => {
@@ -1826,7 +1904,8 @@ const Report = () => {
     }
     try {
       if (!auto) toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
-      const pdfBytes = await capturePdfBytes("short");
+      // compact: smaller images so the FieldRoutes upload middleware never 502s
+      const pdfBytes = await capturePdfBytes("short", { compact: true });
       // Uint8Array -> base64, chunked to avoid call-stack limits on big files.
       let bin = "";
       const chunk = 0x8000;
@@ -1927,28 +2006,10 @@ Crest Pest Control`;
       if (pdfAttachOption !== "none") {
         toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
-          setPdfExportMode(true);
-          await new Promise((r) => setTimeout(r, 600));
-          const pageEls = Array.from(
-            document.querySelectorAll<HTMLElement>("[data-pdf-capture]")
-          ).sort((a, b) => Number(a.dataset.pdfCapture) - Number(b.dataset.pdfCapture));
-          const reportPages = pageEls.filter((el) => !el.querySelector(".no-images-placeholder"));
-          let pdfBytes: Uint8Array;
-          if (pdfAttachOption === "full") {
-            pdfBytes = await buildMergedPDF({
-              customerName: editableCustomer || "",
-              technicianName: editableTech || "",
-              address: editableAddress || extractedAddress || address || "",
-              reportPages,
-            });
-          } else {
-            pdfBytes = await buildSimplePDF({ reportPages }) as Uint8Array;
-          }
-          setPdfExportMode(false);
+          const pdfBytes = await capturePdfBytes(pdfAttachOption);
           const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
           pdfBase64 = btoa(binary);
         } catch (pdfErr) {
-          setPdfExportMode(false);
           console.warn("PDF generation failed, sending email without attachment:", pdfErr);
         }
         toast.dismiss("pdf-email");
