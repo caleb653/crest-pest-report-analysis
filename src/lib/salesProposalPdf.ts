@@ -728,114 +728,239 @@ export async function buildSalesProposalPdf(
 
   data.options.forEach(drawOptionCard);
 
-  // ── Scheduling / Products / Pesticide notice row ──
+  // ── Scheduling / Products / Pesticide notice row + Crest Guarantee ──
+  // The Crest Guarantee band should land on page 1 whenever possible. The
+  // products list is usually the tallest column, so we pick a layout by
+  // MEASURING: (A) the classic side-by-side row, shrinking product type down
+  // to a 5.4pt floor; then (B) a stacked layout where scheduling collapses to
+  // one inline row and products spread into three wider columns; and only if
+  // neither fits does the band draw first, with the row after it.
 
   const sched = data.scheduling;
-  const hasSched = !!sched && [sched.day, sched.time, sched.contact, sched.phone].some((v) => (v || "").trim() && (v || "").trim() !== "-");
+  const schedItems: [string, string][] = !sched
+    ? []
+    : ([
+        ["Preferred Day", sched.day || ""],
+        ["Preferred Time", sched.time || ""],
+        ["Point of Contact", sched.contact || ""],
+        ["Phone", sched.phone || ""],
+      ] as [string, string][]).filter(([, v]) => v.trim() && v.trim() !== "-");
+  const hasSched = schedItems.length > 0;
 
   ensure(120);
-  const rowTop = y;
+  let rowTop = y;
   const gutter = 14;
-  const schedW = hasSched ? CONTENT_W * 0.22 : 0;
-  const prodW = CONTENT_W * (hasSched ? 0.30 : 0.38);
-  const noticeW = CONTENT_W - schedW - prodW - gutter * (hasSched ? 2 : 1);
-  let maxColBottom = rowTop;
 
-  const columnBlock = (x: number, w: number, title: string, body: () => void) => {
+  const drawGuaranteeBand = () => {
+    ensure(40 + (data.fourWeekCycleNote ? 22 : 0) + 22);
+    const bandH = 40;
+    stroke(C.rule);
+    fill(C.sageTint);
+    pdf.roundedRect(MARGIN, y, CONTENT_W, bandH, 6, 6, "FD");
+    const bugH = 22;
+    const bugW = bugH * bugAspect;
+    if (bugPng) pdf.addImage(bugPng, "PNG", MARGIN + 14, y + (bandH - bugH) / 2, bugW, bugH);
+    if (bugPng) pdf.addImage(bugPng, "PNG", MARGIN + CONTENT_W - 14 - bugW, y + (bandH - bugH) / 2, bugW, bugH);
+    const gtextX = MARGIN + 14 + bugW + 12;
+    const gtextW = CONTENT_W - 2 * (14 + bugW + 12);
+    setFont(9, "bold", C.ink);
+    const guaranteeIntro = "The Crest Guarantee:  ";
+    const gLines: string[] = pdf.splitTextToSize(guaranteeIntro + CREST_GUARANTEE, gtextW);
+    const gBlockH = gLines.length * 11;
+    let gy = y + (bandH - gBlockH) / 2 + 8;
+    gLines.forEach((ln, i) => {
+      if (i === 0 && ln.startsWith(guaranteeIntro.trim())) {
+        setFont(9, "bold", C.ink);
+        pdf.text("The Crest Guarantee:", gtextX + gtextW / 2 - pdf.getTextWidth(ln) / 2, gy);
+        setFont(9, "normal", C.ink);
+        pdf.text(ln.slice("The Crest Guarantee:".length), gtextX + gtextW / 2 - pdf.getTextWidth(ln) / 2 + pdf.getTextWidth("The Crest Guarantee:") + 2, gy);
+      } else {
+        setFont(9, "normal", C.ink);
+        pdf.text(ln, gtextX + gtextW / 2, gy, { align: "center" });
+      }
+      gy += 11;
+    });
+    y += bandH + 8;
+    if (data.fourWeekCycleNote) {
+      writeText(FOUR_WEEK_NOTE, MARGIN + 40, CONTENT_W - 80, 7.2, { style: "italic", color: C.muted, align: "center", lineH: 9 });
+      y += 2;
+    }
+    writeText(LIABILITY_NOTE, MARGIN + 40, CONTENT_W - 80, 7.6, { style: "italic", color: C.muted, align: "center", lineH: 9.4 });
+  };
+
+  // Geometry for both layouts.
+  const schedColW = hasSched ? CONTENT_W * 0.22 : 0;
+  const prodColW = CONTENT_W * (hasSched ? 0.30 : 0.38);
+  const prodWideW = CONTENT_W * 0.52 + (hasSched ? gutter : 0);
+  const noticeWa = CONTENT_W - schedColW - prodColW - gutter * (hasSched ? 2 : 1);
+  const noticeWb = CONTENT_W - prodWideW - gutter;
+
+  const productLabel = (p: { name: string; chemical?: string }) =>
+    p.chemical ? `${p.name} (${p.chemical})` : p.name;
+  const productCols = (nCols: number) => {
+    const per = Math.ceil(data.products.length / nCols);
+    return Array.from({ length: nCols }, (_, i) => data.products.slice(i * per, (i + 1) * per));
+  };
+  const measureProducts = (size: number, step: number, nCols: number, regionW: number): number => {
+    const colW = (regionW - (nCols - 1) * 10) / nCols;
+    setFont(size, "normal", C.soft);
+    return Math.max(
+      0,
+      ...productCols(nCols).map((col) =>
+        col.reduce((a, p) => a + (pdf.splitTextToSize(productLabel(p), colW) as string[]).length * step + 1.2, 0),
+      ),
+    );
+  };
+  const measureNotice = (w: number): number => {
+    setFont(6.4, "normal", C.muted);
+    const n1 = (pdf.splitTextToSize(PESTICIDE_NOTICE, w) as string[]).length;
+    setFont(6.4, "bold", C.soft);
+    const n2 = (pdf.splitTextToSize(PESTICIDE_CONTACTS, w) as string[]).length;
+    return 21 + n1 * 7.6 + 2 + n2 * 7.6;
+  };
+
+  const PRODUCT_SIZES: [number, number][] = [[6.6, 8], [6.2, 7.5], [5.8, 7], [5.4, 6.6]];
+  const bandBlockH = 12 + 40 + 8 + (data.fourWeekCycleNote ? 20 : 0) + 12;
+  const schedColH = hasSched ? 21 + schedItems.length * 13 : 0;
+  // Stacked mode puts the sched label/value pairs ON the section-title row
+  // (wrapping below it only when they run long) — measure that packing.
+  const schedPairWidths = schedItems.map(([l, v]) => {
+    setFont(7.5, "normal", C.muted);
+    const lw = pdf.getTextWidth(`${l}: `);
+    setFont(9, "bold", C.ink);
+    return lw + pdf.getTextWidth(v);
+  });
+  setFont(9.5, "bold", C.ink);
+  const schedTitleEnd = MARGIN + 8 + pdf.getTextWidth("SCHEDULING & COMMUNICATION") + 0.6 * 25 + 18;
+  const packSchedLines = (): number => {
+    let ix = schedTitleEnd;
+    let lines = 0;
+    for (const w of schedPairWidths) {
+      if (ix + w > MARGIN + prodWideW && ix > (lines === 0 ? schedTitleEnd : MARGIN)) {
+        lines++;
+        ix = MARGIN;
+      }
+      ix += w + 20;
+    }
+    return lines;
+  };
+  const schedInlineH = hasSched ? 21 + packSchedLines() * 13 : 0;
+  const noticeHa = measureNotice(noticeWa);
+  const noticeHb = measureNotice(noticeWb);
+  const roomBelowCards = BOTTOM - rowTop;
+
+  interface RowPlan { mode: "side" | "stacked"; size: number; step: number; bandBelow: boolean }
+  // Larger type beats layout: at each size, try the classic side-by-side row
+  // first, then the stacked wide-products variant, before shrinking further.
+  let plan: RowPlan | null = null;
+  for (const [s, st] of PRODUCT_SIZES) {
+    const sideH = Math.max(schedColH, 21 + measureProducts(s, st, 2, prodColW), noticeHa);
+    if (sideH + bandBlockH <= roomBelowCards) { plan = { mode: "side", size: s, step: st, bandBelow: true }; break; }
+    const stackedH = Math.max(schedInlineH + 21 + measureProducts(s, st, 3, prodWideW), noticeHb);
+    if (stackedH + bandBlockH <= roomBelowCards) { plan = { mode: "stacked", size: s, step: st, bandBelow: true }; break; }
+  }
+  if (!plan) {
+    // Nothing fits with the band below — keep the band on this page by
+    // drawing it right after the pricing, then place the row after it at the
+    // largest size that fits the remaining space (or a fresh page at 6.6).
+    drawGuaranteeBand();
+    y += 6;
+    rowTop = y;
+    for (const [s, st] of PRODUCT_SIZES) {
+      const rowH = Math.max(schedInlineH + 21 + measureProducts(s, st, 3, prodWideW), noticeHb);
+      if (rowTop + rowH <= BOTTOM) { plan = { mode: "stacked", size: s, step: st, bandBelow: false }; break; }
+    }
+    if (!plan) {
+      plan = { mode: "stacked", size: 6.6, step: 8, bandBelow: false };
+      newPage();
+      rowTop = y;
+    }
+  }
+
+  let maxColBottom = rowTop;
+  const columnBlock = (x: number, title: string, body: () => void) => {
     y = rowTop;
     sectionTitle(title, x);
     body();
     maxColBottom = Math.max(maxColBottom, y);
   };
 
-  if (hasSched && sched) {
-    columnBlock(MARGIN, schedW, "Scheduling & Communication", () => {
-      const items: [string, string][] = ([
-        ["Preferred Day", sched.day || ""],
-        ["Preferred Time", sched.time || ""],
-        ["Point of Contact", sched.contact || ""],
-        ["Phone", sched.phone || ""],
-      ] as [string, string][]).filter(([, v]) => v.trim() && v.trim() !== "-");
-      for (const [label, value] of items) {
-        setFont(7.5, "normal", C.muted);
-        pdf.text(`${label}:`, MARGIN, y + 8);
-        setFont(9, "bold", C.ink);
-        pdf.text(value, MARGIN + 68, y + 8);
-        y += 13;
-      }
-    });
-  }
-
-  const prodX = MARGIN + schedW + (hasSched ? gutter : 0);
-  columnBlock(prodX, prodW, "Products", () => {
-    const colSplit = Math.ceil(data.products.length / 2);
-    const halfW = (prodW - 10) / 2;
+  const renderProductCols = (x: number, regionW: number, nCols: number, size: number, step: number) => {
+    const colW = (regionW - (nCols - 1) * 10) / nCols;
     const startY = y;
     let bottomY = y;
-    [data.products.slice(0, colSplit), data.products.slice(colSplit)].forEach((half, hi) => {
+    productCols(nCols).forEach((col, ci) => {
       y = startY;
-      const hx = prodX + hi * (halfW + 10);
-      for (const p of half) {
-        setFont(6.6, "normal", C.soft);
-        const label = p.chemical ? `${p.name} (${p.chemical})` : p.name;
-        const lines: string[] = pdf.splitTextToSize(label, halfW);
-        lines.forEach((ln, li) => pdf.text(ln, hx, y + 6.2 + li * 8));
-        y += lines.length * 8 + 1.2;
+      const cx = x + ci * (colW + 10);
+      for (const p of col) {
+        setFont(size, "normal", C.soft);
+        const lines: string[] = pdf.splitTextToSize(productLabel(p), colW);
+        lines.forEach((ln, li) => pdf.text(ln, cx, y + step * 0.78 + li * step));
+        y += lines.length * step + 1.2;
       }
       bottomY = Math.max(bottomY, y);
     });
     y = bottomY;
-  });
+  };
 
-  const noticeX = prodX + prodW + gutter;
-  columnBlock(noticeX, noticeW, "Pesticide Notice", () => {
+  const renderNotice = (x: number, w: number) => {
     setFont(6.4, "normal", C.muted);
-    const lines: string[] = pdf.splitTextToSize(PESTICIDE_NOTICE, noticeW);
-    lines.forEach((ln) => { pdf.text(ln, noticeX, y + 6); y += 7.6; });
+    const lines: string[] = pdf.splitTextToSize(PESTICIDE_NOTICE, w);
+    lines.forEach((ln) => { pdf.text(ln, x, y + 6); y += 7.6; });
     y += 2;
     setFont(6.4, "bold", C.soft);
-    const lines2: string[] = pdf.splitTextToSize(PESTICIDE_CONTACTS, noticeW);
-    lines2.forEach((ln) => { pdf.text(ln, noticeX, y + 6); y += 7.6; });
-  });
+    const lines2: string[] = pdf.splitTextToSize(PESTICIDE_CONTACTS, w);
+    lines2.forEach((ln) => { pdf.text(ln, x, y + 6); y += 7.6; });
+  };
+
+  if (plan.mode === "side") {
+    if (hasSched) {
+      columnBlock(MARGIN, "Scheduling & Communication", () => {
+        for (const [label, value] of schedItems) {
+          setFont(7.5, "normal", C.muted);
+          pdf.text(`${label}:`, MARGIN, y + 8);
+          setFont(9, "bold", C.ink);
+          pdf.text(value, MARGIN + 68, y + 8);
+          y += 13;
+        }
+      });
+    }
+    const prodX = MARGIN + schedColW + (hasSched ? gutter : 0);
+    columnBlock(prodX, "Products", () => renderProductCols(prodX, prodColW, 2, plan!.size, plan!.step));
+    const noticeX = prodX + prodColW + gutter;
+    columnBlock(noticeX, "Pesticide Notice", () => renderNotice(noticeX, noticeWa));
+  } else {
+    columnBlock(MARGIN, hasSched ? "Scheduling & Communication" : "Products", () => {
+      if (hasSched) {
+        // Label/value pairs share the section-title row to save height,
+        // wrapping to lines below only when they run long.
+        let ix = schedTitleEnd;
+        let extraLines = 0;
+        for (let i = 0; i < schedItems.length; i++) {
+          const [label, value] = schedItems[i];
+          if (ix + schedPairWidths[i] > MARGIN + prodWideW && ix > (extraLines === 0 ? schedTitleEnd : MARGIN)) {
+            extraLines++;
+            ix = MARGIN;
+          }
+          const by = y - 7.5 + extraLines * 13;
+          setFont(7.5, "normal", C.muted);
+          pdf.text(`${label}:`, ix, by);
+          const lw = pdf.getTextWidth(`${label}: `);
+          setFont(9, "bold", C.ink);
+          pdf.text(value, ix + lw, by);
+          ix += schedPairWidths[i] + 20;
+        }
+        y += extraLines * 13;
+        sectionTitle("Products", MARGIN);
+      }
+      renderProductCols(MARGIN, prodWideW, 3, plan!.size, plan!.step);
+    });
+    const noticeX = MARGIN + prodWideW + gutter;
+    columnBlock(noticeX, "Pesticide Notice", () => renderNotice(noticeX, noticeWb));
+  }
 
   y = maxColBottom + 12;
-
-  // ── Crest Guarantee band (keep band + footnotes together) ──
-  ensure(40 + (data.fourWeekCycleNote ? 22 : 0) + 22);
-  const bandH = 40;
-  stroke(C.rule);
-  fill(C.sageTint);
-  pdf.roundedRect(MARGIN, y, CONTENT_W, bandH, 6, 6, "FD");
-  const bugH = 22;
-  const bugW = bugH * bugAspect;
-  if (bugPng) pdf.addImage(bugPng, "PNG", MARGIN + 14, y + (bandH - bugH) / 2, bugW, bugH);
-  if (bugPng) pdf.addImage(bugPng, "PNG", MARGIN + CONTENT_W - 14 - bugW, y + (bandH - bugH) / 2, bugW, bugH);
-  const gtextX = MARGIN + 14 + bugW + 12;
-  const gtextW = CONTENT_W - 2 * (14 + bugW + 12);
-  setFont(9, "bold", C.ink);
-  const guaranteeIntro = "The Crest Guarantee:  ";
-  const gLines: string[] = pdf.splitTextToSize(guaranteeIntro + CREST_GUARANTEE, gtextW);
-  const gBlockH = gLines.length * 11;
-  let gy = y + (bandH - gBlockH) / 2 + 8;
-  gLines.forEach((ln, i) => {
-    if (i === 0 && ln.startsWith(guaranteeIntro.trim())) {
-      setFont(9, "bold", C.ink);
-      pdf.text("The Crest Guarantee:", gtextX + gtextW / 2 - pdf.getTextWidth(ln) / 2, gy);
-      setFont(9, "normal", C.ink);
-      pdf.text(ln.slice("The Crest Guarantee:".length), gtextX + gtextW / 2 - pdf.getTextWidth(ln) / 2 + pdf.getTextWidth("The Crest Guarantee:") + 2, gy);
-    } else {
-      setFont(9, "normal", C.ink);
-      pdf.text(ln, gtextX + gtextW / 2, gy, { align: "center" });
-    }
-    gy += 11;
-  });
-  y += bandH + 8;
-
-  if (data.fourWeekCycleNote) {
-    writeText(FOUR_WEEK_NOTE, MARGIN + 40, CONTENT_W - 80, 7.2, { style: "italic", color: C.muted, align: "center", lineH: 9 });
-    y += 2;
-  }
-  writeText(LIABILITY_NOTE, MARGIN + 40, CONTENT_W - 80, 7.6, { style: "italic", color: C.muted, align: "center", lineH: 9.4 });
+  if (plan.bandBelow) drawGuaranteeBand();
 
   // ════════════════════════════════════════════════════════════════════
   // OPTION DETAIL PAGES — map + proposed services per option
