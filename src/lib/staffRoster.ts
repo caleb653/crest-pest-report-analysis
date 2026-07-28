@@ -19,6 +19,7 @@ export const STAFF: StaffMember[] = [
   { username: "clopez",    fullName: "Carmen Lopez",    email: "clopez@crestpestcontrol.com" },
   { username: "dlongoria", fullName: "David Longoria",  email: "dlongoria@crestpestcontrol.com" },
   { username: "nstovall", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
+  { username: "ccarnival", fullName: "Cade Carnival",  email: "ccarnival@crestpestcontrol.com" },
 ];
 
 export const STAFF_NAMES: string[] = STAFF.map(s => s.fullName);
