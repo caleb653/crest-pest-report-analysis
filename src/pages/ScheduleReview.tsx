@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
+import WeekRouteMap from "@/components/scheduling/WeekRouteMap";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -1469,6 +1470,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
+  const [weekMapOpen, setWeekMapOpen] = useState(false);
 
   const toggleTech = (t: string) =>
     setTechs((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
@@ -1639,11 +1641,29 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           )}
 
           {result.proposed.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-              {result.proposed.map((d) => (
-                <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} />
-              ))}
-            </div>
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold">Proposed days</span>
+                <Button size="sm" variant="outline" onClick={() => setWeekMapOpen(true)}>
+                  <MapPin className="w-3 h-3 mr-1" /> Week map — all routes overlaid
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {result.proposed.map((d) => (
+                  <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} />
+                ))}
+              </div>
+              <Dialog open={weekMapOpen} onOpenChange={setWeekMapOpen}>
+                <DialogContent className="max-w-6xl w-[96vw]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      Week map · {result.start} – {result.end} · one color per day
+                    </DialogTitle>
+                  </DialogHeader>
+                  <WeekRouteMap days={result.proposed} />
+                </DialogContent>
+              </Dialog>
+            </>
           )}
 
           <UnscheduledBucket
