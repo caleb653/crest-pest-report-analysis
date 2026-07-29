@@ -280,6 +280,9 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
                 {" · "}stop #{active.stop.order}
                 {tech === "*" ? <> · {active.day.tech}</> : null}
               </div>
+              {active.stop.service_label && (
+                <div className="font-medium">{active.stop.service_label}</div>
+              )}
               {(active.stop.address || active.stop.city) && (
                 <div className="text-muted-foreground">
                   {[active.stop.address, active.stop.city].filter(Boolean).join(", ")}

@@ -1320,6 +1320,7 @@ type FillStop = {
   eta?: string;                  // projected arrival clock time, e.g. "9:25 AM"
   drive_from_prev_min?: number;  // estimated drive from the previous stop
   flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
+  moved?: boolean;               // dragged onto this day by the office
 };
 type FillRouteSummary = {
   stop_count: number;
@@ -1346,6 +1347,7 @@ type FillDay = {
   capacity: number;
   summary?: FillRouteSummary;
   stops: FillStop[];
+  route_id?: string | number | null;   // FieldRoutes route for this tech-day
 };
 type FillRouteRow = { date: string; tech: string } & FillRouteSummary;
 type FillTopSummary = {
@@ -1477,6 +1479,82 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
   const [weekMapOpen, setWeekMapOpen] = useState(false);
+  // Drag-to-reorganize (Caleb 2026-07-30): a stop dragged onto another day
+  // card moves instantly when it's clean; when it breaks a rule the office
+  // gets a popup that says WHY and offers an explicit override.
+  const [pendingMove, setPendingMove] = useState<{
+    fromKey: string; toKey: string; stopId: string; stop: FillStop; reasons: string[];
+  } | null>(null);
+
+  const TOL_BY_FREQ: Record<number, number> = { 30: 4, 60: 8, 90: 14 };
+  const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
+  const dayDiffFromDue = (targetIso: string, dueIso: string) =>
+    Math.round((new Date(`${targetIso}T12:00:00`).getTime()
+                - new Date(`${dueIso}T12:00:00`).getTime()) / 86400000);
+
+  const executeMove = (fromKey: string, toKey: string, stopId: string) => {
+    setResult((prev) => {
+      if (!prev) return prev;
+      const proposed = prev.proposed.map((d) => ({ ...d, stops: [...d.stops] }));
+      const src = proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
+      const dst = proposed.find((d) => `${d.date}|${d.tech}` === toKey);
+      if (!src || !dst) return prev;
+      const idx = src.stops.findIndex((s) => fillStopKey(s) === stopId);
+      if (idx < 0) return prev;
+      const [stop] = src.stops.splice(idx, 1);
+      dst.stops.push({
+        ...stop,
+        order: dst.stops.length + 1,
+        days_off_target: dayDiffFromDue(dst.date, stop.due_date),
+        // Book on the TARGET day's FieldRoutes route — the route carries the date.
+        route_id: dst.route_id != null && dst.route_id !== "" ? String(dst.route_id) : undefined,
+        eta: undefined,
+        drive_from_prev_min: undefined,
+        moved: true,
+      });
+      src.stops.forEach((s, i) => { s.order = i + 1; });
+      src.stop_count = src.stops.length;
+      dst.stop_count = dst.stops.length;
+      return { ...prev, proposed };
+    });
+  };
+
+  const requestMove = (fromKey: string, stopId: string, toKey: string) => {
+    if (!result || fromKey === toKey) return;
+    const src = result.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
+    const dst = result.proposed.find((d) => `${d.date}|${d.tech}` === toKey);
+    if (!src || !dst) return;
+    const stop = src.stops.find((s) => fillStopKey(s) === stopId);
+    if (!stop) return;
+    if (stop.already_scheduled || stop.locked || stop.notification_sent) {
+      toast.error("That appointment is already booked/locked in FieldRoutes — reschedule it there instead.");
+      return;
+    }
+    const reasons: string[] = [];
+    const diff = dayDiffFromDue(dst.date, stop.due_date);
+    const tol = TOL_BY_FREQ[stop.frequency] ?? 0;
+    if (Math.abs(diff) > tol) {
+      const cadence = stop.frequency === 30 ? "monthly" : stop.frequency === 60 ? "bi-monthly"
+        : stop.frequency === 90 ? "quarterly" : `${stop.frequency}-day`;
+      reasons.push(`Puts them ${Math.abs(diff)} days ${diff > 0 ? "past" : "before"} their ideal date `
+        + `(due ${stop.due_date}) — ${cadence} flexibility is ±${tol} days.`);
+    }
+    if (src.tech !== dst.tech) {
+      reasons.push(`Moves them from ${src.tech} (their assigned tech) to ${dst.tech}.`);
+    }
+    if (dst.stop_count >= dst.capacity) {
+      reasons.push(`${weekdayLabel(dst.date)} is already at capacity (${dst.stop_count}/${dst.capacity} stops).`);
+    }
+    if (stop.special_scheduling) {
+      reasons.push(`Customer scheduling note: “${stop.special_scheduling.trim()}” — double-check ${weekdayLabel(dst.date)} works for it.`);
+    }
+    if (reasons.length) {
+      setPendingMove({ fromKey, toKey, stopId, stop, reasons });
+    } else {
+      executeMove(fromKey, toKey, stopId);
+      toast.success(`Moved ${stop.customer} to ${weekdayLabel(dst.date)}`);
+    }
+  };
 
   const toggleTech = (t: string) =>
     setTechs((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : [...cur, t]));
@@ -1650,14 +1728,19 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           {result.proposed.length > 0 && (
             <>
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold">Proposed days</span>
+                <span className="text-sm font-semibold">
+                  Proposed days
+                  <span className="ml-2 font-normal text-xs text-muted-foreground">
+                    drag a stop onto another day card to move it
+                  </span>
+                </span>
                 <Button size="sm" variant="outline" onClick={() => setWeekMapOpen(true)}>
                   <MapPin className="w-3 h-3 mr-1" /> Week map — all routes overlaid
                 </Button>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {result.proposed.map((d) => (
-                  <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} />
+                  <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} onMoveStop={requestMove} />
                 ))}
               </div>
               <Dialog open={weekMapOpen} onOpenChange={setWeekMapOpen}>
@@ -1668,6 +1751,41 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     </DialogTitle>
                   </DialogHeader>
                   <WeekRouteMap days={result.proposed} />
+                </DialogContent>
+              </Dialog>
+              <Dialog open={!!pendingMove} onOpenChange={(o) => { if (!o) setPendingMove(null); }}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" /> This move breaks the scheduling rules
+                    </DialogTitle>
+                  </DialogHeader>
+                  {pendingMove && (
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <span className="font-semibold">{pendingMove.stop.customer}</span>
+                        {" → "}{weekdayLabel(pendingMove.toKey.split("|")[0])} · {pendingMove.toKey.split("|")[1]}
+                      </div>
+                      <ul className="list-disc pl-5 space-y-1">
+                        {pendingMove.reasons.map((r, i) => (<li key={i}>{r}</li>))}
+                      </ul>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={() => setPendingMove(null)}>
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            executeMove(pendingMove.fromKey, pendingMove.toKey, pendingMove.stopId);
+                            toast.success(`Moved ${pendingMove.stop.customer} (override)`);
+                            setPendingMove(null);
+                          }}
+                        >
+                          Override & move anyway
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </DialogContent>
               </Dialog>
             </>
@@ -1698,7 +1816,12 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 // through fieldroutes-appointment-submit with commit:true — the write-queue
 // row is kept only as the audit trail; there is no approval step. X a stop to
 // keep it out of the day push.
-function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
+function FillDayCard({ day, staff, onMoveStop }: {
+  day: FillDay;
+  staff: { fullName: string } | null;
+  onMoveStop?: (fromKey: string, stopId: string, toKey: string) => void;
+}) {
+  const dayKey = `${day.date}|${day.tech}`;
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
   const [stopPushing, setStopPushing] = useState<string | null>(null);
@@ -1785,7 +1908,18 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
   };
 
   return (
-    <Card className="border-l-4 border-l-indigo-500">
+    <Card
+      className="border-l-4 border-l-indigo-500"
+      onDragOver={(e) => { if (onMoveStop) e.preventDefault(); }}
+      onDrop={(e) => {
+        if (!onMoveStop) return;
+        e.preventDefault();
+        try {
+          const p = JSON.parse(e.dataTransfer.getData("text/plain"));
+          if (p?.from && p?.id) onMoveStop(p.from, p.id, dayKey);
+        } catch { /* not a stop drag */ }
+      }}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-baseline justify-between gap-2 flex-wrap">
           <CardTitle className="text-base">{weekdayLabel(day.date)} · {day.tech}</CardTitle>
@@ -1837,8 +1971,18 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
             : "bg-indigo-50";
           // Lock the X button when the row is system-locked.
           const canExclude = !isBlack && !isQueued;
+          // Proposed, un-pushed stops can be dragged onto another day card.
+          const canDrag = !!onMoveStop && !isBlack && !isGreen && !isQueued;
           return (
-            <div key={key} className={`text-xs rounded p-2 ${rowClass}`}>
+            <div
+              key={key}
+              className={`text-xs rounded p-2 ${rowClass}${canDrag ? " cursor-grab active:cursor-grabbing" : ""}`}
+              draggable={canDrag}
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/plain", JSON.stringify({ from: dayKey, id: key }));
+                e.dataTransfer.effectAllowed = "move";
+              }}
+            >
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-semibold text-sm flex items-center gap-1">
                   {isQueued && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
@@ -1905,6 +2049,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
               )}
               <div className="mt-1 flex flex-wrap gap-1">
                 {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
+                {s.moved && <Badge variant="outline" className="text-indigo-700 border-indigo-300">moved here manually</Badge>}
                 {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
                 {s.locked && (
                   <Badge variant="outline" className="text-background border-background/40">
