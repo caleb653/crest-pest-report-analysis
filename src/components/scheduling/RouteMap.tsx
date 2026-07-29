@@ -18,6 +18,7 @@ export type RouteMapStop = {
   drive_from_prev_min?: number;
   already_scheduled?: boolean;
   locked?: boolean;
+  special_scheduling?: string | null;
 };
 
 const CONTAINER_STYLE = { width: "100%", height: "70vh" } as const;
@@ -137,6 +138,9 @@ function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: strin
               {active.service_label && <div className="text-muted-foreground">{active.service_label}</div>}
               {typeof active.drive_from_prev_min === "number" && active.order > 1 && (
                 <div className="text-muted-foreground">+{active.drive_from_prev_min} min drive from previous</div>
+              )}
+              {active.special_scheduling && (
+                <div className="text-amber-700 font-medium">note: {active.special_scheduling}</div>
               )}
             </div>
           </InfoWindowF>

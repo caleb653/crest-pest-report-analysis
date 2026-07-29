@@ -288,6 +288,9 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
               {(active.stop.eta || active.stop.window) && (
                 <div>{active.stop.eta}{active.stop.eta && active.stop.window ? " · " : ""}{active.stop.window}</div>
               )}
+              {active.stop.special_scheduling && (
+                <div className="text-amber-700 font-medium">note: {active.stop.special_scheduling}</div>
+              )}
               {active.stop.locked ? <div className="text-muted-foreground">locked appointment</div>
                 : active.stop.already_scheduled ? <div className="text-muted-foreground">already scheduled</div>
                 : null}
