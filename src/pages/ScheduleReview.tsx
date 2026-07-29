@@ -1456,12 +1456,13 @@ function fmtHM(mins?: number): string {
   return h ? `${h}h ${m}m` : `${m}m`;
 }
 
-// Color the DRIVE-based efficiency score (1 − paid drive ÷ 8h): a pocketed
-// day (~5-min legs ≈ 55m drive) is ~89%, so green ≥88, amber ≥80 (≤96m
-// drive), red below (2h+ of driving).
+// Color the efficiency score = productive share of the 8-hour day
+// ((on-site + paperwork) ÷ max(8h, actual day)). A full 12-stop pocket day
+// (~5-min legs) is ~88%; 10-min legs pull it to ~79%; a thin 4-stop day is
+// ~29% — idle hours and drive time both count against the day.
 function efficiencyTone(pct: number): string {
-  if (pct >= 88) return "text-emerald-700";
-  if (pct >= 80) return "text-amber-700";
+  if (pct >= 80) return "text-emerald-700";
+  if (pct >= 65) return "text-amber-700";
   return "text-red-600";
 }
 
