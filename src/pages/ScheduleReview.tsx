@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
   Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing, TrendingUp, TrendingDown, Minus,
+  Send,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -1518,8 +1519,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             then proposes which day &amp; tech each one fits — clustering by
             location and honoring preferred tech, day/time notes, and per-day
             capacity. Anything marked "call to schedule" is set aside for manual
-            handling. Nothing is booked — review and queue through the normal
-            approval flow.
+            handling. Nothing books until you push it — use "Push stop to FR"
+            on a single stop or "Push route to FR" for the whole day.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1691,14 +1692,16 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   );
 }
 
-// A proposed-schedule day card with a single "queue this whole day for
-// approval" action. Nothing books here — each stop is enqueued to the
-// fieldroutes_write_queue and the office approves it later (same path as the
-// Slot Finder's per-slot schedule button). The engine hands us a concrete
-// start/end window per stop, so we queue those directly.
+// A proposed-schedule day card with ONE-CLICK FieldRoutes pushes (Caleb,
+// 2026-07-29: "1 button to push instead of 2"): a per-stop "Push stop to FR"
+// button and a whole-day "Push route to FR" button. Each push books straight
+// through fieldroutes-appointment-submit with commit:true — the write-queue
+// row is kept only as the audit trail; there is no approval step. X a stop to
+// keep it out of the day push.
 function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string } | null }) {
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [stopPushing, setStopPushing] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   // Per-card exclusion set: when the user X's someone, we drop them from the
   // queueing list so they will NOT be sent to FieldRoutes for this day.
@@ -1726,42 +1729,59 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
     });
   };
 
-  const queueDay = async () => {
+  // One booking straight to FieldRoutes (commit:true — no approval step).
+  const pushOne = async (s: FillStop): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff!.fullName,
+          commit: true,
+          customer_id: Number(s.customer_id),
+          customer_label: s.customer,
+          service_type_id: Number(s.service_type_id) || 0,
+          service_type_label: s.service_label,
+          date: day.date,
+          start: s.start,
+          end: s.end,
+          duration: s.duration || 30,
+          subscription_id: Number(s.subscription_id),
+          route_id: s.route_id ? Number(s.route_id) : undefined,
+        },
+      });
+      return !error && data?.ok === true;
+    } catch {
+      return false;
+    }
+  };
+
+  const pushStop = async (s: FillStop) => {
+    if (!staff) return toast.error("Please sign in again.");
+    setStopPushing(stopKey(s));
+    const ok = await pushOne(s);
+    setStopPushing(null);
+    if (ok) {
+      setQueued((cur) => new Set(cur).add(s.subscription_id));
+      toast.success(`Pushed ${s.customer} to FieldRoutes`);
+    } else {
+      toast.error(`Failed to push ${s.customer} — see console.`);
+    }
+  };
+
+  const pushDay = async () => {
     if (!staff) return toast.error("Please sign in again.");
     if (remaining.length === 0) return;
-    if (!window.confirm(
-      `Queue ${remaining.length} appointment(s) on ${day.tech}'s ${day.date} route for office approval?\n\n` +
-      `Nothing books in FieldRoutes until the office approves each one.`,
-    )) return;
-
     setQueueing(true);
     const done = new Set(queued);
     let ok = 0, fail = 0;
     for (const s of remaining) {
-      try {
-        const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-          body: {
-            staffName: staff.fullName,
-            customer_id: Number(s.customer_id),
-            customer_label: s.customer,
-            service_type_id: Number(s.service_type_id) || 0,
-            service_type_label: s.service_label,
-            date: day.date,
-            start: s.start,
-            end: s.end,
-            duration: s.duration || 30,
-            subscription_id: Number(s.subscription_id),
-            route_id: s.route_id ? Number(s.route_id) : undefined,
-          },
-        });
-        if (error || !data?.ok) { fail++; continue; }
+      if (await pushOne(s)) {
         ok++; done.add(s.subscription_id);
-      } catch { fail++; }
+        setQueued(new Set(done));   // tick stops green as they land
+      } else fail++;
     }
-    setQueued(done);
     setQueueing(false);
-    if (ok) toast.success(`Queued ${ok} for approval${fail ? ` · ${fail} failed` : ""}`);
-    else toast.error("Failed to queue this day — see console.");
+    if (ok) toast.success(`Pushed ${ok} to FieldRoutes${fail ? ` · ${fail} failed` : ""}`);
+    else toast.error("Failed to push this day — see console.");
   };
 
   return (
@@ -1840,6 +1860,21 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
                   </span>
+                  {!isQueued && !isBlack && !isGreen && !isExcluded && s.subscription_id && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      title="Push this stop to FieldRoutes now"
+                      disabled={queueing || stopPushing !== null}
+                      onClick={() => pushStop(s)}
+                    >
+                      {stopPushing === key
+                        ? <Clock className="w-3.5 h-3.5 animate-pulse text-indigo-600" />
+                        : <Send className="w-3.5 h-3.5 text-indigo-600" />}
+                    </Button>
+                  )}
                   {canExclude && (
                     <Button
                       type="button"
@@ -1902,9 +1937,9 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
           );
         })}
         <div className="flex justify-end pt-1">
-          <Button size="sm" onClick={queueDay} disabled={queueing || allQueued || bookable.length === 0}>
-            {allQueued ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Day queued</>
-              : <><CalendarPlus className="w-3 h-3 mr-1" /> {queueing ? "Queueing…" : `Queue this day (${remaining.length}) for approval`}</>}
+          <Button size="sm" onClick={pushDay} disabled={queueing || allQueued || bookable.length === 0}>
+            {allQueued ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Route pushed to FR</>
+              : <><Send className="w-3 h-3 mr-1" /> {queueing ? "Pushing…" : `Push route to FR (${remaining.length})`}</>}
           </Button>
         </div>
       </CardContent>

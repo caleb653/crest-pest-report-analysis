@@ -1,9 +1,14 @@
 // supabase/functions/fieldroutes-appointment-submit
-// QUEUE a FieldRoutes appointment-book write for manual admin approval.
+// QUEUE a FieldRoutes appointment-book write — or, with commit:true, push it
+// straight to FieldRoutes in one step.
 //
-// Caleb's rule: slot-finder / schedule-review writes are NEVER auto-approved.
-// We only enqueue here; fieldroutes-queue-decide commits to Cloud Run on
-// approve (adds dry_run:false there). Endpoint is /api/fr/appointment.
+// Default (no commit flag): enqueue only; fieldroutes-queue-decide commits to
+// Cloud Run on approve (adds dry_run:false there). Endpoint is /api/fr/appointment.
+//
+// commit:true (Caleb, 2026-07-29: "1 button to push to FieldRoutes instead of
+// 2"): the row is still written to fieldroutes_write_queue for the audit
+// trail, but committed to Cloud Run immediately — no approval step. Used by
+// the Schedule Fill "Push stop/route to FR" buttons.
 //
 // subscription_id rule lives in the client: inspection types → -1 (standalone);
 // subscription types → the customer's real subscription id (never -1). We just
@@ -105,6 +110,7 @@ serve(async (req) => {
     };
 
     const summary = `Book ${service_type_label || "appointment"} for ${customer_label || `customer ${customer_id}`} on ${date} ${start}–${end}`;
+    const commit = body?.commit === true;
 
     const { data: row, error } = await supabase
       .from("fieldroutes_write_queue")
@@ -114,14 +120,64 @@ serve(async (req) => {
         endpoint: "/api/fr/appointment",
         payload,
         summary,
-        status: "pending",
+        // Direct pushes are claimed at insert so the approval UI never shows
+        // them as actionable; the row exists purely as the audit trail.
+        status: commit ? "processing" : "pending",
         requested_by: requestedBy,
+        ...(commit ? { decided_by: requestedBy, decided_at: new Date().toISOString() } : {}),
       })
       .select("id, status, summary, requested_at")
       .single();
 
     if (error) return json({ ok: false, error: "enqueue_failed", detail: error.message }, 500);
-    return json({ ok: true, queued: row });
+    if (!commit) return json({ ok: true, queued: row });
+
+    // ── One-step push: commit to FieldRoutes via Cloud Run right now ──────
+    const apiUrl = Deno.env.get("SCHEDULING_API_URL");
+    const apiKey = Deno.env.get("SCHEDULING_API_KEY");
+    if (!apiUrl || !apiKey) {
+      await supabase.from("fieldroutes_write_queue")
+        .update({ status: "failed", error: "api_not_configured" }).eq("id", row.id);
+      return json({ ok: false, error: "api_not_configured" }, 500);
+    }
+
+    let finalStatus = "failed";
+    let result: unknown = null;
+    let errText: string | null = null;
+    try {
+      const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fr/appointment`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...payload, dry_run: false }),
+      });
+      const data = await upstream.json().catch(() => ({}));
+      result = data;
+      if (!upstream.ok) {
+        errText = `upstream_${upstream.status}`;
+      } else if (data?.forced_dry_run === true || data?.dry_run === true) {
+        // Server kill switch (FR_WRITE_ENABLED) is off — the write did NOT happen.
+        errText = "server_write_disabled";
+      } else if (data?.ok === false) {
+        errText = String(data?.error ?? "fieldroutes_error");
+      } else {
+        finalStatus = "committed";
+      }
+    } catch (e) {
+      errText = `request_failed: ${String(e)}`;
+    }
+
+    await supabase.from("fieldroutes_write_queue")
+      .update({ status: finalStatus, result, error: errText })
+      .eq("id", row.id);
+
+    return json({
+      ok: finalStatus === "committed",
+      pushed: finalStatus === "committed",
+      id: row.id,
+      status: finalStatus,
+      error: errText,
+      result,
+    });
   } catch (e) {
     console.error("fieldroutes-appointment-submit exception", e);
     return json({ ok: false, error: "exception", detail: String(e) });
