@@ -1479,6 +1479,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
   const [weekMapOpen, setWeekMapOpen] = useState(false);
+  // Tech-by-tech layout (Caleb 2026-07-30): the plan reads one TECH at a time
+  // down the page — never day-by-day with all techs interleaved. "*" = every
+  // tech (still sectioned per tech); or focus a single tech.
+  const [viewTech, setViewTech] = useState<string>("*");
   // Drag-to-reorganize (Caleb 2026-07-30): a stop dragged onto another day
   // card moves instantly when it's clean; when it breaks a rule the office
   // gets a popup that says WHY and offers an explicit override.
@@ -1738,11 +1742,50 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                   <MapPin className="w-3 h-3 mr-1" /> Week map — all routes overlaid
                 </Button>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {result.proposed.map((d) => (
-                  <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff} onMoveStop={requestMove} />
-                ))}
-              </div>
+              {(() => {
+                const techsInPlan = [...new Set(result.proposed.map((d) => d.tech))].sort();
+                const shownTechs = viewTech === "*"
+                  ? techsInPlan
+                  : techsInPlan.filter((t) => t === viewTech);
+                return (
+                  <>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Button size="sm" variant={viewTech === "*" ? "default" : "outline"}
+                              onClick={() => setViewTech("*")}>
+                        All techs
+                      </Button>
+                      {techsInPlan.map((t) => (
+                        <Button key={t} size="sm" variant={viewTech === t ? "default" : "outline"}
+                                onClick={() => setViewTech(t)}>
+                          {t}
+                        </Button>
+                      ))}
+                    </div>
+                    {shownTechs.map((tech) => {
+                      const days = result.proposed
+                        .filter((d) => d.tech === tech)
+                        .sort((a, b) => a.date.localeCompare(b.date));
+                      const total = days.reduce((n, d) => n + d.stop_count, 0);
+                      return (
+                        <div key={tech} className="space-y-2">
+                          <div className="flex items-baseline gap-2 pt-2 border-b pb-1">
+                            <span className="text-base font-semibold">{tech}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {days.length} days · {total} stops
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                            {days.map((d) => (
+                              <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff}
+                                           onMoveStop={requestMove} />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                );
+              })()}
               <Dialog open={weekMapOpen} onOpenChange={setWeekMapOpen}>
                 <DialogContent className="max-w-6xl w-[96vw]">
                   <DialogHeader>
