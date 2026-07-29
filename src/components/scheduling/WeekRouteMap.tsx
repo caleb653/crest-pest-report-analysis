@@ -101,6 +101,20 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
     () => [...new Set(techDays.map((d) => d.date))].sort(),
     [techDays],
   );
+  // Group dates into Mon-Sun weeks, keyed by each week's Monday.
+  const weeks = useMemo(() => {
+    const byMonday = new Map<string, string[]>();
+    for (const date of dates) {
+      const d = new Date(`${date}T12:00:00`);
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+      const monday = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      if (!byMonday.has(monday)) byMonday.set(monday, []);
+      byMonday.get(monday)!.push(date);
+    }
+    return [...byMonday.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([monday, weekDates]) => ({ monday, weekDates }));
+  }, [dates]);
   const visibleDays = techDays.filter((d) => !hiddenDates.has(d.date));
 
   type Route = { key: string; day: WeekRouteDay; stops: RouteMapStop[]; color: string };
@@ -145,6 +159,14 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
       return next;
     });
 
+  // A multi-week run stacks every week's routes over the same territory —
+  // even a perfect month reads as spaghetti. Week rows let you judge the plan
+  // the way it's driven: one week at a time.
+  const isolateWeek = (weekDates: string[], currentlyIsolated: boolean) =>
+    setHiddenDates(currentlyIsolated
+      ? new Set()
+      : new Set(dates.filter((d) => !weekDates.includes(d))));
+
   const totalMapped = routes.reduce((s, r) => s + r.stops.length, 0);
   const chip = (selected: boolean) =>
     `px-2.5 py-1 rounded-full border text-xs font-medium transition-colors ${
@@ -165,31 +187,49 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
           </button>
         </div>
       )}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {dates.map((date) => {
-          const off = hiddenDates.has(date);
-          const stopN = techDays.filter((d) => d.date === date)
-            .reduce((s, d) => s + d.stops.length, 0);
-          const label = new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
-            weekday: "short", month: "numeric", day: "numeric",
-          });
-          return (
-            <button
-              key={date}
-              type="button"
-              onClick={() => toggleDate(date)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-opacity ${off ? "opacity-35" : ""}`}
-              style={{ borderColor: dayColor(date) }}
-              title={off ? "Show this day" : "Hide this day"}
-            >
-              <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
-              {label} · {stopN}
-            </button>
-          );
-        })}
-        <span className="ml-auto text-xs text-muted-foreground">
-          {totalMapped} stops · click a day to hide/show · click a dot for details
-        </span>
+      {weeks.map(({ monday, weekDates }) => {
+        const isolated = dates.every((d) => weekDates.includes(d) !== hiddenDates.has(d));
+        const weekLabel = new Date(`${monday}T12:00:00`).toLocaleDateString(undefined, {
+          month: "numeric", day: "numeric",
+        });
+        return (
+          <div key={monday} className="flex flex-wrap items-center gap-1.5">
+            {weeks.length > 1 && (
+              <button
+                type="button"
+                onClick={() => isolateWeek(weekDates, isolated)}
+                className={chip(isolated)}
+                title={isolated ? "Show all weeks" : "Show only this week"}
+              >
+                Wk {weekLabel}
+              </button>
+            )}
+            {weekDates.map((date) => {
+              const off = hiddenDates.has(date);
+              const stopN = techDays.filter((d) => d.date === date)
+                .reduce((s, d) => s + d.stops.length, 0);
+              const label = new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+                weekday: "short", month: "numeric", day: "numeric",
+              });
+              return (
+                <button
+                  key={date}
+                  type="button"
+                  onClick={() => toggleDate(date)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-opacity ${off ? "opacity-35" : ""}`}
+                  style={{ borderColor: dayColor(date) }}
+                  title={off ? "Show this day" : "Hide this day"}
+                >
+                  <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
+                  {label} · {stopN}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })}
+      <div className="text-xs text-muted-foreground">
+        {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone · " : ""}click a day to hide/show · click a dot for details
       </div>
       <GoogleMap
         mapContainerStyle={CONTAINER_STYLE}
