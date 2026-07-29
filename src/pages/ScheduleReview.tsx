@@ -1327,11 +1327,12 @@ type FillRouteSummary = {
   drive_min: number;
   paid_drive_min?: number;
   commute_min?: number;
+  avg_leg_min?: number;          // paid drive per between-stop hop
   total_miles?: number;
   total_min: number;
   total_hours: number;
   production: number;
-  efficiency_pct: number;        // wrench-time: onsite ÷ total working time
+  efficiency_pct: number;        // drive-based: 1 − paid drive ÷ 8h
   est_start: string;
   est_finish: string;
 };
@@ -1455,10 +1456,12 @@ function fmtHM(mins?: number): string {
   return h ? `${h}h ${m}m` : `${m}m`;
 }
 
-// Color the wrench-time efficiency score: green ≥70, amber ≥50, red below.
+// Color the DRIVE-based efficiency score (1 − paid drive ÷ 8h): a pocketed
+// day (~5-min legs ≈ 55m drive) is ~89%, so green ≥88, amber ≥80 (≤96m
+// drive), red below (2h+ of driving).
 function efficiencyTone(pct: number): string {
-  if (pct >= 70) return "text-emerald-700";
-  if (pct >= 50) return "text-amber-700";
+  if (pct >= 88) return "text-emerald-700";
+  if (pct >= 80) return "text-amber-700";
   return "text-red-600";
 }
 
@@ -1616,6 +1619,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                             <span>{r.stop_count} stops</span>
                             <span>· {r.total_hours}h</span>
                             <span>· {fmtHM(r.paid_drive_min ?? r.drive_min)} paid drive</span>
+                            {r.avg_leg_min != null && <span>· {r.avg_leg_min}m/leg</span>}
                             {r.total_miles != null && <span>· {Math.round(r.total_miles)} mi</span>}
                             {r.commute_min != null && r.commute_min > 0 && (
                               <span className="opacity-70">· +{Math.round(r.commute_min)}m commute</span>
@@ -1780,6 +1784,7 @@ function FillDayCard({ day, staff }: { day: FillDay; staff: { fullName: string }
               <span className="opacity-70">· +{Math.round(day.summary.commute_min)}m commute (unpaid)</span>
             )}
             <span>· {fmtHM(day.summary.onsite_min)} on-site</span>
+            {day.summary.avg_leg_min != null && <span>· {day.summary.avg_leg_min}m/leg</span>}
             <span>· ${day.summary.production.toLocaleString()} production</span>
             <span className={`font-semibold ${efficiencyTone(day.summary.efficiency_pct)}`}>
               · {day.summary.efficiency_pct}% efficient
