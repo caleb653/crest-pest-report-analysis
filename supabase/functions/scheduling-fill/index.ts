@@ -30,11 +30,11 @@ const corsHeaders = {
 // Mirrors src/lib/staffRoster.ts on the frontend.
 const KNOWN_STAFF = new Set([
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall",
+  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival",
 ]);
 
 // Field techs the planner packs (matches policy/tech-home-bases.yaml on the API).
-const FIELD_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz"];
+const FIELD_TECHS = ["Brock Lyttle", "Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz", "Nick Stovall"];
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

@@ -27,7 +27,7 @@ const KNOWN_STAFF = new Set([
   "Michael Muniz",
   "Carmen Lopez",
   "David Longoria",
-  "Nick Stovall",
+  "Nick Stovall", "Cade Carnival",
 ]);
 
 const MAX_MESSAGES = 40;

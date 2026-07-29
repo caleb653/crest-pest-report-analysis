@@ -33,7 +33,7 @@ const KNOWN_STAFF = new Set([
   "Michael Muniz",
   "Carmen Lopez",
   "David Longoria",
-  "Nick Stovall",
+  "Nick Stovall", "Cade Carnival",
 ]);
 
 function json(body: unknown, status = 200) {
