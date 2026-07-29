@@ -38,6 +38,7 @@ import WeekRouteMap from "@/components/scheduling/WeekRouteMap";
 // from the review entirely — they're one-time appointments, not recurring
 // schedule items.
 const FIELD_TECHS = [
+  "Brock Lyttle",
   "Darrell Tanner",
   "Dylan Gallegos",
   "Jackson Latham",
@@ -448,7 +449,7 @@ const ScheduleReview = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
   useEffect(() => {
-    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham","Nick Stovall"]);
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham","Nick Stovall","Brock Lyttle"]);
     if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
   }, [staff, navigate]);
 
@@ -1282,7 +1283,7 @@ function PerRouteGrid({
 // Fill mode (schedule planner) — proposes a schedule from the due "job pool"
 // ─────────────────────────────────────────────────────────────────────────
 
-const FILL_TECHS = ["Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz", "Nick Stovall"];
+const FILL_TECHS = ["Brock Lyttle", "Darrell Tanner", "Dylan Gallegos", "Jackson Latham", "Mike Muniz", "Nick Stovall"];
 
 type FillStop = {
   order: number;
