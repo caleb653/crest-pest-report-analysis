@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
   Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing, TrendingUp, TrendingDown, Minus,
-  Send,
+  Send, ChevronDown, ChevronRight,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -575,9 +575,9 @@ function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Route Efficiency by Week</CardTitle>
           <CardDescription>
-            Average wrench-time efficiency (on-site ÷ total working time) per tech, per week — 8 weeks
-            of history through 8 weeks ahead. Same metric as Fill &amp; Review, estimated the same way
-            for past and future so weeks compare directly. The <strong>bold</strong> column is this week.
+            Share of the working day spent driving (drive ÷ drive + on-site) per tech, per week —
+            lower is better. 8 weeks of history through 8 weeks ahead. Same metric as Fill &amp; Review,
+            estimated the same way for past and future so weeks compare directly. The <strong>bold</strong> column is this week.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -624,9 +624,10 @@ function EfficiencyMode({ staff }: { staff: { fullName: string } | null }) {
                         );
                       })}
                       <td className="p-2 text-center whitespace-nowrap">
+                        {/* Efficiency = drive share, so a RISING number is bad. */}
                         {delta == null ? <Minus className="w-3.5 h-3.5 inline text-muted-foreground" />
-                          : delta > 1 ? <span className="text-emerald-700 inline-flex items-center gap-0.5"><TrendingUp className="w-3.5 h-3.5" />+{delta}</span>
-                          : delta < -1 ? <span className="text-red-600 inline-flex items-center gap-0.5"><TrendingDown className="w-3.5 h-3.5" />{delta}</span>
+                          : delta > 1 ? <span className="text-red-600 inline-flex items-center gap-0.5"><TrendingUp className="w-3.5 h-3.5" />+{delta}</span>
+                          : delta < -1 ? <span className="text-emerald-700 inline-flex items-center gap-0.5"><TrendingDown className="w-3.5 h-3.5" />{delta}</span>
                           : <span className="text-muted-foreground inline-flex items-center gap-0.5"><Minus className="w-3.5 h-3.5" />0</span>}
                       </td>
                     </tr>
@@ -1335,7 +1336,7 @@ type FillRouteSummary = {
   total_min: number;
   total_hours: number;
   production: number;
-  efficiency_pct: number;        // drive-based: 1 − paid drive ÷ 8h
+  efficiency_pct: number;        // drive share of the day: drive ÷ (drive + on-site); lower is better
   est_start: string;
   est_finish: string;
 };
@@ -1460,13 +1461,13 @@ function fmtHM(mins?: number): string {
   return h ? `${h}h ${m}m` : `${m}m`;
 }
 
-// Color the efficiency score = productive share of the 8-hour day
-// ((on-site + paperwork) ÷ max(8h, actual day)). A full 12-stop pocket day
-// (~5-min legs) is ~88%; 10-min legs pull it to ~79%; a thin 4-stop day is
-// ~29% — idle hours and drive time both count against the day.
+// Color the efficiency score = share of the day spent DRIVING vs servicing
+// (drive ÷ drive + on-site) — LOWER is better. A tight 12-stop pocket day
+// (~5-min legs) is ~13%; 10-min legs pull it to ~23%; a scattered day runs
+// 30%+ — half the day behind the wheel.
 function efficiencyTone(pct: number): string {
-  if (pct >= 80) return "text-emerald-700";
-  if (pct >= 65) return "text-amber-700";
+  if (pct <= 15) return "text-emerald-700";
+  if (pct <= 30) return "text-amber-700";
   return "text-red-600";
 }
 
@@ -1490,6 +1491,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [pendingMove, setPendingMove] = useState<{
     fromKey: string; toKey: string; stopId: string; stop: FillStop; reasons: string[];
   } | null>(null);
+
+  const [daySummaryOpen, setDaySummaryOpen] = useState(false);
 
   const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
   const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
@@ -1669,11 +1672,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     ["Commute (unpaid)", fmtHM(result.summary.total_commute_min ?? 0)],
                     ["Total miles", result.summary.total_miles != null ? `${Math.round(result.summary.total_miles)} mi` : "—"],
                     ["Production", `$${result.summary.total_production.toLocaleString()}`],
-                    ["Avg efficiency", `${result.summary.avg_efficiency_pct}%`],
+                    ["% of day driving", `${result.summary.avg_efficiency_pct}%`],
                   ] as [string, string][]).map(([label, value]) => (
                     <div key={label}>
                       <div className="text-muted-foreground text-xs">{label}</div>
-                      <div className={`font-semibold text-base ${label === "Avg efficiency" ? efficiencyTone(result.summary!.avg_efficiency_pct) : ""}`}>
+                      <div className={`font-semibold text-base ${label === "% of day driving" ? efficiencyTone(result.summary!.avg_efficiency_pct) : ""}`}>
                         {value}
                       </div>
                     </div>
@@ -1682,10 +1685,14 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               </Card>
 
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Summary by day</CardTitle>
+                <CardHeader className="pb-2 cursor-pointer select-none" onClick={() => setDaySummaryOpen((o) => !o)}>
+                  <CardTitle className="text-sm flex items-center gap-1.5">
+                    {daySummaryOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    Summary by day
+                    {!daySummaryOpen && <span className="text-muted-foreground font-normal text-xs">(click to expand)</span>}
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                {daySummaryOpen && <CardContent className="space-y-4">
                   {groupRoutesByDay(result.summary.routes ?? []).map((day) => (
                     <div key={day.date} className="space-y-1.5">
                       <div className="flex items-baseline justify-between gap-2 border-b pb-1">
@@ -1711,13 +1718,13 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                             )}
                             <span>· {r.est_start}–{r.est_finish}</span>
                             <span className="font-semibold text-foreground">· ${r.production.toLocaleString()}</span>
-                            <span className={`font-semibold ${efficiencyTone(r.efficiency_pct)}`}>· {r.efficiency_pct}%</span>
+                            <span className={`font-semibold ${efficiencyTone(r.efficiency_pct)}`}>· {r.efficiency_pct}% driving</span>
                           </span>
                         </div>
                       ))}
                     </div>
                   ))}
-                </CardContent>
+                </CardContent>}
               </Card>
             </>
           )}
@@ -1986,7 +1993,7 @@ function FillDayCard({ day, staff, onMoveStop }: {
             {day.summary.avg_leg_min != null && <span>· {day.summary.avg_leg_min}m/leg</span>}
             <span>· ${day.summary.production.toLocaleString()} production</span>
             <span className={`font-semibold ${efficiencyTone(day.summary.efficiency_pct)}`}>
-              · {day.summary.efficiency_pct}% efficient
+              · {day.summary.efficiency_pct}% driving
             </span>
           </div>
         )}
@@ -2142,7 +2149,7 @@ function FillDayCard({ day, staff, onMoveStop }: {
           <DialogHeader>
             <DialogTitle>
               {day.tech} · {weekdayLabel(day.date)} · {day.stop_count} stops
-              {day.summary ? ` · ${day.summary.efficiency_pct}% efficient` : ""}
+              {day.summary ? ` · ${day.summary.efficiency_pct}% driving` : ""}
             </DialogTitle>
           </DialogHeader>
           <RouteMap stops={day.stops} />
