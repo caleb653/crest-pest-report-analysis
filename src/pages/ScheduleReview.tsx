@@ -1491,7 +1491,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     fromKey: string; toKey: string; stopId: string; stop: FillStop; reasons: string[];
   } | null>(null);
 
-  const TOL_BY_FREQ: Record<number, number> = { 30: 4, 60: 8, 90: 14 };
+  const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
   const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
   const dayDiffFromDue = (targetIso: string, dueIso: string) =>
     Math.round((new Date(`${targetIso}T12:00:00`).getTime()
