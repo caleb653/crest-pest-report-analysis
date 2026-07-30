@@ -950,7 +950,11 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       scheduling_status: "projected",
       prep_required: null,
       prep_notes: null,
-      units_planned: pastServicesForCadence[0]?.units_planned || null,
+      // NEVER inherit the completed visit's roster: a completed unit leaves
+      // Upcoming unless its follow-up box was checked (those, plus open work
+      // orders, merge in via computeUpcomingUnits). Copying units_planned
+      // here made every previously-serviced unit look upcoming forever.
+      units_planned: null,
       unit_details: [],
       special_notes: null,
     };

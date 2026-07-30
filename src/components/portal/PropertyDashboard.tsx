@@ -1426,7 +1426,6 @@ const PropertyDashboard = ({
     const dates = generateUpcomingDates(anchorDate, propertyFrequencyDays, 2);
     const fallbackType = mostRecent?.service_type || "General Pest Control";
     const fallbackTech = mostRecent?.technician || null;
-    const fallbackUnits = mostRecent?.units_planned || null;
     return dates.map((d, i) => ({
       id: `projected-${i}`,
       isProjected: true,
@@ -1434,7 +1433,12 @@ const PropertyDashboard = ({
       service_type: fallbackType,
       technician: fallbackTech,
       status: "scheduled",
-      units_planned: fallbackUnits,
+      // A completed visit's roster must NOT roll into the projected next
+      // visit (Caleb: a completed unit leaves Upcoming unless follow-up is
+      // flagged). Follow-ups + open work orders still merge in via
+      // computeUpcomingUnits — carrying units_planned here double-listed
+      // every unit ever serviced (the Huntington Cove bug).
+      units_planned: null,
       property_id: property.id,
     }));
   })();
@@ -1457,14 +1461,6 @@ const PropertyDashboard = ({
       }));
   })();
   const followUpFromPast = followUpDetailsFromPast.map(u => u.unit_number);
-
-  // Also include all units from most recent service as default for next
-  const unitsFromMostRecent = (() => {
-    if (pastServices.length === 0) return [] as string[];
-    const mostRecent = pastServices[0];
-    const details = Array.isArray(mostRecent.unit_details) ? mostRecent.unit_details as any[] : [];
-    return details.filter((u: any) => u.unit_number).map((u: any) => u.unit_number as string);
-  })();
 
   // Show ONE detailed "next service" + 5 future date-only projections.
   // - If 1+ scheduled: keep ONLY the soonest as the next visit (ignore far-future scheduled rows).
