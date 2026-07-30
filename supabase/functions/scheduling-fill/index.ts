@@ -100,6 +100,34 @@ serve(async (req) => {
       await logAttempt(false, "missing_staff"); return json({ ok: false, error: "missing_staff" });
     }
 
+    // ── Action: re-route ONE tech-day after manual drag-edits (pure compute
+    // upstream — re-orders the stops for drive efficiency and re-projects
+    // every ETA; no BigQuery, no writes). ──
+    if (String(body?.action ?? "") === "reroute_day") {
+      const tech = String(body?.tech ?? "").trim();
+      const date = String(body?.date ?? "").trim() || null;
+      const stops = Array.isArray(body?.stops) ? body.stops : null;
+      if (!FIELD_TECHS.includes(tech) || !stops || stops.length === 0 || stops.length > 40) {
+        await logAttempt(false, "bad_reroute");
+        return json({ ok: false, error: "bad_reroute", detail: "action=reroute_day needs a field tech and 1-40 stops" });
+      }
+      const rApiUrl = Deno.env.get("SCHEDULING_API_URL");
+      const rApiKey = Deno.env.get("SCHEDULING_API_KEY");
+      if (!rApiUrl || !rApiKey) { await logAttempt(false, "api_not_configured"); return json({ ok: false, error: "api_not_configured" }); }
+      const up = await fetch(`${rApiUrl.replace(/\/+$/, "")}/api/fill-reroute-day`, {
+        method: "POST",
+        headers: { "X-API-Key": rApiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ tech, date, stops }),
+      });
+      const rr = await up.json().catch(() => ({}));
+      if (!up.ok) {
+        await logAttempt(false, `upstream_${up.status}`);
+        return json({ ok: false, error: "upstream_failed", status: up.status, detail: rr });
+      }
+      await logAttempt(true, null);
+      return json({ ok: true, result: rr });
+    }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
       await logAttempt(false, "bad_dates");
       return json({ ok: false, error: "bad_dates", detail: "start_date and end_date must be YYYY-MM-DD" });

@@ -106,7 +106,7 @@ function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: strin
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: "#1f2937" }} /> locked</span>
         <span className="ml-auto">{geocoded.length} of {stops.length} stops mapped</span>
       </div>
-      <GoogleMap mapContainerStyle={CONTAINER_STYLE} onLoad={onLoad} options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}>
+      <GoogleMap mapContainerStyle={CONTAINER_STYLE} onLoad={onLoad} options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}>
         <PolylineF
           path={path}
           options={{ strokeColor: "#4f46e5", strokeOpacity: 0.7, strokeWeight: 3, geodesic: false }}

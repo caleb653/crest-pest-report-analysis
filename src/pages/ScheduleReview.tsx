@@ -3,7 +3,7 @@
 // the most actionable items in a big "Key Highlights" panel up top, then a
 // per-tech-day grid below with inline indicators.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -32,7 +32,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
-import WeekRouteMap from "@/components/scheduling/WeekRouteMap";
+import WeekRouteMap, { type MapMoveGroup } from "@/components/scheduling/WeekRouteMap";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -1494,27 +1494,41 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
   const [daySummaryOpen, setDaySummaryOpen] = useState(false);
 
+  // Week-map bulk moves (select stops → day chip, or drag day-chip onto
+  // day-chip). Items with reasons break a rule and need the are-you-sure
+  // confirm; `noTarget` stops can't move at all (their tech has no proposed
+  // route on the target date).
+  type BulkItem = { fromKey: string; toKey: string; stopId: string; stop: FillStop; reasons: string[] };
+  const [pendingBulk, setPendingBulk] = useState<{
+    toDate: string; items: BulkItem[]; noTarget: { stop: FillStop; tech: string }[];
+  } | null>(null);
+
+  // Latest result for async flows (reroute calls run after state updates).
+  const resultRef = useRef<FillResult | null>(null);
+  useEffect(() => { resultRef.current = result; }, [result]);
+
   const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
   const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
   const dayDiffFromDue = (targetIso: string, dueIso: string) =>
     Math.round((new Date(`${targetIso}T12:00:00`).getTime()
                 - new Date(`${dueIso}T12:00:00`).getTime()) / 86400000);
 
-  const executeMove = (fromKey: string, toKey: string, stopId: string) => {
-    setResult((prev) => {
-      if (!prev) return prev;
-      const proposed = prev.proposed.map((d) => ({ ...d, stops: [...d.stops] }));
-      const src = proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
-      const dst = proposed.find((d) => `${d.date}|${d.tech}` === toKey);
-      if (!src || !dst) return prev;
-      const idx = src.stops.findIndex((s) => fillStopKey(s) === stopId);
-      if (idx < 0) return prev;
+  // Pure: apply a batch of stop moves to a FillResult (same semantics the
+  // single-card drag always had — moved stops rebook on the TARGET day's
+  // FieldRoutes route, since the route carries the date).
+  const applyMoves = (prev: FillResult, moves: { fromKey: string; toKey: string; stopId: string }[]): FillResult => {
+    const proposed = prev.proposed.map((d) => ({ ...d, stops: [...d.stops] }));
+    for (const m of moves) {
+      const src = proposed.find((d) => `${d.date}|${d.tech}` === m.fromKey);
+      const dst = proposed.find((d) => `${d.date}|${d.tech}` === m.toKey);
+      if (!src || !dst) continue;
+      const idx = src.stops.findIndex((s) => fillStopKey(s) === m.stopId);
+      if (idx < 0) continue;
       const [stop] = src.stops.splice(idx, 1);
       dst.stops.push({
         ...stop,
         order: dst.stops.length + 1,
         days_off_target: dayDiffFromDue(dst.date, stop.due_date),
-        // Book on the TARGET day's FieldRoutes route — the route carries the date.
         route_id: dst.route_id != null && dst.route_id !== "" ? String(dst.route_id) : undefined,
         eta: undefined,
         drive_from_prev_min: undefined,
@@ -1523,8 +1537,119 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       src.stops.forEach((s, i) => { s.order = i + 1; });
       src.stop_count = src.stops.length;
       dst.stop_count = dst.stops.length;
-      return { ...prev, proposed };
-    });
+    }
+    return { ...prev, proposed };
+  };
+
+  const executeMove = (fromKey: string, toKey: string, stopId: string) => {
+    setResult((prev) => (prev ? applyMoves(prev, [{ fromKey, toKey, stopId }]) : prev));
+    void rerouteKeys([fromKey, toKey]);
+  };
+
+  // After manual moves, ask the engine to re-order each touched day for drive
+  // efficiency and re-project its ETAs, so the times shown stay honest.
+  // Failures keep the manual order (times just show as re-computed pending).
+  const rerouteKeys = async (keys: string[]) => {
+    for (const key of [...new Set(keys)]) {
+      const cur = resultRef.current;
+      const day = cur?.proposed.find((d) => `${d.date}|${d.tech}` === key);
+      if (!day || day.stops.length === 0) continue;
+      try {
+        const { data, error } = await supabase.functions.invoke("scheduling-fill", {
+          body: { staffName: staff?.fullName, action: "reroute_day",
+                  tech: day.tech, date: day.date, stops: day.stops },
+        });
+        const rr = data?.result;
+        if (!error && data?.ok && rr?.ok && Array.isArray(rr.stops)) {
+          setResult((prev) => (!prev ? prev : {
+            ...prev,
+            proposed: prev.proposed.map((d) => (`${d.date}|${d.tech}` === key
+              ? { ...d, stops: rr.stops, stop_count: rr.stops.length, summary: rr.summary }
+              : d)),
+          }));
+        }
+      } catch { /* keep the manual order if the reroute call fails */ }
+    }
+  };
+
+  // Validate one prospective move; returns the rule-break reasons ([] = clean).
+  const moveReasons = (stop: FillStop, srcTech: string, dst: FillDay, extraLoad = 0): string[] => {
+    const reasons: string[] = [];
+    const diff = dayDiffFromDue(dst.date, stop.due_date);
+    const tol = TOL_BY_FREQ[stop.frequency] ?? 0;
+    if (Math.abs(diff) > tol) {
+      const cadence = stop.frequency === 30 ? "monthly" : stop.frequency === 60 ? "bi-monthly"
+        : stop.frequency === 90 ? "quarterly" : `${stop.frequency}-day`;
+      reasons.push(`Puts them ${Math.abs(diff)} days ${diff > 0 ? "past" : "before"} their ideal date `
+        + `(due ${stop.due_date}) — ${cadence} flexibility is ±${tol} days.`);
+    }
+    if (srcTech !== dst.tech) {
+      reasons.push(`Moves them from ${srcTech} (their assigned tech) to ${dst.tech}.`);
+    }
+    if (dst.stop_count + extraLoad >= dst.capacity) {
+      reasons.push(`${weekdayLabel(dst.date)} is already at capacity (${dst.stop_count}/${dst.capacity} stops).`);
+    }
+    if (stop.special_scheduling) {
+      reasons.push(`Customer scheduling note: “${stop.special_scheduling.trim()}” — double-check ${weekdayLabel(dst.date)} works for it.`);
+    }
+    return reasons;
+  };
+
+  // Week-map: move the selected stops (each staying with its own tech) onto toDate.
+  const handleMapMoves = (groups: MapMoveGroup[], toDate: string) => {
+    const cur = resultRef.current;
+    if (!cur) return;
+    const items: BulkItem[] = [];
+    const noTarget: { stop: FillStop; tech: string }[] = [];
+    const headed: Record<string, number> = {};
+    for (const g of groups) {
+      const fromKey = `${g.fromDate}|${g.tech}`;
+      const src = cur.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
+      if (!src) continue;
+      const dst = cur.proposed.find((d) => d.date === toDate && d.tech === g.tech);
+      for (const k of g.stopKeys) {
+        const stop = src.stops.find((s) => fillStopKey(s) === k);
+        if (!stop || stop.already_scheduled || stop.locked || stop.notification_sent) continue;
+        if (!dst) { noTarget.push({ stop, tech: g.tech }); continue; }
+        const toKey = `${dst.date}|${dst.tech}`;
+        items.push({ fromKey, toKey, stopId: k, stop,
+                     reasons: moveReasons(stop, g.tech, dst, headed[toKey] ?? 0) });
+        headed[toKey] = (headed[toKey] ?? 0) + 1;
+      }
+    }
+    if (!items.length && !noTarget.length) return;
+    const blocked = items.filter((i) => i.reasons.length);
+    if (!blocked.length && !noTarget.length) {
+      setResult((prev) => (prev ? applyMoves(prev, items) : prev));
+      void rerouteKeys(items.flatMap((i) => [i.fromKey, i.toKey]));
+      toast.success(`Moved ${items.length} stop${items.length === 1 ? "" : "s"} to ${weekdayLabel(toDate)} — re-routing…`);
+    } else {
+      setPendingBulk({ toDate, items, noTarget });
+    }
+  };
+
+  // Week-map: drag one day chip onto another = combine those days (per tech).
+  const handleMergeDays = (fromDate: string, toDate: string, techsShown: string[]) => {
+    const cur = resultRef.current;
+    if (!cur) return;
+    const groups: MapMoveGroup[] = [];
+    for (const t of techsShown) {
+      const src = cur.proposed.find((d) => d.date === fromDate && d.tech === t);
+      if (!src) continue;
+      const keys = src.stops
+        .filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent)
+        .map((s) => fillStopKey(s));
+      if (keys.length) groups.push({ fromDate, tech: t, stopKeys: keys });
+    }
+    if (groups.length) handleMapMoves(groups, toDate);
+    else toast.error("Nothing movable on that day — booked/locked appointments stay put.");
+  };
+
+  const executeBulk = (items: BulkItem[], toDate: string) => {
+    if (!items.length) return;
+    setResult((prev) => (prev ? applyMoves(prev, items) : prev));
+    void rerouteKeys(items.flatMap((i) => [i.fromKey, i.toKey]));
+    toast.success(`Moved ${items.length} stop${items.length === 1 ? "" : "s"} to ${weekdayLabel(toDate)} — re-routing…`);
   };
 
   const requestMove = (fromKey: string, stopId: string, toKey: string) => {
@@ -1653,7 +1778,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         <>
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <StatCard label="Window" value={`${result.start} – ${result.end}`} small />
-            <StatCard label="Due pool" value={result.pool_size} />
+            <StatCard label="Due in window" value={result.schedulable} />
             <StatCard label="Placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
             <StatCard label="Manual" value={result.manual_count} tone={result.manual_count > 0 ? "warn" : "ok"} />
             <StatCard label="Other tech job pool" value={result.needs_reassignment_count} small />
@@ -1746,8 +1871,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     drag a stop onto another day card to move it
                   </span>
                 </span>
-                <Button size="sm" variant="outline" onClick={() => setWeekMapOpen(true)}>
-                  <MapPin className="w-3 h-3 mr-1" /> Week map — all routes overlaid
+                <Button size="lg" onClick={() => setWeekMapOpen(true)}>
+                  <MapPin className="w-5 h-5 mr-2" /> Week map — all routes overlaid
                 </Button>
               </div>
               {(() => {
@@ -1802,7 +1927,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     </DialogTitle>
                   </DialogHeader>
                   <div className="flex-1 min-h-0">
-                    <WeekRouteMap days={result.proposed} />
+                    <WeekRouteMap days={result.proposed}
+                                  onMoveStops={handleMapMoves}
+                                  onMergeDays={handleMergeDays} />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -1839,6 +1966,68 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                       </div>
                     </div>
                   )}
+                </DialogContent>
+              </Dialog>
+              <Dialog open={!!pendingBulk} onOpenChange={(o) => { if (!o) setPendingBulk(null); }}>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                      Move stops to {pendingBulk ? weekdayLabel(pendingBulk.toDate) : ""}?
+                    </DialogTitle>
+                  </DialogHeader>
+                  {pendingBulk && (() => {
+                    const clean = pendingBulk.items.filter((i) => !i.reasons.length);
+                    const blocked = pendingBulk.items.filter((i) => i.reasons.length);
+                    return (
+                      <div className="space-y-3 text-sm max-h-[60vh] overflow-y-auto">
+                        {clean.length > 0 && (
+                          <div>
+                            <span className="font-semibold">{clean.length}</span> stop{clean.length === 1 ? "" : "s"} move cleanly
+                            {" — "}{clean.map((i) => i.stop.customer).join(", ")}.
+                          </div>
+                        )}
+                        {blocked.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="font-semibold text-amber-700">
+                              {blocked.length} break{blocked.length === 1 ? "s" : ""} the scheduling rules:
+                            </div>
+                            {blocked.map((i) => (
+                              <div key={`${i.fromKey}-${i.stopId}`} className="pl-2 border-l-2 border-amber-300">
+                                <div className="font-medium">{i.stop.customer}</div>
+                                <ul className="list-disc pl-5">
+                                  {i.reasons.map((r, ri) => (<li key={ri}>{r}</li>))}
+                                </ul>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {pendingBulk.noTarget.length > 0 && (
+                          <div className="text-muted-foreground">
+                            Staying put (no proposed route for their tech on {weekdayLabel(pendingBulk.toDate)}):{" "}
+                            {pendingBulk.noTarget.map((n) => `${n.stop.customer} (${n.tech})`).join(", ")}.
+                          </div>
+                        )}
+                        <div className="flex justify-end gap-2 pt-1 flex-wrap">
+                          <Button variant="outline" size="sm" onClick={() => setPendingBulk(null)}>
+                            Cancel
+                          </Button>
+                          {clean.length > 0 && blocked.length > 0 && (
+                            <Button size="sm" variant="secondary"
+                              onClick={() => { executeBulk(clean, pendingBulk.toDate); setPendingBulk(null); }}>
+                              Move only the {clean.length} clean one{clean.length === 1 ? "" : "s"}
+                            </Button>
+                          )}
+                          <Button size="sm"
+                            onClick={() => { executeBulk(pendingBulk.items, pendingBulk.toDate); setPendingBulk(null); }}>
+                            {blocked.length > 0
+                              ? `Yes — move all ${pendingBulk.items.length} anyway`
+                              : `Move ${pendingBulk.items.length} stop${pendingBulk.items.length === 1 ? "" : "s"}`}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </DialogContent>
               </Dialog>
             </>

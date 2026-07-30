@@ -56,7 +56,19 @@ function dotIcon(color: string, highlight = false) {
   } as google.maps.Icon;
 }
 
-export default function WeekRouteMap({ days }: { days: WeekRouteDay[] }) {
+// One batch of map-initiated moves: stops (grouped by their source day) headed
+// to `toDate`. The parent owns rule validation + the are-you-sure dialog.
+export type MapMoveGroup = { fromDate: string; tech: string; stopKeys: string[] };
+
+type WeekRouteMapProps = {
+  days: WeekRouteDay[];
+  /** Move the selected stops onto toDate (same tech per stop). */
+  onMoveStops?: (moves: MapMoveGroup[], toDate: string) => void;
+  /** Merge every shown tech's fromDate day into toDate (chip drag-and-drop). */
+  onMergeDays?: (fromDate: string, toDate: string, techsShown: string[]) => void;
+};
+
+export default function WeekRouteMap({ days, onMoveStops, onMergeDays }: WeekRouteMapProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
   useEffect(() => {
@@ -72,12 +84,19 @@ export default function WeekRouteMap({ days }: { days: WeekRouteDay[] }) {
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <WeekRouteMapInner days={days} apiKey={apiKey} />;
+  return <WeekRouteMapInner days={days} apiKey={apiKey} onMoveStops={onMoveStops} onMergeDays={onMergeDays} />;
 }
 
 type ActiveStop = { routeKey: string; stop: RouteMapStop; day: WeekRouteDay };
 
-function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: string }) {
+// Identity for a stop inside its day — MUST match ScheduleReview's fillStopKey.
+const mapStopKey = (s: RouteMapStop) =>
+  `${(s as any).subscription_id || (s as any).customer_id}-${s.order}`;
+
+const isMovableStop = (s: RouteMapStop) =>
+  !s.locked && !s.already_scheduled && !(s as any).notification_sent;
+
+function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays }: WeekRouteMapProps & { apiKey: string }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
@@ -94,6 +113,11 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
   const [hiddenDates, setHiddenDates] = useState<Set<string>>(new Set());
   const [active, setActive] = useState<ActiveStop | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
+  // Stops the office has picked to re-arrange: `${routeKey}#${stopKey}` →
+  // enough identity to hand the parent a move request per source day.
+  const [selected, setSelected] = useState<Map<string, ActiveStop>>(new Map());
+  const [dragDate, setDragDate] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   const techDays = useMemo(
     () => days.filter((d) => (tech === "*" ? true : d.tech === tech)),
@@ -147,6 +171,9 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, tech]);
 
+  // A tech switch invalidates the selection (it references the old routes).
+  useEffect(() => { setSelected(new Map()); setActive(null); }, [tech]);
+
   if (loadError) {
     return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
   }
@@ -160,6 +187,30 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
       if (next.has(date)) next.delete(date); else next.add(date);
       return next;
     });
+
+  const toggleSelect = (a: ActiveStop) =>
+    setSelected((cur) => {
+      const next = new Map(cur);
+      const k = `${a.routeKey}#${mapStopKey(a.stop)}`;
+      if (next.has(k)) next.delete(k); else next.set(k, a);
+      return next;
+    });
+
+  // Hand the selection to the parent as per-source-day groups; the parent
+  // validates the scheduling rules and runs the are-you-sure dialog.
+  const moveSelectionTo = (toDate: string) => {
+    if (!onMoveStops || selected.size === 0) return;
+    const groups = new Map<string, MapMoveGroup>();
+    for (const a of selected.values()) {
+      if (a.day.date === toDate) continue;
+      const gk = `${a.day.date}|${a.day.tech}`;
+      if (!groups.has(gk)) groups.set(gk, { fromDate: a.day.date, tech: a.day.tech, stopKeys: [] });
+      groups.get(gk)!.stopKeys.push(mapStopKey(a.stop));
+    }
+    if (groups.size) onMoveStops([...groups.values()], toDate);
+    setSelected(new Map());
+    setActive(null);
+  };
 
   // A multi-week run stacks every week's routes over the same territory —
   // even a perfect month reads as spaghetti. Week rows let you judge the plan
@@ -213,14 +264,32 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
               const label = new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
                 weekday: "short", month: "numeric", day: "numeric",
               });
+              const moveTarget = selected.size > 0;
+              const dropTarget = dragOverDate === date && dragDate && dragDate !== date;
               return (
                 <button
                   key={date}
                   type="button"
-                  onClick={() => toggleDate(date)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-opacity ${off ? "opacity-35" : ""}`}
+                  draggable={!!onMergeDays}
+                  onDragStart={(e) => { setDragDate(date); e.dataTransfer.effectAllowed = "move"; }}
+                  onDragEnd={() => { setDragDate(null); setDragOverDate(null); }}
+                  onDragOver={(e) => { if (dragDate && dragDate !== date) { e.preventDefault(); setDragOverDate(date); } }}
+                  onDragLeave={() => setDragOverDate((cur) => (cur === date ? null : cur))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (onMergeDays && dragDate && dragDate !== date) {
+                      onMergeDays(dragDate, date, tech === "*" ? techs : [tech]);
+                    }
+                    setDragDate(null); setDragOverDate(null);
+                  }}
+                  onClick={() => (moveTarget ? moveSelectionTo(date) : toggleDate(date))}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-opacity ${off && !moveTarget ? "opacity-35" : ""} ${dropTarget ? "ring-2 ring-primary" : ""} ${moveTarget ? "ring-1 ring-primary/50" : ""}`}
                   style={{ borderColor: dayColor(date) }}
-                  title={off ? "Show this day" : "Hide this day"}
+                  title={moveTarget
+                    ? `Move ${selected.size} selected stop${selected.size === 1 ? "" : "s"} to ${label}`
+                    : onMergeDays
+                      ? (off ? "Show this day · drag onto another day to combine" : "Hide this day · drag onto another day to combine")
+                      : (off ? "Show this day" : "Hide this day")}
                 >
                   <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
                   {label} · {stopN}
@@ -230,14 +299,26 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
           </div>
         );
       })}
-      <div className="text-xs text-muted-foreground">
-        {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone · " : ""}click a day to hide/show · click a dot for details
-      </div>
+      {selected.size > 0 ? (
+        <div className="flex items-center gap-2 text-xs font-medium bg-primary/10 border border-primary/30 rounded-md px-2.5 py-1.5">
+          <span>{selected.size} stop{selected.size === 1 ? "" : "s"} selected — click a day chip to move them there</span>
+          <button type="button" className="underline text-muted-foreground hover:text-foreground"
+                  onClick={() => setSelected(new Map())}>
+            Clear
+          </button>
+        </div>
+      ) : (
+        <div className="text-xs text-muted-foreground">
+          {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone · " : ""}click a day to hide/show · click a dot for details
+          {onMoveStops ? " or to select it for a move" : ""}{onMergeDays ? " · drag one day chip onto another to combine those days" : ""}
+        </div>
+      )}
       <div className="flex-1 min-h-0">
       <GoogleMap
         mapContainerStyle={CONTAINER_STYLE}
         onLoad={setMap}
-        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+        options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
+                   gestureHandling: "greedy" }}
       >
         {routes.map((r) => (
           <PolylineF
@@ -264,7 +345,9 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
             <MarkerF
               key={`${r.key}-${s.order}`}
               position={{ lat: s.lat as number, lng: s.lng as number }}
-              icon={dotIcon(r.color, active?.routeKey === r.key && active?.stop.order === s.order)}
+              icon={dotIcon(r.color,
+                (active?.routeKey === r.key && active?.stop.order === s.order)
+                || selected.has(`${r.key}#${mapStopKey(s)}`))}
               onClick={() => setActive({ routeKey: r.key, stop: s, day: r.day })}
               title={`${s.customer} — ${r.day.weekday} (${r.day.tech})`}
             />
@@ -300,6 +383,19 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
               {active.stop.locked ? <div className="text-muted-foreground">locked appointment</div>
                 : active.stop.already_scheduled ? <div className="text-muted-foreground">already scheduled</div>
                 : null}
+              {onMoveStops && (isMovableStop(active.stop) ? (
+                <button
+                  type="button"
+                  className="mt-1 w-full rounded border border-primary/50 bg-primary/10 px-2 py-1 font-medium hover:bg-primary/20"
+                  onClick={() => { toggleSelect(active); }}
+                >
+                  {selected.has(`${active.routeKey}#${mapStopKey(active.stop)}`)
+                    ? "Unselect"
+                    : "Select to move — then click a day chip"}
+                </button>
+              ) : (
+                <div className="text-muted-foreground italic">booked in FieldRoutes — can't be moved here</div>
+              ))}
             </div>
           </InfoWindowF>
         )}
