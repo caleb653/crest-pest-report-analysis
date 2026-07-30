@@ -14,7 +14,9 @@ export type WeekRouteDay = {
   stops: RouteMapStop[];
 };
 
-const CONTAINER_STYLE = { width: "100%", height: "72vh" } as const;
+// Fills whatever height the parent gives it (the near-fullscreen week-map
+// dialog); the flex-1 wrapper below provides the bounded box.
+const CONTAINER_STYLE = { width: "100%", height: "100%" } as const;
 
 // Categorical weekday palette — validated (CVD + normal-vision, all pairs)
 // against a light map surface. Fixed weekday→hue assignment, never cycled, so
@@ -174,7 +176,7 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
                : "bg-background text-foreground border-border hover:bg-muted"}`;
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2 h-full min-h-[72vh]">
       {techs.length > 1 && (
         <div className="flex flex-wrap gap-1.5">
           {techs.map((t) => (
@@ -231,6 +233,7 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
       <div className="text-xs text-muted-foreground">
         {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone · " : ""}click a day to hide/show · click a dot for details
       </div>
+      <div className="flex-1 min-h-0">
       <GoogleMap
         mapContainerStyle={CONTAINER_STYLE}
         onLoad={setMap}
@@ -301,6 +304,7 @@ function WeekRouteMapInner({ days, apiKey }: { days: WeekRouteDay[]; apiKey: str
           </InfoWindowF>
         )}
       </GoogleMap>
+      </div>
     </div>
   );
 }
