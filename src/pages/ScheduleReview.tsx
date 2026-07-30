@@ -1753,7 +1753,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               <Label>Min stops / tech-day</Label>
               <Input type="number" min={0} max={maxStops} value={minStops}
                      onChange={(e) => setMinStops(Math.max(0, parseInt(e.target.value, 10) || 0))} />
-              <p className="text-[11px] text-muted-foreground leading-tight">0 = off. Days below this get consolidated onto fuller days.</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Days below this get consolidated onto fuller days. 0 = engine default (6); set 1 to turn consolidation off.</p>
             </div>
             <div className="space-y-2">
               <Label className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Techs</Label>
