@@ -1321,6 +1321,7 @@ type FillStop = {
   drive_from_prev_min?: number;  // estimated drive from the previous stop
   flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
   moved?: boolean;               // dragged onto this day by the office
+  far_from_route_min?: number | null;  // >20-min hop from the rest of this route
 };
 type FillRouteSummary = {
   stop_count: number;
@@ -2093,6 +2094,11 @@ function FillDayCard({ day, staff, onMoveStop }: {
               <div className="mt-1 flex flex-wrap gap-1">
                 {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
                 {s.moved && <Badge variant="outline" className="text-indigo-700 border-indigo-300">moved here manually</Badge>}
+                {typeof s.far_from_route_min === "number" && s.far_from_route_min > 0 && (
+                  <Badge variant="outline" className="text-amber-700 border-amber-300">
+                    ~{s.far_from_route_min}m from the rest of this route — could this be another day?
+                  </Badge>
+                )}
                 {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
                 {s.locked && (
                   <Badge variant="outline" className="text-background border-background/40">
