@@ -53,3 +53,6 @@ verify_jwt = false
 
 [functions.fieldroutes-inspection-webhook]
 verify_jwt = false
+
+[functions.notify-unit-overage]
+verify_jwt = false

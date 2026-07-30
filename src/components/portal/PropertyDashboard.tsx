@@ -46,6 +46,7 @@ import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPrevi
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
+import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
 import ApartmentInspectionDisclaimer from "@/components/portal/ApartmentInspectionDisclaimer";
@@ -1376,6 +1377,29 @@ const PropertyDashboard = ({
     if (tasks.length > 0) Promise.allSettled(tasks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planCfg.included_units, planCfg.overage_price_per_unit, propServices.length, property.id]);
+
+  // Billing alert (apartments): whenever the FIRST upcoming visit's merged
+  // unit list exceeds the plan's included allotment, email Carmen how many
+  // extra units to charge for. Replaces her old per-unit-added notification.
+  // The edge function dedupes per service (report_data.overage_alert) and
+  // only re-sends when the count GROWS, so re-renders never double-email.
+  const firstUpcomingForOverage = scheduledServices[0] || null;
+  const upcomingMergedUnitCount = (() => {
+    if (!planCfg.included_units || !firstUpcomingForOverage?.id) return 0;
+    return computeUpcomingUnits({
+      service: firstUpcomingForOverage,
+      isFirstUpcoming: true,
+      requests: pendingRequests,
+      mostRecentPast: buildMergedMostRecentPast(pastServicesForDisplay),
+      allPastServices: pastServicesForDisplay,
+    }).units.length;
+  })();
+  useEffect(() => {
+    if (!planCfg.included_units || !upcomingMergedUnitCount) return;
+    if (upcomingMergedUnitCount <= planCfg.included_units) return;
+    maybeNotifyUnitOverage({ property, services: propServices, requests: pendingRequests });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property.id, firstUpcomingForOverage?.id, upcomingMergedUnitCount, planCfg.included_units]);
 
   // Property-level service frequency toggle (stored in customer_preferences JSON)
   // Values: "weekly" (7), "bi-weekly" (14), "monthly" (30), "bi-monthly" (60). Defaults to bi-weekly.

@@ -23,6 +23,7 @@ import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getO
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
+import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import crestLogo from "@/assets/crest-logo.png";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
@@ -532,6 +533,12 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         .eq("property_id", propertyId)
         .order("created_at", { ascending: false });
       if (reqs) setRequests(reqs);
+      // Billing alert: if this unit pushed the next visit past the plan's
+      // included-unit allotment, Carmen gets an overage email (the edge
+      // function re-checks the plan and dedupes, so this is fire-and-forget).
+      if (!isGeneral) {
+        maybeNotifyUnitOverage({ property, services, requests: reqs || requests });
+      }
     } else {
       toast({ title: "Error", description: "Could not submit work order.", variant: "destructive" });
     }
