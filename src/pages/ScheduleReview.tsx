@@ -1731,7 +1731,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             location and honoring preferred tech, day/time notes, and per-day
             capacity. Anything marked "call to schedule" is set aside for manual
             handling. Nothing books until you push it — use "Push stop to FR"
-            on a single stop or "Push route to FR" for the whole day.
+            on a single stop or "Push route to FR" for the whole day. Pushes
+            queue instantly and the bot writes them to FieldRoutes 30 seconds
+            apart (rate-limit safe).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -2094,13 +2096,16 @@ function FillDayCard({ day, staff, onMoveStop }: {
     });
   };
 
-  // One booking straight to FieldRoutes (commit:true — no approval step).
+  // Enqueue one booking as a PACED write (Caleb 2026-07-30: FieldRoutes
+  // tolerates ~50 writes/min, so writes are queued and the
+  // fieldroutes-queue-worker bot commits them 30 seconds apart instead of
+  // firing back-to-back). Enqueueing is instant; the bot does the writing.
   const pushOne = async (s: FillStop): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
         body: {
           staffName: staff!.fullName,
-          commit: true,
+          paced: true,
           customer_id: Number(s.customer_id),
           customer_label: s.customer,
           service_type_id: Number(s.service_type_id) || 0,
@@ -2119,6 +2124,12 @@ function FillDayCard({ day, staff, onMoveStop }: {
     }
   };
 
+  // Wake the drain bot so the first write goes out immediately (it also runs
+  // on a 1-minute cron; pacing is enforced server-side either way).
+  const kickWorker = () => {
+    supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+  };
+
   const pushStop = async (s: FillStop) => {
     if (!staff) return toast.error("Please sign in again.");
     setStopPushing(stopKey(s));
@@ -2126,9 +2137,10 @@ function FillDayCard({ day, staff, onMoveStop }: {
     setStopPushing(null);
     if (ok) {
       setQueued((cur) => new Set(cur).add(s.subscription_id));
-      toast.success(`Pushed ${s.customer} to FieldRoutes`);
+      kickWorker();
+      toast.success(`Queued ${s.customer} — the bot pushes writes 30s apart`);
     } else {
-      toast.error(`Failed to push ${s.customer} — see console.`);
+      toast.error(`Failed to queue ${s.customer} — see console.`);
     }
   };
 
@@ -2141,12 +2153,15 @@ function FillDayCard({ day, staff, onMoveStop }: {
     for (const s of remaining) {
       if (await pushOne(s)) {
         ok++; done.add(s.subscription_id);
-        setQueued(new Set(done));   // tick stops green as they land
+        setQueued(new Set(done));   // tick stops green as they queue
       } else fail++;
     }
     setQueueing(false);
-    if (ok) toast.success(`Pushed ${ok} to FieldRoutes${fail ? ` · ${fail} failed` : ""}`);
-    else toast.error("Failed to push this day — see console.");
+    if (ok) {
+      kickWorker();
+      toast.success(`Queued ${ok} for FieldRoutes — pushed 30s apart (~${Math.ceil(ok / 2)} min)`
+        + (fail ? ` · ${fail} failed to queue` : ""));
+    } else toast.error("Failed to queue this day — see console.");
   };
 
   return (

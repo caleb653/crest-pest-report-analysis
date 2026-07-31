@@ -111,6 +111,10 @@ serve(async (req) => {
 
     const summary = `Book ${service_type_label || "appointment"} for ${customer_label || `customer ${customer_id}`} on ${date} ${start}–${end}`;
     const commit = body?.commit === true;
+    // paced:true (Caleb 2026-07-30): pre-approved like commit, but drained by
+    // fieldroutes-queue-worker ONE write per 30s instead of firing instantly —
+    // FieldRoutes tolerates ~50 writes/min and route pushes were back-to-back.
+    const paced = body?.paced === true;
 
     const { data: row, error } = await supabase
       .from("fieldroutes_write_queue")
@@ -122,7 +126,8 @@ serve(async (req) => {
         summary,
         // Direct pushes are claimed at insert so the approval UI never shows
         // them as actionable; the row exists purely as the audit trail.
-        status: commit ? "processing" : "pending",
+        // 'auto' rows are invisible to the approval UI too — the worker owns them.
+        status: commit ? "processing" : paced ? "auto" : "pending",
         requested_by: requestedBy,
         ...(commit ? { decided_by: requestedBy, decided_at: new Date().toISOString() } : {}),
       })
@@ -130,6 +135,7 @@ serve(async (req) => {
       .single();
 
     if (error) return json({ ok: false, error: "enqueue_failed", detail: error.message }, 500);
+    if (paced) return json({ ok: true, paced: true, queued: row });
     if (!commit) return json({ ok: true, queued: row });
 
     // ── One-step push: commit to FieldRoutes via Cloud Run right now ──────

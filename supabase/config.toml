@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.notify-unit-overage]
 verify_jwt = false
+
+[functions.fieldroutes-queue-worker]
+verify_jwt = false
