@@ -1683,11 +1683,26 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     const items: BulkItem[] = [];
     const noTarget: { stop: FillStop; tech: string }[] = [];
     const headed: Record<string, number> = {};
+    const created: Record<string, FillDay> = {};
     for (const g of groups) {
       const fromKey = `${g.fromDate}|${g.tech}`;
       const src = cur.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
       if (!src) continue;
-      const dst = cur.proposed.find((d) => d.date === toDate && d.tech === g.tech);
+      let dst = cur.proposed.find((d) => d.date === toDate && d.tech === g.tech)
+        || created[`${toDate}|${g.tech}`];
+      if (!dst) {
+        // Empty target day: create it on the tech's real FieldRoutes route so
+        // moving onto a 0-stop day works from the map too.
+        const rid = cur.routes_all?.[`${toDate}|${g.tech}`];
+        if (rid) {
+          const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(`${toDate}T12:00:00`).getDay()];
+          const dstDay: FillDay = { date: toDate, weekday: wd, tech: g.tech, zone: "",
+                                    stop_count: 0, capacity: cur.max_stops || 12, stops: [], route_id: rid };
+          dst = dstDay;
+          created[`${toDate}|${g.tech}`] = dstDay;
+          setResult((prev) => (prev ? { ...prev, proposed: [...prev.proposed, dstDay] } : prev));
+        }
+      }
       for (const k of g.stopKeys) {
         const stop = src.stops.find((s) => fillStopKey(s) === k);
         if (!stop || stop.already_scheduled || stop.locked || stop.notification_sent) continue;
@@ -1731,6 +1746,43 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     setResult((prev) => (prev ? applyMoves(prev, items) : prev));
     void rerouteKeys(items.flatMap((i) => [i.fromKey, i.toKey]));
     toast.success(`Moved ${items.length} stop${items.length === 1 ? "" : "s"} to ${weekdayLabel(toDate)} — re-routing…`);
+  };
+
+  // ── Drop a stop onto an EMPTY day (a date where the tech has a FieldRoutes
+  // route but the plan gave them nothing): create the day on that route,
+  // then run the normal single-stop move flow (rule dialog included). ──
+  const requestMoveToDate = (fromKey: string, stopId: string, date: string, tech: string) => {
+    const cur = resultRef.current;
+    if (!cur) return;
+    const toKey = `${date}|${tech}`;
+    if (fromKey === toKey) return;
+    let dst = cur.proposed.find((d) => d.date === date && d.tech === tech);
+    if (!dst) {
+      const rid = cur.routes_all?.[toKey];
+      if (!rid) {
+        toast.error(`${tech} has no FieldRoutes route on ${weekdayLabel(date)} — create it in FR first.`);
+        return;
+      }
+      const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(`${date}T12:00:00`).getDay()];
+      const dstDay: FillDay = { date, weekday: wd, tech, zone: "", stop_count: 0,
+                                capacity: cur.max_stops || 12, stops: [], route_id: rid };
+      dst = dstDay;
+      setResult((prev) => (prev ? { ...prev, proposed: [...prev.proposed, dstDay] } : prev));
+    }
+    const src = cur.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
+    const stop = src?.stops.find((s) => fillStopKey(s) === stopId);
+    if (!src || !stop) return;
+    if (stop.already_scheduled || stop.locked || stop.notification_sent) {
+      toast.error("That appointment is already booked/locked in FieldRoutes — reschedule it there instead.");
+      return;
+    }
+    const reasons = moveReasons(stop, src.tech, dst);
+    if (reasons.length) {
+      setPendingMove({ fromKey, toKey, stopId, stop, reasons });
+    } else {
+      executeMove(fromKey, toKey, stopId);
+      toast.success(`Moved ${stop.customer} to ${weekdayLabel(date)}`);
+    }
   };
 
   // ── Reassign a whole day to a DIFFERENT tech (Caleb: "assign a route on
@@ -2026,9 +2078,29 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     {shownTechs.map((tech) => {
                       const days = result.proposed
                         // Empty shells (created by a cancelled/pending reassign)
-                        // stay invisible until stops actually land on them.
+                        // render via the empty-day placeholders below instead.
                         .filter((d) => d.tech === tech && d.stops.length > 0)
                         .sort((a, b) => a.date.localeCompare(b.date));
+                      // Every date in the window where this tech has a
+                      // FieldRoutes route but NO stops: rendered as a drop
+                      // target so the office can seed a fresh day.
+                      const emptyDates = (() => {
+                        const have = new Set(days.map((d) => d.date));
+                        const out: string[] = [];
+                        const endD = new Date(`${result.end}T12:00:00`);
+                        for (let cur = new Date(`${result.start}T12:00:00`); cur <= endD; cur.setDate(cur.getDate() + 1)) {
+                          const iso = isoFromDate(cur);
+                          if (cur.getDay() === 0 || have.has(iso)) continue;
+                          if (!result.routes_all?.[`${iso}|${tech}`]) continue;
+                          out.push(iso);
+                        }
+                        return out;
+                      })();
+                      const gridItems: Array<{ kind: "day"; d: FillDay } | { kind: "empty"; date: string }> = [
+                        ...days.map((d) => ({ kind: "day" as const, d })),
+                        ...emptyDates.map((date) => ({ kind: "empty" as const, date })),
+                      ].sort((a, b) =>
+                        (a.kind === "day" ? a.d.date : a.date).localeCompare(b.kind === "day" ? b.d.date : b.date));
                       const total = days.reduce((n, d) => n + d.stop_count, 0);
                       const techBookable = days.reduce((n, d) => n + bookableOf(d).length, 0);
                       return (
@@ -2047,11 +2119,14 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                             </Button>
                           </div>
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                            {days.map((d) => (
-                              <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff}
+                            {gridItems.map((item) => (item.kind === "day" ? (
+                              <FillDayCard key={`${item.d.date}|${item.d.tech}`} day={item.d} staff={staff}
                                            onMoveStop={requestMove} externQueued={bulkQueued}
                                            reassignTechs={FILL_TECHS} onReassign={requestReassignDay} />
-                            ))}
+                            ) : (
+                              <EmptyFillDayCard key={`empty-${item.date}-${tech}`} date={item.date} tech={tech}
+                                                onDropStop={requestMoveToDate} />
+                            )))}
                           </div>
                         </div>
                       );
@@ -2096,7 +2171,15 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                   <div className="flex-1 min-h-0">
                     <WeekRouteMap days={result.proposed.filter((d) => d.stops.length > 0)}
                                   onMoveStops={handleMapMoves}
-                                  onMergeDays={handleMergeDays} />
+                                  onMergeDays={handleMergeDays}
+                                  windowDates={(() => {
+                                    const out: string[] = [];
+                                    const endD = new Date(`${result.end}T12:00:00`);
+                                    for (let cur = new Date(`${result.start}T12:00:00`); cur <= endD; cur.setDate(cur.getDate() + 1)) {
+                                      if (cur.getDay() !== 0) out.push(isoFromDate(cur));
+                                    }
+                                    return out;
+                                  })()} />
                   </div>
                 </DialogContent>
               </Dialog>
@@ -2216,6 +2299,37 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         </>
       )}
     </>
+  );
+}
+
+// A 0-stop day the tech COULD work (their FieldRoutes route exists for the
+// date): a dashed drop target so the office can drag stops onto it and seed
+// a fresh day — the plan's day materializes on first drop.
+function EmptyFillDayCard({ date, tech, onDropStop }: {
+  date: string;
+  tech: string;
+  onDropStop: (fromKey: string, stopId: string, date: string, tech: string) => void;
+}) {
+  const [over, setOver] = useState(false);
+  return (
+    <Card
+      className={`border-2 border-dashed transition-colors ${over ? "border-primary bg-primary/5" : "border-muted-foreground/25 bg-muted/20"}`}
+      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        try {
+          const p = JSON.parse(e.dataTransfer.getData("text/plain"));
+          if (p?.from && p?.id) onDropStop(p.from, p.id, date, tech);
+        } catch { /* not a stop drag */ }
+      }}
+    >
+      <CardContent className="py-6 text-center text-sm text-muted-foreground">
+        <div className="font-medium text-foreground/70">{weekdayLabel(date)} · 0 stops</div>
+        <div className="text-xs mt-1">drag a stop here to start this day</div>
+      </CardContent>
+    </Card>
   );
 }
 

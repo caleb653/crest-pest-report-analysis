@@ -66,9 +66,12 @@ type WeekRouteMapProps = {
   onMoveStops?: (moves: MapMoveGroup[], toDate: string) => void;
   /** Merge every shown tech's fromDate day into toDate (chip drag-and-drop). */
   onMergeDays?: (fromDate: string, toDate: string, techsShown: string[]) => void;
+  /** ALL dates in the plan window — 0-stop days render as chips too, so a
+   *  selection can be moved onto a day nobody visits yet. */
+  windowDates?: string[];
 };
 
-export default function WeekRouteMap({ days, onMoveStops, onMergeDays }: WeekRouteMapProps) {
+export default function WeekRouteMap({ days, onMoveStops, onMergeDays, windowDates }: WeekRouteMapProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
   useEffect(() => {
@@ -84,7 +87,8 @@ export default function WeekRouteMap({ days, onMoveStops, onMergeDays }: WeekRou
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <WeekRouteMapInner days={days} apiKey={apiKey} onMoveStops={onMoveStops} onMergeDays={onMergeDays} />;
+  return <WeekRouteMapInner days={days} apiKey={apiKey} onMoveStops={onMoveStops}
+                            onMergeDays={onMergeDays} windowDates={windowDates} />;
 }
 
 type ActiveStop = { routeKey: string; stop: RouteMapStop; day: WeekRouteDay };
@@ -96,7 +100,7 @@ const mapStopKey = (s: RouteMapStop) =>
 const isMovableStop = (s: RouteMapStop) =>
   !s.locked && !s.already_scheduled && !(s as any).notification_sent;
 
-function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays }: WeekRouteMapProps & { apiKey: string }) {
+function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates }: WeekRouteMapProps & { apiKey: string }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
@@ -124,8 +128,8 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays }: WeekRoute
     [days, tech],
   );
   const dates = useMemo(
-    () => [...new Set(techDays.map((d) => d.date))].sort(),
-    [techDays],
+    () => [...new Set([...techDays.map((d) => d.date), ...(windowDates ?? [])])].sort(),
+    [techDays, windowDates],
   );
   // Group dates into Mon-Sun weeks, keyed by each week's Monday.
   const weeks = useMemo(() => {
