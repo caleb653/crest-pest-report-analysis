@@ -1428,6 +1428,9 @@ type FillResult = {
   deferred?: FillDeferred[];
   deferred_count?: number;
   summary?: FillTopSummary;
+  /** "date|tech" → FieldRoutes routeID for EVERY field tech (not just the
+   *  proposed days) — powers reassigning a day onto another tech's route. */
+  routes_all?: Record<string, string>;
 };
 
 function isoFromDate(d: Date): string {
@@ -1725,6 +1728,44 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     toast.success(`Moved ${items.length} stop${items.length === 1 ? "" : "s"} to ${weekdayLabel(toDate)} — re-routing…`);
   };
 
+  // ── Reassign a whole day to a DIFFERENT tech (Caleb: "assign a route on
+  // Brock to Dylan"). Moves every movable stop onto the target tech's day for
+  // the same date — creating that day (on the target tech's real FieldRoutes
+  // route) when they don't have one in the plan yet — then re-routes both
+  // days so the order/ETAs reflect the target tech's home base. ──
+  const requestReassignDay = (day: FillDay, targetTech: string) => {
+    const cur = resultRef.current;
+    if (!cur || !targetTech || targetTech === day.tech) return;
+    let dst = cur.proposed.find((d) => d.date === day.date && d.tech === targetTech);
+    if (!dst) {
+      const rid = cur.routes_all?.[`${day.date}|${targetTech}`];
+      if (!rid) {
+        toast.error(`${targetTech} has no FieldRoutes route on ${weekdayLabel(day.date)} — `
+          + `create their route in FieldRoutes first, then re-run Fill.`);
+        return;
+      }
+      dst = {
+        date: day.date, weekday: day.weekday, tech: targetTech, zone: day.zone,
+        stop_count: 0, capacity: day.capacity, stops: [], route_id: rid,
+      };
+      const dstDay = dst;
+      setResult((prev) => (prev ? { ...prev, proposed: [...prev.proposed, dstDay] } : prev));
+    }
+    const dstForReasons = dst;
+    const fromKey = `${day.date}|${day.tech}`;
+    const toKey = `${day.date}|${targetTech}`;
+    const movable = day.stops.filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent);
+    if (!movable.length) {
+      toast.error("Nothing movable on that day — booked/locked stops stay with their tech.");
+      return;
+    }
+    const items: BulkItem[] = movable.map((stop, i) => ({
+      fromKey, toKey, stopId: fillStopKey(stop), stop,
+      reasons: moveReasons(stop, day.tech, dstForReasons, i),
+    }));
+    setPendingBulk({ toDate: day.date, items, noTarget: [] });
+  };
+
   const requestMove = (fromKey: string, stopId: string, toKey: string) => {
     if (!result || fromKey === toKey) return;
     const src = result.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
@@ -1979,7 +2020,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     </div>
                     {shownTechs.map((tech) => {
                       const days = result.proposed
-                        .filter((d) => d.tech === tech)
+                        // Empty shells (created by a cancelled/pending reassign)
+                        // stay invisible until stops actually land on them.
+                        .filter((d) => d.tech === tech && d.stops.length > 0)
                         .sort((a, b) => a.date.localeCompare(b.date));
                       const total = days.reduce((n, d) => n + d.stop_count, 0);
                       const techBookable = days.reduce((n, d) => n + bookableOf(d).length, 0);
@@ -2001,7 +2044,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {days.map((d) => (
                               <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff}
-                                           onMoveStop={requestMove} externQueued={bulkQueued} />
+                                           onMoveStop={requestMove} externQueued={bulkQueued}
+                                           reassignTechs={FILL_TECHS} onReassign={requestReassignDay} />
                             ))}
                           </div>
                         </div>
@@ -2045,7 +2089,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     </DialogTitle>
                   </DialogHeader>
                   <div className="flex-1 min-h-0">
-                    <WeekRouteMap days={result.proposed}
+                    <WeekRouteMap days={result.proposed.filter((d) => d.stops.length > 0)}
                                   onMoveStops={handleMapMoves}
                                   onMergeDays={handleMergeDays} />
                   </div>
@@ -2176,13 +2220,16 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 // through fieldroutes-appointment-submit with commit:true — the write-queue
 // row is kept only as the audit trail; there is no approval step. X a stop to
 // keep it out of the day push.
-function FillDayCard({ day, staff, onMoveStop, externQueued }: {
+function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onReassign }: {
   day: FillDay;
   staff: { fullName: string } | null;
   onMoveStop?: (fromKey: string, stopId: string, toKey: string) => void;
   /** Subscriptions queued by a BULK push (tech week / all routes) — shown as
    *  queued here too so the card and the bulk buttons stay in sync. */
   externQueued?: Set<string>;
+  /** Field techs this day can be reassigned to (whole-day move). */
+  reassignTechs?: string[];
+  onReassign?: (day: FillDay, targetTech: string) => void;
 }) {
   const dayKey = `${day.date}|${day.tech}`;
   const [queueing, setQueueing] = useState(false);
@@ -2309,8 +2356,27 @@ function FillDayCard({ day, staff, onMoveStop, externQueued }: {
       <CardHeader className="pb-2">
         <div className="flex items-baseline justify-between gap-2 flex-wrap">
           <CardTitle className="text-base">{weekdayLabel(day.date)} · {day.tech}</CardTitle>
-          <div className="text-sm text-muted-foreground">
-            <span className={over ? "font-bold text-red-600" : "font-semibold"}>{day.stop_count}</span>/{day.capacity} stops
+          <div className="flex items-center gap-2">
+            {onReassign && reassignTechs && reassignTechs.filter((t) => t !== day.tech).length > 0 && (
+              <select
+                className="text-xs border rounded-md px-1.5 py-1 bg-background text-muted-foreground hover:text-foreground cursor-pointer"
+                value=""
+                title="Move this whole day's stops to another tech (books on THEIR FieldRoutes route)"
+                onChange={(e) => {
+                  const t = e.target.value;
+                  e.target.value = "";
+                  if (t) onReassign(day, t);
+                }}
+              >
+                <option value="">Reassign day…</option>
+                {reassignTechs.filter((t) => t !== day.tech).map((t) => (
+                  <option key={t} value={t}>→ {t}</option>
+                ))}
+              </select>
+            )}
+            <div className="text-sm text-muted-foreground">
+              <span className={over ? "font-bold text-red-600" : "font-semibold"}>{day.stop_count}</span>/{day.capacity} stops
+            </div>
           </div>
         </div>
         <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
