@@ -488,7 +488,7 @@ const ScheduleReview = () => {
               value="pending"
               className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
-              <Clock className="w-4 h-4" /> Pending
+              <Clock className="w-4 h-4" /> Write Queue
             </TabsTrigger>
           </TabsList>
           <TabsContent value="review" className="mt-4 space-y-6">
@@ -501,7 +501,7 @@ const ScheduleReview = () => {
             <EfficiencyMode staff={staff} />
           </TabsContent>
           <TabsContent value="pending" className="mt-4 space-y-6">
-            <PendingFieldRoutesWrites title="Pending FieldRoutes writes" />
+            <PendingFieldRoutesWrites title="Writes awaiting approval (Slot Finder bookings + strays)" />
           </TabsContent>
         </Tabs>
       </div>
@@ -1563,7 +1563,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
             body: { staffName: staff.fullName, commit: true, paced: true, ...toRow(it) },
           });
-          if (!error && data?.ok) okIds.push(it.stop.subscription_id);
+          if (!error && data?.ok && (data?.pushed === true || data?.paced === true)) {
+            okIds.push(it.stop.subscription_id);
+          }
         } catch { /* skip this one */ }
       }
     }
@@ -2241,7 +2243,11 @@ function FillDayCard({ day, staff, onMoveStop, externQueued }: {
           route_id: s.route_id ? Number(s.route_id) : undefined,
         },
       });
-      return !error && data?.ok === true;
+      // Only count it when the backend CONFIRMED a real outcome: pushed
+      // (instant write landed) or paced (queued for the 30s bot). A bare
+      // ok:true from a stale backend once meant "filed as pending approval" —
+      // that must never render as pushed again.
+      return !error && data?.ok === true && (data?.pushed === true || data?.paced === true);
     } catch {
       return false;
     }

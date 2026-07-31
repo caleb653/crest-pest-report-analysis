@@ -28,7 +28,7 @@ type QueueRow = {
   action: string;
   summary: string | null;
   payload: Record<string, unknown>;
-  status: "pending" | "processing" | "committed" | "failed" | "rejected";
+  status: "pending" | "auto" | "processing" | "committed" | "failed" | "rejected";
   requested_by: string | null;
   requested_at: string;
 };
@@ -92,6 +92,9 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   // Optimistic check; the queue-list call enforces real validation.
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<QueueRow[]>([]);
+  // Everything that ISN'T awaiting approval: auto-queued (30s bot), in-flight,
+  // committed, failed — so "did my push actually land?" is answerable here.
+  const [recent, setRecent] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Bulk approval: which group is committing ("all" for the whole list) + progress.
@@ -127,6 +130,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
       }
       const pending = (data.pending ?? []) as QueueRow[];
       setRows(wanted ? pending.filter((r) => wanted.includes(r.entity)) : pending);
+      setRecent((data.recent ?? []) as QueueRow[]);
     } catch (e) {
       // Silent unless we have a token; non-admins shouldn't see errors.
       console.warn("queue load failed", e);
@@ -238,11 +242,64 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
     );
   }
 
-  if (rows.length === 0 && !loading) return null;
+  if (rows.length === 0 && recent.length === 0 && !loading) return null;
 
   const anyBusy = bulkBusy !== null || busyId !== null;
 
+  // Status roll-up of everything NOT awaiting approval — auto-queued rows the
+  // 30s bot will write, in-flight, failures (with why), and recent successes.
+  const autoRows = recent.filter((r) => r.status === "auto" || r.status === "processing");
+  const failedRows = recent.filter((r) => r.status === "failed");
+  const committedRows = recent.filter((r) => r.status === "committed").slice(0, 8);
+
+  const statusSection = (autoRows.length > 0 || failedRows.length > 0 || committedRows.length > 0) && (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <RefreshCw className="h-4 w-4" /> Write queue status
+          {autoRows.length > 0 && <Badge variant="secondary">{autoRows.length} queued</Badge>}
+          {failedRows.length > 0 && <Badge variant="destructive">{failedRows.length} failed</Badge>}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-xs">
+        {autoRows.length > 0 && (
+          <div className="space-y-1">
+            <p className="font-semibold">Queued for auto-push (the bot writes these 30s apart — no approval needed):</p>
+            {autoRows.map((r) => (
+              <p key={r.id} className="text-muted-foreground break-words">
+                • {r.summary ?? r.id}{r.status === "processing" ? " — writing now…" : ""}
+              </p>
+            ))}
+          </div>
+        )}
+        {failedRows.length > 0 && (
+          <div className="space-y-1">
+            <p className="font-semibold text-red-600">Failed (NOT in FieldRoutes — re-push from the Fill tab):</p>
+            {failedRows.map((r) => (
+              <p key={r.id} className="text-muted-foreground break-words">
+                • {r.summary ?? r.id} — <span className="text-red-600">{(r as any).error ?? "unknown error"}</span>
+              </p>
+            ))}
+          </div>
+        )}
+        {committedRows.length > 0 && (
+          <div className="space-y-1">
+            <p className="font-semibold text-emerald-700">Recently written to FieldRoutes:</p>
+            {committedRows.map((r) => (
+              <p key={r.id} className="text-muted-foreground break-words">• {r.summary ?? r.id}</p>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+
+  if (rows.length === 0) {
+    return statusSection || null;
+  }
+
   return (
+    <>
     <Card>
       <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 gap-2">
         <CardTitle className="text-sm flex items-center gap-2">
@@ -317,5 +374,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
         })}
       </CardContent>
     </Card>
+    {statusSection}
+    </>
   );
 }

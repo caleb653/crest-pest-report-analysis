@@ -51,7 +51,9 @@ serve(async (req) => {
   const failed: string[] = [];
 
   try {
-    for (let i = 0; i < MAX_COMMITS_PER_RUN; i++) {
+    const started = Date.now();
+    let commits = 0;
+    while (commits < MAX_COMMITS_PER_RUN && Date.now() - started < 100_000) {
       // ── Pacing gate: 30s since the last auto commit OR claim ──────────────
       // 'processing' rows claimed by the worker count too, so two overlapping
       // invocations can't both slip through the gate.
@@ -65,10 +67,12 @@ serve(async (req) => {
       const lastAt = lastRows?.[0]?.decided_at ? new Date(lastRows[0].decided_at).getTime() : 0;
       const since = Date.now() - lastAt;
       if (since < WRITE_SPACING_MS) {
+        // Sleep out the gap (in bounded slices so runtime stays well under the
+        // edge-function wall clock) and re-check — this invocation may have
+        // arrived as a relay right after another one committed.
         const wait = WRITE_SPACING_MS - since;
-        // Long waits are the next invocation's job (cron fires every minute).
-        if (wait > 26_000) break;
-        await sleep(wait);
+        await sleep(Math.min(wait, 25_000));
+        if (wait > 25_000) continue;
       }
 
       // ── Claim the oldest 'auto' row (atomic via the status transition) ────
@@ -114,6 +118,7 @@ serve(async (req) => {
         .update({ status: finalStatus, result, error: errText, decided_at: new Date().toISOString() })
         .eq("id", claimed.id);
       (finalStatus === "committed" ? committed : failed).push(claimed.id);
+      commits++;
       if (errText === "server_write_disabled") break; // kill switch — stop draining
     }
 
@@ -121,7 +126,26 @@ serve(async (req) => {
       .from("fieldroutes_write_queue")
       .select("id", { count: "exact", head: true })
       .eq("status", "auto");
-    return json({ ok: true, committed, failed, remaining: count ?? 0 });
+    const remaining = count ?? 0;
+
+    // ── Self-relay: keep draining even with NO cron. Each invocation commits
+    // its share then hands off to a fresh one; the pacing gate makes extra or
+    // overlapping chains harmless (they just wait their turn or exit). ──
+    if (remaining > 0) {
+      const self = `${Deno.env.get("SUPABASE_URL")}/functions/v1/fieldroutes-queue-worker`;
+      const relay = fetch(self, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_ANON_KEY") ?? ""}`,
+        },
+        body: JSON.stringify({ relay: true }),
+      }).then((r) => r.body?.cancel()).catch(() => {});
+      // deno-lint-ignore no-explicit-any
+      (globalThis as any).EdgeRuntime?.waitUntil?.(relay);
+    }
+
+    return json({ ok: true, committed, failed, remaining });
   } catch (e) {
     console.error("fieldroutes-queue-worker exception", e);
     return json({ ok: false, error: "exception", detail: String(e) });
