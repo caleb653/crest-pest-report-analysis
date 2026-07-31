@@ -1520,8 +1520,13 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     label: string; items: { stop: FillStop; day: FillDay }[];
   } | null>(null);
 
+  // route_id is REQUIRED to push: FieldRoutes accepts a routeless appointment
+  // but it lands unassigned — on nobody's schedule (live incident 2026-07-31:
+  // six 8/3 appts booked with no route). Stops without one are excluded here
+  // and surfaced by the per-day push instead of silently vanishing.
   const bookableOf = (d: FillDay) => d.stops.filter((s) =>
     s.subscription_id && !s.already_scheduled && !s.locked && !s.notification_sent
+    && (s.route_id || d.route_id)
     && !bulkQueued.has(s.subscription_id));
 
   const requestPushAll = (days: FillDay[], label: string) => {
@@ -2308,6 +2313,10 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
 
   const pushStop = async (s: FillStop) => {
     if (!staff) return toast.error("Please sign in again.");
+    if (!s.route_id && !day.route_id) {
+      return toast.error(`No FieldRoutes route exists for ${day.tech} on ${weekdayLabel(day.date)} — `
+        + `create it in FieldRoutes first, or the appointment would book unassigned (invisible on schedules).`);
+    }
     setStopPushing(stopKey(s));
     const ok = await pushOne(s);
     setStopPushing(null);
@@ -2323,10 +2332,16 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   const pushDay = async () => {
     if (!staff) return toast.error("Please sign in again.");
     if (remaining.length === 0) return;
+    if (!day.route_id && remaining.some((s) => !s.route_id)) {
+      const n = remaining.filter((s) => !s.route_id).length;
+      toast.error(`${n} stop${n === 1 ? "" : "s"} skipped — no FieldRoutes route for ${day.tech} on `
+        + `${weekdayLabel(day.date)}. Create the route in FR first (a routeless appointment books unassigned).`);
+    }
     setQueueing(true);
     const done = new Set(queued);
     let ok = 0, fail = 0;
-    for (const s of remaining) {
+    const pushable = remaining.filter((s) => s.route_id || day.route_id);
+    for (const s of pushable) {
       if (await pushOne(s)) {
         ok++; done.add(s.subscription_id);
         setQueued(new Set(done));   // tick stops green as they queue
