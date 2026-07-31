@@ -148,8 +148,28 @@ serve(async (req) => {
       await logAttempt(false, `upstream_${upstream.status}`);
       return json({ ok: false, error: "upstream_failed", status: upstream.status, detail: result });
     }
+    // Everything already pushed to FieldRoutes in this window (queued for the
+    // paced bot, in-flight, or committed) — the app greys these stops out and
+    // blocks re-pushing, and it must survive reloads/fresh runs even before
+    // the FieldRoutes data sync reflects the new appointments.
+    let pushed: Array<Record<string, unknown>> = [];
+    try {
+      const { data: rows } = await supabase
+        .from("fieldroutes_write_queue")
+        .select("payload, status")
+        .eq("entity", "appointment")
+        .in("status", ["auto", "processing", "committed"])
+        .gte("payload->>date", startDate)
+        .lte("payload->>date", endDate)
+        .limit(2000);
+      pushed = (rows ?? []).map((r: Record<string, unknown>) => {
+        const p = (r.payload ?? {}) as Record<string, unknown>;
+        return { date: p.date, customer_id: p.customer_id,
+                 subscription_id: p.subscription_id, status: r.status };
+      });
+    } catch (_e) { /* non-fatal — the app treats missing `pushed` as empty */ }
     await logAttempt(true, null);
-    return json({ ok: true, result });
+    return json({ ok: true, result, pushed });
   } catch (e) {
     console.error("scheduling-fill exception", e);
     await logAttempt(false, "exception").catch(() => {});

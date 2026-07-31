@@ -98,7 +98,8 @@ const mapStopKey = (s: RouteMapStop) =>
   `${(s as any).subscription_id || (s as any).customer_id}-${s.order}`;
 
 const isMovableStop = (s: RouteMapStop) =>
-  !s.locked && !s.already_scheduled && !(s as any).notification_sent;
+  !s.locked && !s.already_scheduled && !(s as any).notification_sent
+  && !(s as any).pushed_to_fr;
 
 // Keep in sync with the engine's TOLERANCE_BY_FREQ (and ScheduleReview's
 // TOL_BY_FREQ): how many days a visit may slip from its due date.

@@ -1322,6 +1322,7 @@ type FillStop = {
   drive_from_prev_min?: number;  // estimated drive from the previous stop
   flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
   moved?: boolean;               // dragged onto this day by the office
+  pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
   far_from_route_min?: number | null;  // >20-min hop from the rest of this route
 };
 type FillRouteSummary = {
@@ -1526,6 +1527,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // and surfaced by the per-day push instead of silently vanishing.
   const bookableOf = (d: FillDay) => d.stops.filter((s) =>
     s.subscription_id && !s.already_scheduled && !s.locked && !s.notification_sent
+    && !s.pushed_to_fr
     && (s.route_id || d.route_id)
     && !bulkQueued.has(s.subscription_id));
 
@@ -1705,7 +1707,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       }
       for (const k of g.stopKeys) {
         const stop = src.stops.find((s) => fillStopKey(s) === k);
-        if (!stop || stop.already_scheduled || stop.locked || stop.notification_sent) continue;
+        if (!stop || stop.already_scheduled || stop.locked || stop.notification_sent || stop.pushed_to_fr) continue;
         if (!dst) { noTarget.push({ stop, tech: g.tech }); continue; }
         const toKey = `${dst.date}|${dst.tech}`;
         items.push({ fromKey, toKey, stopId: k, stop,
@@ -1733,7 +1735,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       const src = cur.proposed.find((d) => d.date === fromDate && d.tech === t);
       if (!src) continue;
       const keys = src.stops
-        .filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent)
+        .filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent && !s.pushed_to_fr)
         .map((s) => fillStopKey(s));
       if (keys.length) groups.push({ fromDate, tech: t, stopKeys: keys });
     }
@@ -1772,7 +1774,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     const src = cur.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
     const stop = src?.stops.find((s) => fillStopKey(s) === stopId);
     if (!src || !stop) return;
-    if (stop.already_scheduled || stop.locked || stop.notification_sent) {
+    if (stop.already_scheduled || stop.locked || stop.notification_sent || stop.pushed_to_fr) {
       toast.error("That appointment is already booked/locked in FieldRoutes — reschedule it there instead.");
       return;
     }
@@ -1811,7 +1813,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     const dstForReasons = dst;
     const fromKey = `${day.date}|${day.tech}`;
     const toKey = `${day.date}|${targetTech}`;
-    const movable = day.stops.filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent);
+    const movable = day.stops.filter((s) => !s.already_scheduled && !s.locked && !s.notification_sent && !s.pushed_to_fr);
     if (!movable.length) {
       toast.error("Nothing movable on that day — booked/locked stops stay with their tech.");
       return;
@@ -1830,7 +1832,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     if (!src || !dst) return;
     const stop = src.stops.find((s) => fillStopKey(s) === stopId);
     if (!stop) return;
-    if (stop.already_scheduled || stop.locked || stop.notification_sent) {
+    if (stop.already_scheduled || stop.locked || stop.notification_sent || stop.pushed_to_fr) {
       toast.error("That appointment is already booked/locked in FieldRoutes — reschedule it there instead.");
       return;
     }
@@ -1879,7 +1881,23 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         toast.error(data?.detail || data?.error || "Failed to build the fill plan.");
         return;
       }
-      setResult(data.result as FillResult);
+      // Mark stops already written/queued to FieldRoutes (server reads the
+      // write queue) so they render grey and can't be re-pushed — even after
+      // a reload or a fresh run, before the FR data sync catches up.
+      const res = data.result as FillResult;
+      const pushedKeys = new Set(
+        ((data.pushed ?? []) as Array<{ subscription_id?: unknown; date?: unknown }>)
+          .map((p) => `${p.subscription_id}|${p.date}`));
+      if (pushedKeys.size) {
+        for (const d of res.proposed) {
+          for (const s of d.stops) {
+            if (!s.already_scheduled && pushedKeys.has(`${s.subscription_id}|${d.date}`)) {
+              s.pushed_to_fr = true;
+            }
+          }
+        }
+      }
+      setResult(res);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.message || "Unexpected error.");
@@ -2367,6 +2385,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
     !s.already_scheduled &&
     !s.locked &&
     !s.notification_sent &&
+    !s.pushed_to_fr &&
     !excluded.has(stopKey(s)),
   );
   const remaining = bookable.filter((s) =>
@@ -2535,19 +2554,24 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
-          const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id);
+          const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id)
+            || !!s.pushed_to_fr;
           const key = stopKey(s);
           const isExcluded = excluded.has(key);
           // Color rules (per user request):
           //  - locked OR notification already sent → black (and locked-in)
           //  - already scheduled on this day        → green
+          //  - pushed/queued to FieldRoutes         → GREY (it's an appointment
+          //    now — persists across reloads via the write queue)
           //  - excluded by user                     → muted/struck
           //  - default                              → indigo (planner proposal)
           const isBlack = !!(s.locked || s.notification_sent);
           const isGreen = !isBlack && !!s.already_scheduled;
+          const isPushed = !isBlack && !isGreen && isQueued;
           const rowClass =
             isBlack ? "bg-foreground/90 text-background"
             : isGreen ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
+            : isPushed ? "bg-muted/70 text-muted-foreground border border-muted-foreground/20"
             : isExcluded ? "bg-muted text-muted-foreground line-through opacity-60"
             : "bg-indigo-50";
           // Lock the X button when the row is system-locked.
@@ -2566,10 +2590,15 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             >
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="font-semibold text-sm flex items-center gap-1">
-                  {isQueued && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />}
+                  {isPushed && <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />}
                   {isBlack && <Lock className="w-3.5 h-3.5" />}
                   {isGreen && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />}
                   <span className={isBlack ? "font-mono opacity-70" : "text-muted-foreground font-mono"}>#{s.order}</span> {s.customer}
+                  {isPushed && (
+                    <Badge variant="outline" className="text-muted-foreground border-muted-foreground/40 text-[10px] h-4">
+                      pushed to FR
+                    </Badge>
+                  )}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <Badge
