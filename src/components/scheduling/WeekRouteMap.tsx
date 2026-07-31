@@ -100,6 +100,17 @@ const mapStopKey = (s: RouteMapStop) =>
 const isMovableStop = (s: RouteMapStop) =>
   !s.locked && !s.already_scheduled && !(s as any).notification_sent;
 
+// Keep in sync with the engine's TOLERANCE_BY_FREQ (and ScheduleReview's
+// TOL_BY_FREQ): how many days a visit may slip from its due date.
+const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
+
+const milesBetween = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const r = Math.PI / 180;
+  const a = Math.sin(((lat2 - lat1) * r) / 2) ** 2
+    + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(((lng2 - lng1) * r) / 2) ** 2;
+  return 2 * 3958.8 * Math.asin(Math.sqrt(a));
+};
+
 function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates }: WeekRouteMapProps & { apiKey: string }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
@@ -122,6 +133,9 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
   const [selected, setSelected] = useState<Map<string, ActiveStop>>(new Map());
   const [dragDate, setDragDate] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  // Hovering a day chip while exploring a single selected stop previews that
+  // day's route at full strength on the faded map.
+  const [previewDate, setPreviewDate] = useState<string | null>(null);
 
   const techDays = useMemo(
     () => days.filter((d) => (tech === "*" ? true : d.tech === tech)),
@@ -176,7 +190,41 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
   }, [map, tech]);
 
   // A tech switch invalidates the selection (it references the old routes).
-  useEffect(() => { setSelected(new Map()); setActive(null); }, [tech]);
+  useEffect(() => { setSelected(new Map()); setActive(null); setPreviewDate(null); }, [tech]);
+
+  // ── "Where else could this stop go?" explorer ─────────────────────────────
+  // Active when EXACTLY ONE stop is selected: for every day chip we compute
+  // (a) is the day inside the stop's due-date tolerance, and (b) the distance
+  // to the nearest stop already riding that day for the SAME tech — the
+  // human-readable answer to "which other day has something really close?".
+  const explore = useMemo(() => {
+    if (selected.size !== 1) return null;
+    const a = [...selected.values()][0];
+    const s = a.stop as any;
+    if (typeof s.lat !== "number" || typeof s.lng !== "number") return null;
+    const due = s.due_date ? new Date(`${s.due_date}T12:00:00`).getTime() : null;
+    const tol = TOL_BY_FREQ[s.frequency] ?? 14;
+    const byDate = new Map<string, { legal: boolean; minMi: number | null }>();
+    for (const date of dates) {
+      let legal = true;
+      if (due != null) {
+        const off = Math.round((new Date(`${date}T12:00:00`).getTime() - due) / 86400000);
+        legal = Math.abs(off) <= tol;
+      }
+      let minMi: number | null = null;
+      for (const d of techDays) {
+        if (d.date !== date || d.tech !== a.day.tech) continue;
+        for (const x of d.stops) {
+          if (typeof x.lat !== "number" || typeof x.lng !== "number") continue;
+          if (d.date === a.day.date && x.order === a.stop.order) continue; // itself
+          const mi = milesBetween(s.lat, s.lng, x.lat as number, x.lng as number);
+          if (minMi == null || mi < minMi) minMi = mi;
+        }
+      }
+      byDate.set(date, { legal, minMi });
+    }
+    return { anchor: a, tol, byDate };
+  }, [selected, dates, techDays]);
 
   if (loadError) {
     return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
@@ -214,6 +262,7 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
     if (groups.size) onMoveStops([...groups.values()], toDate);
     setSelected(new Map());
     setActive(null);
+    setPreviewDate(null);
   };
 
   // A multi-week run stacks every week's routes over the same territory —
@@ -270,6 +319,16 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
               });
               const moveTarget = selected.size > 0;
               const dropTarget = dragOverDate === date && dragDate && dragDate !== date;
+              // Explorer verdict for this chip (single stop selected).
+              const exp = explore?.byDate.get(date);
+              const isOwnDay = explore != null && explore.anchor.day.date === date;
+              const mi = exp?.minMi;
+              const miTone = mi == null ? "" : mi < 1.5 ? "text-emerald-700 font-bold"
+                : mi < 4 ? "text-amber-700 font-semibold" : "text-muted-foreground";
+              const expClass = explore == null ? ""
+                : isOwnDay ? "ring-2 ring-foreground/60"
+                : exp?.legal ? "ring-2 ring-primary shadow-sm"
+                : "opacity-25";
               return (
                 <button
                   key={date}
@@ -286,17 +345,27 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
                     }
                     setDragDate(null); setDragOverDate(null);
                   }}
+                  onMouseEnter={() => { if (explore) setPreviewDate(date); }}
+                  onMouseLeave={() => setPreviewDate((cur) => (cur === date ? null : cur))}
                   onClick={() => (moveTarget ? moveSelectionTo(date) : toggleDate(date))}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-opacity ${off && !moveTarget ? "opacity-35" : ""} ${dropTarget ? "ring-2 ring-primary" : ""} ${moveTarget ? "ring-1 ring-primary/50" : ""}`}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${off && !moveTarget ? "opacity-35" : ""} ${dropTarget ? "ring-2 ring-primary" : ""} ${explore == null && moveTarget ? "ring-1 ring-primary/50" : ""} ${expClass}`}
                   style={{ borderColor: dayColor(date) }}
-                  title={moveTarget
-                    ? `Move ${selected.size} selected stop${selected.size === 1 ? "" : "s"} to ${label}`
-                    : onMergeDays
-                      ? (off ? "Show this day · drag onto another day to combine" : "Hide this day · drag onto another day to combine")
-                      : (off ? "Show this day" : "Hide this day")}
+                  title={explore
+                    ? (isOwnDay ? "Current day for the selected stop"
+                      : exp?.legal
+                        ? `Move here${mi != null ? ` — nearest stop ${mi.toFixed(1)} mi away` : " — day is empty"} (hover to preview)`
+                        : `Outside the ±${explore.tol}-day window for this customer — moving here needs an override`)
+                    : moveTarget
+                      ? `Move ${selected.size} selected stop${selected.size === 1 ? "" : "s"} to ${label}`
+                      : onMergeDays
+                        ? (off ? "Show this day · drag onto another day to combine" : "Hide this day · drag onto another day to combine")
+                        : (off ? "Show this day" : "Hide this day")}
                 >
                   <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
                   {label} · {stopN}
+                  {explore != null && !isOwnDay && exp?.legal && (
+                    <span className={miTone}>{mi != null ? `${mi.toFixed(1)}mi` : "empty"}</span>
+                  )}
                 </button>
               );
             })}
@@ -304,10 +373,18 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
         );
       })}
       {selected.size > 0 ? (
-        <div className="flex items-center gap-2 text-xs font-medium bg-primary/10 border border-primary/30 rounded-md px-2.5 py-1.5">
-          <span>{selected.size} stop{selected.size === 1 ? "" : "s"} selected — click a day chip to move them there</span>
+        <div className="flex items-center gap-2 text-xs font-medium bg-primary/10 border border-primary/30 rounded-md px-2.5 py-1.5 flex-wrap">
+          {explore ? (
+            <span>
+              <span className="font-semibold">{(explore.anchor.stop as any).customer}</span> selected —
+              highlighted chips are days it can legally join (with distance to that day's nearest stop);
+              hover a chip to preview the route, click to move. Dimmed days are outside its ±{explore.tol}-day window.
+            </span>
+          ) : (
+            <span>{selected.size} stops selected — click a day chip to move them there</span>
+          )}
           <button type="button" className="underline text-muted-foreground hover:text-foreground"
-                  onClick={() => setSelected(new Map())}>
+                  onClick={() => { setSelected(new Map()); setPreviewDate(null); }}>
             Clear
           </button>
         </div>
@@ -324,7 +401,15 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
         options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false,
                    gestureHandling: "greedy" }}
       >
-        {routes.map((r) => (
+        {routes.map((r) => {
+          // Explorer fading: the hovered candidate day pops to full strength,
+          // legal candidates stay readable, everything else fades to a ghost.
+          const emphasis = !explore ? 1
+            : previewDate === r.day.date ? 1
+            : r.key === explore.anchor.routeKey ? 0.55
+            : explore.byDate.get(r.day.date)?.legal ? 0.3
+            : 0.07;
+          return (
           <PolylineF
             key={`line-${r.key}`}
             path={r.stops.map((s) => ({ lat: s.lat as number, lng: s.lng as number }))}
@@ -335,28 +420,38 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
                 ? {
                     strokeOpacity: 0,
                     icons: [{
-                      icon: { path: "M 0,-1 0,1", strokeOpacity: 0.85, strokeWeight: 3, strokeColor: r.color },
+                      icon: { path: "M 0,-1 0,1", strokeOpacity: 0.85 * emphasis, strokeWeight: 3, strokeColor: r.color },
                       offset: "0", repeat: "14px",
                     }],
                   }
-                : { strokeOpacity: 0.75, strokeWeight: 3 }),
+                : { strokeOpacity: 0.75 * emphasis,
+                    strokeWeight: explore && previewDate === r.day.date ? 5 : 3 }),
               geodesic: false,
             }}
           />
-        ))}
-        {routes.map((r) =>
-          r.stops.map((s) => (
+          );
+        })}
+        {routes.map((r) => {
+          const emphasis = !explore ? 1
+            : previewDate === r.day.date ? 1
+            : r.key === explore.anchor.routeKey ? 0.55
+            : explore.byDate.get(r.day.date)?.legal ? 0.35
+            : 0.1;
+          return r.stops.map((s) => {
+            const isSel = selected.has(`${r.key}#${mapStopKey(s)}`);
+            return (
             <MarkerF
               key={`${r.key}-${s.order}`}
               position={{ lat: s.lat as number, lng: s.lng as number }}
               icon={dotIcon(r.color,
-                (active?.routeKey === r.key && active?.stop.order === s.order)
-                || selected.has(`${r.key}#${mapStopKey(s)}`))}
+                (active?.routeKey === r.key && active?.stop.order === s.order) || isSel)}
+              opacity={isSel ? 1 : emphasis}
               onClick={() => setActive({ routeKey: r.key, stop: s, day: r.day })}
               title={`${s.customer} — ${r.day.weekday} (${r.day.tech})`}
             />
-          )),
-        )}
+            );
+          });
+        })}
         {active && (
           <InfoWindowF
             position={{ lat: active.stop.lat as number, lng: active.stop.lng as number }}
