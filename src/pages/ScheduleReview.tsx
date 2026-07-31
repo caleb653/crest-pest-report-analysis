@@ -1507,6 +1507,77 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const resultRef = useRef<FillResult | null>(null);
   useEffect(() => { resultRef.current = result; }, [result]);
 
+  // ── Bulk push-to-FR (a tech's whole week, or every open route) ──────────
+  // Enqueues all bookable stops as paced 'auto' writes in one bulk call (the
+  // 30s-apart bot does the actual writing); falls back to per-stop enqueues
+  // if the deployed edge fn predates bulk mode.
+  const [bulkQueued, setBulkQueued] = useState<Set<string>>(new Set());
+  const [bulkPushing, setBulkPushing] = useState(false);
+  const [pendingPushAll, setPendingPushAll] = useState<{
+    label: string; items: { stop: FillStop; day: FillDay }[];
+  } | null>(null);
+
+  const bookableOf = (d: FillDay) => d.stops.filter((s) =>
+    s.subscription_id && !s.already_scheduled && !s.locked && !s.notification_sent
+    && !bulkQueued.has(s.subscription_id));
+
+  const requestPushAll = (days: FillDay[], label: string) => {
+    const items = days.flatMap((d) => bookableOf(d).map((stop) => ({ stop, day: d })));
+    if (!items.length) {
+      toast.error("Nothing left to push — everything is booked or already queued.");
+      return;
+    }
+    setPendingPushAll({ label, items });
+  };
+
+  const runPushAll = async () => {
+    const pending = pendingPushAll;
+    if (!pending || !staff) return;
+    setPendingPushAll(null);
+    setBulkPushing(true);
+    const toRow = ({ stop: s, day: d }: { stop: FillStop; day: FillDay }) => ({
+      customer_id: Number(s.customer_id),
+      customer_label: s.customer,
+      service_type_id: Number(s.service_type_id) || 0,
+      service_type_label: s.service_label,
+      date: d.date,
+      start: s.start,
+      end: s.end,
+      duration: s.duration || 30,
+      subscription_id: Number(s.subscription_id),
+      route_id: s.route_id ? Number(s.route_id) : undefined,
+    });
+    let okIds: string[] = [];
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: { staffName: staff.fullName, bulk: pending.items.map(toRow) },
+      });
+      if (!error && data?.ok && typeof data?.queued_count === "number") {
+        okIds = pending.items.map((i) => i.stop.subscription_id);
+      }
+    } catch { /* fall through to per-stop */ }
+    if (!okIds.length) {
+      // Older backend without bulk mode: enqueue one at a time (still paced).
+      for (const it of pending.items) {
+        try {
+          const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+            body: { staffName: staff.fullName, commit: true, paced: true, ...toRow(it) },
+          });
+          if (!error && data?.ok) okIds.push(it.stop.subscription_id);
+        } catch { /* skip this one */ }
+      }
+    }
+    setBulkPushing(false);
+    if (okIds.length) {
+      setBulkQueued((cur) => new Set([...cur, ...okIds]));
+      supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+      toast.success(`Queued ${okIds.length} stops for FieldRoutes — the bot pushes them 30s apart `
+        + `(~${Math.ceil(okIds.length / 2)} min)`);
+    } else {
+      toast.error("Could not queue those pushes — see console.");
+    }
+  };
+
   const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
   const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
   const dayDiffFromDue = (targetIso: string, dueIso: string) =>
@@ -1866,16 +1937,24 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
           {result.proposed.length > 0 && (
             <>
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-sm font-semibold">
                   Proposed days
                   <span className="ml-2 font-normal text-xs text-muted-foreground">
                     drag a stop onto another day card to move it
                   </span>
                 </span>
-                <Button size="lg" onClick={() => setWeekMapOpen(true)}>
-                  <MapPin className="w-5 h-5 mr-2" /> Week map — all routes overlaid
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button size="lg" variant="outline" disabled={bulkPushing}
+                          onClick={() => requestPushAll(result.proposed, "ALL open routes")}>
+                    <Send className="w-4 h-4 mr-2" />
+                    {bulkPushing ? "Queueing…"
+                      : `Push ALL routes to FR (${result.proposed.reduce((n, d) => n + bookableOf(d).length, 0)})`}
+                  </Button>
+                  <Button size="lg" onClick={() => setWeekMapOpen(true)}>
+                    <MapPin className="w-5 h-5 mr-2" /> Week map — all routes overlaid
+                  </Button>
+                </div>
               </div>
               {(() => {
                 const techsInPlan = [...new Set(result.proposed.map((d) => d.tech))].sort();
@@ -1901,18 +1980,26 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                         .filter((d) => d.tech === tech)
                         .sort((a, b) => a.date.localeCompare(b.date));
                       const total = days.reduce((n, d) => n + d.stop_count, 0);
+                      const techBookable = days.reduce((n, d) => n + bookableOf(d).length, 0);
                       return (
                         <div key={tech} className="space-y-2">
-                          <div className="flex items-baseline gap-2 pt-2 border-b pb-1">
-                            <span className="text-base font-semibold">{tech}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {days.length} days · {total} stops
+                          <div className="flex items-baseline justify-between gap-2 pt-2 border-b pb-1 flex-wrap">
+                            <span className="flex items-baseline gap-2">
+                              <span className="text-base font-semibold">{tech}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {days.length} days · {total} stops
+                              </span>
                             </span>
+                            <Button size="sm" variant="outline" disabled={bulkPushing || techBookable === 0}
+                                    onClick={() => requestPushAll(days, `${tech}'s ${days.length} days`)}>
+                              <Send className="w-3 h-3 mr-1" />
+                              Push {tech.split(" ")[0]}'s week to FR ({techBookable})
+                            </Button>
                           </div>
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {days.map((d) => (
                               <FillDayCard key={`${d.date}|${d.tech}`} day={d} staff={staff}
-                                           onMoveStop={requestMove} />
+                                           onMoveStop={requestMove} externQueued={bulkQueued} />
                             ))}
                           </div>
                         </div>
@@ -1921,6 +2008,33 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                   </>
                 );
               })()}
+              <Dialog open={!!pendingPushAll} onOpenChange={(o) => { if (!o) setPendingPushAll(null); }}>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Send className="w-4 h-4" /> Push {pendingPushAll?.label} to FieldRoutes?
+                    </DialogTitle>
+                  </DialogHeader>
+                  {pendingPushAll && (
+                    <div className="space-y-3 text-sm">
+                      <p>
+                        <span className="font-semibold">{pendingPushAll.items.length} stops</span> will be
+                        queued and booked into FieldRoutes automatically, 30 seconds apart
+                        (~{Math.ceil(pendingPushAll.items.length / 2)} min total). Booked, locked, and
+                        already-notified appointments are skipped. This books real appointments.
+                      </p>
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button variant="outline" size="sm" onClick={() => setPendingPushAll(null)}>
+                          Cancel
+                        </Button>
+                        <Button size="sm" onClick={() => { void runPushAll(); }}>
+                          Push {pendingPushAll.items.length} stops
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
               <Dialog open={weekMapOpen} onOpenChange={setWeekMapOpen}>
                 <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] max-h-[96vh] flex flex-col">
                   <DialogHeader>
@@ -2060,10 +2174,13 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 // through fieldroutes-appointment-submit with commit:true — the write-queue
 // row is kept only as the audit trail; there is no approval step. X a stop to
 // keep it out of the day push.
-function FillDayCard({ day, staff, onMoveStop }: {
+function FillDayCard({ day, staff, onMoveStop, externQueued }: {
   day: FillDay;
   staff: { fullName: string } | null;
   onMoveStop?: (fromKey: string, stopId: string, toKey: string) => void;
+  /** Subscriptions queued by a BULK push (tech week / all routes) — shown as
+   *  queued here too so the card and the bulk buttons stay in sync. */
+  externQueued?: Set<string>;
 }) {
   const dayKey = `${day.date}|${day.tech}`;
   const [queueing, setQueueing] = useState(false);
@@ -2084,7 +2201,8 @@ function FillDayCard({ day, staff, onMoveStop }: {
     !s.notification_sent &&
     !excluded.has(stopKey(s)),
   );
-  const remaining = bookable.filter((s) => !queued.has(s.subscription_id));
+  const remaining = bookable.filter((s) =>
+    !queued.has(s.subscription_id) && !externQueued?.has(s.subscription_id));
   const allQueued = bookable.length > 0 && remaining.length === 0;
 
   const toggleExclude = (s: FillStop) => {
@@ -2216,7 +2334,7 @@ function FillDayCard({ day, staff, onMoveStop }: {
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
         {day.stops.map((s) => {
-          const isQueued = queued.has(s.subscription_id);
+          const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id);
           const key = stopKey(s);
           const isExcluded = excluded.has(key);
           // Color rules (per user request):

@@ -69,6 +69,55 @@ serve(async (req) => {
       return json({ ok: false, error: "missing_auth" }, 401);
     }
 
+    // ── BULK enqueue (push a tech's whole week / ALL open routes): validate
+    // each item and insert them all as pre-approved paced 'auto' rows in ONE
+    // statement; the fieldroutes-queue-worker drains them 30s apart. ──
+    const bulk = Array.isArray(body?.bulk) ? body.bulk : null;
+    if (bulk) {
+      if (bulk.length === 0 || bulk.length > 500) return json({ ok: false, error: "bad_bulk_size" }, 400);
+      const rows: Record<string, unknown>[] = [];
+      let rejected = 0;
+      for (const it of bulk) {
+        const bCustomer = Number(it?.customer_id ?? 0);
+        const bDate = String(it?.date ?? "").trim();
+        const bStart = String(it?.start ?? "").trim();
+        const bEnd = String(it?.end ?? "").trim();
+        if (!bCustomer || bCustomer <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(bDate)
+            || !/^\d{2}:\d{2}(:\d{2})?$/.test(bStart) || !/^\d{2}:\d{2}(:\d{2})?$/.test(bEnd)) {
+          rejected++;
+          continue;
+        }
+        const bTypeLabel = String(it?.service_type_label ?? "").trim();
+        const bCustLabel = String(it?.customer_label ?? "").trim();
+        rows.push({
+          entity: "appointment",
+          action: "create",
+          endpoint: "/api/fr/appointment",
+          payload: {
+            customer_id: bCustomer,
+            service_type_id: Number(it?.service_type_id ?? 0),
+            date: bDate,
+            start: bStart.length === 5 ? `${bStart}:00` : bStart,
+            end: bEnd.length === 5 ? `${bEnd}:00` : bEnd,
+            duration: Number(it?.duration ?? 30),
+            subscription_id: it?.subscription_id == null ? -1 : Number(it.subscription_id),
+            employee_id: it?.employee_id == null ? null : Number(it.employee_id),
+            route_id: it?.route_id == null || it?.route_id === "" ? null : Number(it.route_id),
+            spot_id: null,
+            _label: { service_type: bTypeLabel, customer: bCustLabel, requested_by: requestedBy },
+          },
+          summary: `Book ${bTypeLabel || "appointment"} for ${bCustLabel || `customer ${bCustomer}`} on ${bDate} ${bStart}–${bEnd}`,
+          status: "auto",
+          requested_by: requestedBy,
+        });
+      }
+      if (!rows.length) return json({ ok: false, error: "no_valid_items", rejected }, 400);
+      const { data: ins, error: insErr } = await supabase
+        .from("fieldroutes_write_queue").insert(rows).select("id");
+      if (insErr) return json({ ok: false, error: "enqueue_failed", detail: insErr.message }, 500);
+      return json({ ok: true, paced: true, queued_count: ins?.length ?? rows.length, rejected });
+    }
+
     const customer_id = Number(body?.customer_id ?? 0);
     const service_type_id = Number(body?.service_type_id ?? 0);
     const service_type_label = String(body?.service_type_label ?? "").trim();
