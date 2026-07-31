@@ -1513,7 +1513,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
   // ── Bulk push-to-FR (a tech's whole week, or every open route) ──────────
   // Enqueues all bookable stops as paced 'auto' writes in one bulk call (the
-  // 30s-apart bot does the actual writing); falls back to per-stop enqueues
+  // paced bot does the actual writing (40/min)); falls back to per-stop enqueues
   // if the deployed edge fn predates bulk mode.
   const [bulkQueued, setBulkQueued] = useState<Set<string>>(new Set());
   const [bulkPushing, setBulkPushing] = useState(false);
@@ -1583,8 +1583,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     if (okIds.length) {
       setBulkQueued((cur) => new Set([...cur, ...okIds]));
       supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
-      toast.success(`Queued ${okIds.length} stops for FieldRoutes — the bot pushes them 30s apart `
-        + `(~${Math.ceil(okIds.length / 2)} min)`);
+      toast.success(`Queued ${okIds.length} stops for FieldRoutes — the bot pushes them ~40/min `        + `(~${Math.max(1, Math.ceil(okIds.length / 40))} min)`);
     } else {
       toast.error("Could not queue those pushes — see console.");
     }
@@ -1921,8 +1920,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             capacity. Anything marked "call to schedule" is set aside for manual
             handling. Nothing books until you push it — use "Push stop to FR"
             on a single stop or "Push route to FR" for the whole day. Pushes
-            queue instantly and the bot writes them to FieldRoutes 30 seconds
-            apart (rate-limit safe).
+            queue instantly and the bot writes them to FieldRoutes at a safe pace
+            (~40/min, under FieldRoutes' 60/min limit).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -2163,8 +2162,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     <div className="space-y-3 text-sm">
                       <p>
                         <span className="font-semibold">{pendingPushAll.items.length} stops</span> will be
-                        queued and booked into FieldRoutes automatically, 30 seconds apart
-                        (~{Math.ceil(pendingPushAll.items.length / 2)} min total). Booked, locked, and
+                        queued and booked into FieldRoutes automatically at a safe pace (~40/min)
+                        (~{Math.max(1, Math.ceil(pendingPushAll.items.length / 40))} min total). Booked, locked, and
                         already-notified appointments are skipped. This books real appointments.
                       </p>
                       <div className="flex justify-end gap-2 pt-1">
@@ -2403,7 +2402,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
 
   // Enqueue one booking as a PACED write (Caleb 2026-07-30: FieldRoutes
   // tolerates ~50 writes/min, so writes are queued and the
-  // fieldroutes-queue-worker bot commits them 30 seconds apart instead of
+  // fieldroutes-queue-worker bot commits them at a safe pace (40/min) instead of
   // firing back-to-back). Enqueueing is instant; the bot does the writing.
   const pushOne = async (s: FillStop): Promise<boolean> => {
     try {
@@ -2411,7 +2410,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
         body: {
           staffName: staff!.fullName,
           // BOTH flags on purpose: a backend that knows `paced` queues for the
-          // 30s-apart bot; an older backend falls back to `commit` and pushes
+          // paced bot; an older backend falls back to `commit` and pushes
           // instantly. Either way the write NEVER lands in the pending/approval
           // flow — no admin sign-in needed.
           commit: true,
@@ -2429,7 +2428,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
         },
       });
       // Only count it when the backend CONFIRMED a real outcome: pushed
-      // (instant write landed) or paced (queued for the 30s bot). A bare
+      // (instant write landed) or paced (queued for the paced bot). A bare
       // ok:true from a stale backend once meant "filed as pending approval" —
       // that must never render as pushed again.
       return !error && data?.ok === true && (data?.pushed === true || data?.paced === true);
@@ -2456,7 +2455,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
     if (ok) {
       setQueued((cur) => new Set(cur).add(s.subscription_id));
       kickWorker();
-      toast.success(`Queued ${s.customer} — the bot pushes writes 30s apart`);
+      toast.success(`Queued ${s.customer} — the bot writes it within seconds`);
     } else {
       toast.error(`Failed to queue ${s.customer} — see console.`);
     }
@@ -2483,7 +2482,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
     setQueueing(false);
     if (ok) {
       kickWorker();
-      toast.success(`Queued ${ok} for FieldRoutes — pushed 30s apart (~${Math.ceil(ok / 2)} min)`
+      toast.success(`Queued ${ok} for FieldRoutes — paced ~40/min (~${Math.max(1, Math.ceil(ok / 40))} min)`
         + (fail ? ` · ${fail} failed to queue` : ""));
     } else toast.error("Failed to queue this day — see console.");
   };

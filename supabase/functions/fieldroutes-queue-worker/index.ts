@@ -23,8 +23,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const WRITE_SPACING_MS = 30_000;
-const MAX_COMMITS_PER_RUN = 2;
+// Pacing (Caleb 2026-07-31): FieldRoutes' real limit is 60 writes/min (from
+// their API's tokenLimits); we run at 40/min — safely under his 50/min line
+// with margin for any other writers. One write per 1.5s; each invocation
+// drains up to 30 then relays.
+const WRITE_SPACING_MS = 1_500;
+const MAX_COMMITS_PER_RUN = 30;
 const WORKER_ID = "auto_worker";
 
 function json(body: unknown, status = 200) {

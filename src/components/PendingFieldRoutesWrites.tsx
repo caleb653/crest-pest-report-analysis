@@ -92,7 +92,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   // Optimistic check; the queue-list call enforces real validation.
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<QueueRow[]>([]);
-  // Everything that ISN'T awaiting approval: auto-queued (30s bot), in-flight,
+  // Everything that ISN'T awaiting approval: auto-queued (paced bot), in-flight,
   // committed, failed — so "did my push actually land?" is answerable here.
   const [recent, setRecent] = useState<QueueRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -247,7 +247,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   const anyBusy = bulkBusy !== null || busyId !== null;
 
   // Status roll-up of everything NOT awaiting approval — auto-queued rows the
-  // 30s bot will write, in-flight, failures (with why), and recent successes.
+  // paced bot will write, in-flight, failures (with why), and recent successes.
   const autoRows = recent.filter((r) => r.status === "auto" || r.status === "processing");
   const failedRows = recent.filter((r) => r.status === "failed");
   const committedRows = recent.filter((r) => r.status === "committed").slice(0, 8);
@@ -264,7 +264,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
       <CardContent className="space-y-3 text-xs">
         {autoRows.length > 0 && (
           <div className="space-y-1">
-            <p className="font-semibold">Queued for auto-push (the bot writes these 30s apart — no approval needed):</p>
+            <p className="font-semibold">Queued for auto-push (the bot writes these ~40/min — no approval needed):</p>
             {autoRows.map((r) => (
               <p key={r.id} className="text-muted-foreground break-words">
                 • {r.summary ?? r.id}{r.status === "processing" ? " — writing now…" : ""}
