@@ -2105,6 +2105,11 @@ function FillDayCard({ day, staff, onMoveStop }: {
       const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
         body: {
           staffName: staff!.fullName,
+          // BOTH flags on purpose: a backend that knows `paced` queues for the
+          // 30s-apart bot; an older backend falls back to `commit` and pushes
+          // instantly. Either way the write NEVER lands in the pending/approval
+          // flow — no admin sign-in needed.
+          commit: true,
           paced: true,
           customer_id: Number(s.customer_id),
           customer_label: s.customer,

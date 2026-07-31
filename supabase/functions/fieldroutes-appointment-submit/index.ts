@@ -126,8 +126,11 @@ serve(async (req) => {
         summary,
         // Direct pushes are claimed at insert so the approval UI never shows
         // them as actionable; the row exists purely as the audit trail.
-        // 'auto' rows are invisible to the approval UI too — the worker owns them.
-        status: commit ? "processing" : paced ? "auto" : "pending",
+        // 'auto' rows are invisible to the approval UI too — the worker owns
+        // them. paced WINS over commit: the app sends BOTH flags so a stale
+        // (pre-paced) deployment of this fn still pushes instantly instead of
+        // stranding the row in the pending/approval flow.
+        status: paced ? "auto" : commit ? "processing" : "pending",
         requested_by: requestedBy,
         ...(commit ? { decided_by: requestedBy, decided_at: new Date().toISOString() } : {}),
       })
