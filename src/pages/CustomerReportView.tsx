@@ -25,6 +25,7 @@ interface ServiceItem {
   initialPrice: string;
   recurringPrice: string;
   frequency: string | number;
+  followUp30?: boolean;
 }
 
 interface Proposal {
@@ -228,6 +229,12 @@ const formatFrequency = (freq: string | number): string => {
   if (freq === 60) return "Bi-Monthly";
   if (freq === 90) return "Quarterly";
   return `Every ${freq} days`;
+};
+
+// Frequency cell text incl. the 30-day follow-up marker set in the editor.
+const formatServiceFrequency = (service: ServiceItem): string => {
+  const base = formatFrequency(service.frequency);
+  return service.followUp30 ? `${base} + 30-Day Follow-Up` : base;
 };
 
 const getMapDataString = (mapData: unknown): string | null => {
@@ -646,7 +653,7 @@ export default function CustomerReportView() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-foreground">{service.serviceType || "Service"}</p>
-                <p className="text-xs text-muted-foreground">{formatFrequency(service.frequency)}</p>
+                <p className="text-xs text-muted-foreground">{formatServiceFrequency(service)}</p>
               </div>
               <div className="text-right text-xs leading-5">
                 <p>
@@ -739,7 +746,7 @@ export default function CustomerReportView() {
                           <td className="px-3 py-1.5 text-xs font-medium">{service.serviceType}</td>
                           <td className="px-3 py-1.5 text-xs text-center">${service.initialPrice || "0"}</td>
                           <td className="px-3 py-1.5 text-xs text-center">${service.recurringPrice || "0"}</td>
-                          <td className="px-3 py-1.5 text-xs text-center">{formatFrequency(service.frequency)}</td>
+                          <td className="px-3 py-1.5 text-xs text-center">{formatServiceFrequency(service)}</td>
                         </tr>
                       ))}
                       <tr className="border-t-2 border-border bg-muted/30">
@@ -1277,11 +1284,11 @@ export default function CustomerReportView() {
               {report.recommendations && report.recommendations.length > 0 && report.recommendations[0] && (
                 <Card className="overflow-hidden">
                   <div className="bg-brand-black text-white px-4 py-2">
-                    <span className="text-xs font-bold uppercase text-dark-sage">Recommendations</span>
+                    <span className="text-xs font-bold uppercase">Recommendations</span>
                   </div>
                   <div className="p-4">
                     <div
-                      className="text-sm leading-relaxed prose prose-sm max-w-none text-dark-sage"
+                      className="text-sm leading-relaxed prose prose-sm max-w-none text-foreground"
                       dangerouslySetInnerHTML={{ __html: report.recommendations.join("<br/>") }}
                     />
                   </div>
@@ -1341,7 +1348,7 @@ export default function CustomerReportView() {
                             <td className="px-4 py-2 font-medium">{service.serviceType || "—"}</td>
                             <td className="px-4 py-2 text-center">${service.initialPrice || "0"}</td>
                             <td className="px-4 py-2 text-center">${service.recurringPrice || "0"}</td>
-                            <td className="px-4 py-2 text-center">{formatFrequency(service.frequency)}</td>
+                            <td className="px-4 py-2 text-center">{formatServiceFrequency(service)}</td>
                           </tr>
                         ))}
                         <tr className="border-t-2 border-border bg-muted/30">

@@ -98,6 +98,17 @@ const PEST_OPTIONS = [
   "Other",
 ];
 
+// Display selected pests in the same order as the (alphabetized) picker,
+// regardless of the order they were clicked. Unknown/custom pests sort last.
+const pestDisplayOrder = (pests: string[]): string[] =>
+  [...pests].sort((a, b) => {
+    const rank = (p: string) => {
+      const i = PEST_OPTIONS.indexOf(p);
+      return i === -1 ? PEST_OPTIONS.length : i;
+    };
+    return rank(a) - rank(b);
+  });
+
 const defaultRodentPairLabel = (index: number) => `Entry Point #${index + 1}`;
 
 const normalizeRodentPairLabels = (labels: unknown, count = 0): string[] => {
@@ -313,12 +324,15 @@ const Report = () => {
   const [renderedMapImage, setRenderedMapImage] = useState<string | null>(null);
   const [pdfExportMode, setPdfExportMode] = useState(false);
   const [propertyImages, setPropertyImages] = useState<Array<{ image: string; caption?: string }>>([]);
-  // "Before" photos carried over from the source sales report (rodent-exclusion
-  // variant only). Read-only — represent the property's pre-service state.
+  // "Before" photos (rodent-exclusion variant only) — seeded from the source
+  // sales report, but techs can also upload/replace them directly here.
   const [beforePhotos, setBeforePhotos] = useState<Array<{ image: string; caption?: string }>>([]);
   // Editable labels for each Before/After pair (rodent-exclusion only).
   // Defaults to "Entry Point #N"; tech can rename to anything (e.g. "Clean Up Spot #1").
   const [pairLabels, setPairLabels] = useState<string[]>([]);
+  // Whether the bulk uploader on the rodent-exclusion photo panel adds
+  // "before" or "after" photos. Techs pick before snapping/selecting.
+  const [bulkUploadKind, setBulkUploadKind] = useState<"before" | "after">("after");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpandingFindings, setIsExpandingFindings] = useState(false);
   const [isExpandingExpect, setIsExpandingExpect] = useState(false);
@@ -981,7 +995,7 @@ const Report = () => {
         property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
-        target_pests: editableTargetPests,
+        target_pests: pestDisplayOrder(editableTargetPests),
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
@@ -1053,7 +1067,7 @@ const Report = () => {
         property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
-        target_pests: editableTargetPests,
+        target_pests: pestDisplayOrder(editableTargetPests),
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
@@ -1084,7 +1098,7 @@ const Report = () => {
     if (!pendingAutoSaveRef.current || !reportLoadedRef.current) return;
     pendingAutoSaveRef.current = false;
     autoSave();
-  }, [propertyImages, customMapImage]);
+  }, [propertyImages, beforePhotos, customMapImage]);
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -1136,7 +1150,7 @@ const Report = () => {
       licenseNumber: editableLicenseNumber,
       propertyType,
       companyName,
-      targetPests: editableTargetPests,
+      targetPests: pestDisplayOrder(editableTargetPests),
       productsUsed: editableProductsUsed,
       equipment: editableEquipment,
       serviceSummary: editableFindings[0] || "",
@@ -1311,7 +1325,7 @@ Crest Pest Control
         property_images: propertyImages,
         service_date: editableServiceDate,
         license_number: editableLicenseNumber,
-        target_pests: editableTargetPests,
+        target_pests: pestDisplayOrder(editableTargetPests),
         products_used: editableProductsUsed,
         equipment: editableEquipment,
         report_title: isRodentExclusion ? "Rodent Exclusion Report" : "Initial Pest Report",
@@ -1554,15 +1568,16 @@ Crest Pest Control
   };
 
   // Append-style uploader used by the Rodent Exclusion / Attic grouped photo
-  // capture panel. Each group passes its own caption prefix so the captured
-  // photos already carry a category label when they land in propertyImages.
+  // capture panel. `kind` decides whether the photos land as Before photos
+  // (beforePhotos) or After photos (propertyImages).
   const handleRodentGroupUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    captionPrefix: string,
+    kind: "before" | "after",
   ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const fileArray = Array.from(files).slice(0, 20 - propertyImages.length);
+    const existingCount = kind === "before" ? beforePhotos.length : propertyImages.length;
+    const fileArray = Array.from(files).slice(0, 20 - existingCount);
     if (fileArray.length === 0) {
       toast.error("Maximum 20 images allowed");
       e.currentTarget.value = "";
@@ -1601,9 +1616,9 @@ Crest Pest Control
         return { image: publicUrl, caption: "" };
       });
       const uploadedImages = await Promise.all(uploadPromises);
-      // Fill empty slots first (so newly uploaded "After" photos pair with
-      // existing "Before" photos that don't have a partner yet), then append.
-      setPropertyImages((prev) => {
+      // Fill empty slots first (so newly uploaded photos pair with existing
+      // photos in the other column that don't have a partner yet), then append.
+      const fillThenAppend = (prev: Array<{ image: string; caption?: string }>) => {
         const next = [...prev];
         let queue = [...uploadedImages];
         for (let i = 0; i < next.length && queue.length > 0; i++) {
@@ -1613,9 +1628,11 @@ Crest Pest Control
           }
         }
         return [...next, ...queue];
-      });
+      };
+      if (kind === "before") setBeforePhotos(fillThenAppend);
+      else setPropertyImages(fillThenAppend);
       pendingAutoSaveRef.current = true;
-      toast.success(`${uploadedImages.length} photo(s) added`);
+      toast.success(`${uploadedImages.length} ${kind} photo(s) added`);
     } catch (error) {
       console.error("Error uploading rodent group images:", error);
       toast.error("Failed to upload images");
@@ -1624,13 +1641,14 @@ Crest Pest Control
     }
   };
 
-  // Upload a single "After" photo into a specific slot so it pairs visually
-  // with the matching Before photo at the same index. Pads empty slots as
-  // needed so the After can land at the requested index even when earlier
-  // pairs are still missing.
-  const handleAfterUploadAtIndex = async (
+  // Upload a photo into a specific pair slot (Before or After column) so it
+  // pairs visually with the photo at the same index in the other column. Pads
+  // empty slots as needed so the photo can land at the requested index even
+  // when earlier pairs are still missing.
+  const handlePairUploadAtIndex = async (
     e: React.ChangeEvent<HTMLInputElement>,
     targetIndex: number,
+    kind: "before" | "after",
   ) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
@@ -1668,7 +1686,7 @@ Crest Pest Control
           return publicUrl;
         }),
       );
-      setPropertyImages((prev) => {
+      const placeAtIndex = (prev: Array<{ image: string; caption?: string }>) => {
         const next = [...prev];
         let cursor = targetIndex;
         for (const url of uploaded) {
@@ -1677,11 +1695,13 @@ Crest Pest Control
           cursor += 1;
         }
         return next;
-      });
+      };
+      if (kind === "before") setBeforePhotos(placeAtIndex);
+      else setPropertyImages(placeAtIndex);
       pendingAutoSaveRef.current = true;
-      toast.success(`${uploaded.length} after photo${uploaded.length > 1 ? "s" : ""} added`);
+      toast.success(`${uploaded.length} ${kind} photo${uploaded.length > 1 ? "s" : ""} added`);
     } catch (error) {
-      console.error("Error uploading after image:", error);
+      console.error("Error uploading pair image:", error);
       toast.error("Failed to upload image");
     } finally {
       e.currentTarget.value = "";
@@ -1693,6 +1713,18 @@ Crest Pest Control
       const next = [...prev];
       if (targetIndex < next.length) {
         // If trailing slots become empty, trim them so we don't grow forever.
+        next[targetIndex] = { image: "" };
+        while (next.length > 0 && !next[next.length - 1].image) next.pop();
+      }
+      return next;
+    });
+    pendingAutoSaveRef.current = true;
+  };
+
+  const clearBeforeAtIndex = (targetIndex: number) => {
+    setBeforePhotos((prev) => {
+      const next = [...prev];
+      if (targetIndex < next.length) {
         next[targetIndex] = { image: "" };
         while (next.length > 0 && !next[next.length - 1].image) next.pop();
       }
@@ -2409,7 +2441,7 @@ Crest Pest Control
               </div>
               {editableTargetPests.length > 0 && (
                 <div className="print-tags flex flex-wrap gap-2 items-start content-start p-3 bg-background">
-                  {editableTargetPests.map((pest) => (
+                  {pestDisplayOrder(editableTargetPests).map((pest) => (
                     <span
                       key={pest}
                       className="print-tag inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-primary text-primary-foreground"
@@ -2668,7 +2700,7 @@ Crest Pest Control
                   <>
                     {editableTargetPests.length > 0 && (
                       <div className="no-print space-y-2">
-                        {editableTargetPests
+                        {pestDisplayOrder(editableTargetPests)
                           .filter((p) => SERVICE_SNIPPETS[p]?.length)
                           .map((pest) => (
                             <div key={pest} className="space-y-1">
@@ -2751,7 +2783,7 @@ Crest Pest Control
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3 text-foreground">Recommendations</h2>
               {editableTargetPests.length > 0 && (
                 <div className="no-print px-3 pb-2 space-y-2">
-                  {editableTargetPests
+                  {pestDisplayOrder(editableTargetPests)
                     .filter((p) => RECOMMENDATION_SNIPPETS[p]?.length)
                     .map((pest) => (
                       <div key={pest} className="space-y-1">
@@ -2883,6 +2915,8 @@ Crest Pest Control
               const pairCount = Math.max(beforePhotos.length, propertyImages.length);
               const rows = Array.from({ length: pairCount }, (_, i) => i);
               const usedAfters = propertyImages.filter((p) => p.image).length;
+              const usedBefores = beforePhotos.filter((p) => p.image).length;
+              const bulkUsed = bulkUploadKind === "before" ? usedBefores : usedAfters;
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {rows.map((i) => {
@@ -2918,36 +2952,88 @@ Crest Pest Control
                           {/* Before — draggable to swap with another Before tile */}
                           <div className="space-y-1">
                             <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
-                            <div
-                              className={`aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted transition-shadow ${before?.image ? "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-dark-sage" : ""}`}
-                              draggable={!!before?.image}
-                              onDragStart={(e) => {
-                                e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "before", index: i }));
-                                e.dataTransfer.effectAllowed = "move";
-                              }}
-                              onDragOver={(e) => {
-                                const types = e.dataTransfer.types;
-                                if (types && Array.from(types).includes("application/x-photo")) {
+                            {before?.image ? (
+                              <div
+                                className="relative aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted group cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-dark-sage transition-shadow"
+                                draggable
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData("application/x-photo", JSON.stringify({ kind: "before", index: i }));
+                                  e.dataTransfer.effectAllowed = "move";
+                                }}
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
                                   e.preventDefault();
-                                  e.dataTransfer.dropEffect = "move";
-                                }
-                              }}
-                              onDrop={(e) => {
-                                e.preventDefault();
-                                try {
-                                  const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
-                                  if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
-                                } catch {}
-                              }}
-                            >
-                              {before?.image ? (
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
                                 <img src={before.image} alt={`Before ${i + 1}`} className="w-full h-full object-cover pointer-events-none" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-muted-foreground text-center px-2">
-                                  Drop a Before here
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="absolute top-1 right-1 h-6 w-6 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                                  onClick={() => clearBeforeAtIndex(i)}
+                                  aria-label="Remove before photo"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div
+                                className="aspect-[4/3] flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-dark-sage/60 bg-card p-2 text-center"
+                                onDragOver={(e) => {
+                                  const types = e.dataTransfer.types;
+                                  if (types && Array.from(types).includes("application/x-photo")) {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = "move";
+                                  }
+                                }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  try {
+                                    const data = JSON.parse(e.dataTransfer.getData("application/x-photo"));
+                                    if (data?.kind === "before" && typeof data.index === "number") swapBeforeAt(data.index, i);
+                                  } catch {}
+                                }}
+                              >
+                                <Plus className="w-5 h-5 text-dark-sage" />
+                                <span className="text-[10px] font-semibold text-foreground leading-tight px-1">
+                                  Add Before
+                                </span>
+                                <div className="flex flex-col gap-1 w-full">
+                                  <label className="relative inline-flex h-8 items-center justify-center rounded-md border border-dark-sage bg-card px-2 text-[11px] font-semibold text-foreground cursor-pointer hover:bg-sage/30">
+                                    Photo Library
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      multiple
+                                      onChange={(e) => handlePairUploadAtIndex(e, i, "before")}
+                                      className="absolute inset-0 opacity-0 cursor-pointer"
+                                      aria-label={`Choose before photo from photo library for pair ${i + 1}`}
+                                    />
+                                  </label>
+                                  <label className="relative inline-flex h-8 items-center justify-center rounded-md border border-border bg-muted px-2 text-[11px] font-semibold text-foreground cursor-pointer hover:bg-sage/30">
+                                    Camera
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      capture="environment"
+                                      onChange={(e) => handlePairUploadAtIndex(e, i, "before")}
+                                      className="absolute inset-0 opacity-0 cursor-pointer"
+                                      aria-label={`Take before photo with camera for pair ${i + 1}`}
+                                    />
+                                  </label>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                           {/* After — draggable to swap with another After tile */}
                           <div className="space-y-1">
@@ -3055,7 +3141,7 @@ Crest Pest Control
                                       type="file"
                                       accept="image/*"
                                       multiple
-                                      onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                      onChange={(e) => handlePairUploadAtIndex(e, i, "after")}
                                       className="absolute inset-0 opacity-0 cursor-pointer"
                                       aria-label={`Choose after photo from photo library for pair ${i + 1}`}
                                     />
@@ -3066,7 +3152,7 @@ Crest Pest Control
                                       type="file"
                                       accept="image/*"
                                       capture="environment"
-                                      onChange={(e) => handleAfterUploadAtIndex(e, i)}
+                                      onChange={(e) => handlePairUploadAtIndex(e, i, "after")}
                                       className="absolute inset-0 opacity-0 cursor-pointer"
                                       aria-label={`Take after photo with camera for pair ${i + 1}`}
                                     />
@@ -3079,16 +3165,36 @@ Crest Pest Control
                       </div>
                     );
                   })}
-                  {/* Trailing card to add unpaired After photos (extras beyond
-                      what the sales report provided). Stops at 12 total. */}
-                  {usedAfters < 20 && (
+                  {/* Trailing card to bulk-add photos. A Before/After toggle
+                      picks which column the uploads land in; uploads fill
+                      empty slots first, then append new pairs. Stops at 20
+                      per column. */}
+                  {bulkUsed < 20 && (
                     <div className="rounded-xl border-2 border-dashed border-dark-sage bg-card min-h-[140px] flex flex-col items-center justify-center gap-2 p-3 text-center">
                       <Plus className="w-7 h-7 text-dark-sage" />
                       <span className="text-sm font-semibold text-foreground leading-tight">
-                        Upload "After" photos
+                        Upload photos
                       </span>
+                      <div className="inline-flex rounded-md border border-dark-sage overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setBulkUploadKind("before")}
+                          className={`px-3 h-8 text-xs font-semibold transition-colors ${bulkUploadKind === "before" ? "bg-dark-sage text-white" : "bg-card text-foreground hover:bg-sage/30"}`}
+                          aria-pressed={bulkUploadKind === "before"}
+                        >
+                          Before
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBulkUploadKind("after")}
+                          className={`px-3 h-8 text-xs font-semibold transition-colors ${bulkUploadKind === "after" ? "bg-dark-sage text-white" : "bg-card text-foreground hover:bg-sage/30"}`}
+                          aria-pressed={bulkUploadKind === "after"}
+                        >
+                          After
+                        </button>
+                      </div>
                       <span className="text-[10px] text-muted-foreground">
-                        {usedAfters}/20 · pick several from Photo Library, or use Camera one at a time
+                        {bulkUsed}/20 {bulkUploadKind} · pick several from Photo Library, or use Camera one at a time
                       </span>
                       <div className="grid grid-cols-2 gap-2 w-full max-w-[260px]">
                         <label className="relative inline-flex h-9 items-center justify-center rounded-md border border-dark-sage bg-card px-2 text-xs font-semibold text-foreground cursor-pointer hover:bg-sage/30 active:bg-sage/40">
@@ -3097,9 +3203,9 @@ Crest Pest Control
                             type="file"
                             accept="image/*"
                             multiple
-                            onChange={(e) => handleRodentGroupUpload(e, "After")}
+                            onChange={(e) => handleRodentGroupUpload(e, bulkUploadKind)}
                             className="absolute inset-0 opacity-0 cursor-pointer"
-                            aria-label="Choose after photos from photo library"
+                            aria-label={`Choose ${bulkUploadKind} photos from photo library`}
                           />
                         </label>
                         <label className="relative inline-flex h-9 items-center justify-center rounded-md border border-border bg-muted px-2 text-xs font-semibold text-foreground cursor-pointer hover:bg-sage/30 active:bg-sage/40">
@@ -3108,9 +3214,9 @@ Crest Pest Control
                             type="file"
                             accept="image/*"
                             capture="environment"
-                            onChange={(e) => handleRodentGroupUpload(e, "After")}
+                            onChange={(e) => handleRodentGroupUpload(e, bulkUploadKind)}
                             className="absolute inset-0 opacity-0 cursor-pointer"
-                            aria-label="Take after photo with camera"
+                            aria-label={`Take ${bulkUploadKind} photo with camera`}
                           />
                         </label>
                       </div>

@@ -687,6 +687,15 @@ export async function buildSalesProposalPdf(
             fill(C.darkSage);
             pdf.roundedRect(cx, cy, w, chipH, 3, 3, "F");
             setFont(6.8, "bold", C.white);
+          } else if (chip.includes("Follow-Up")) {
+            // 30-day follow-up chip: sage outline so it reads as a planned
+            // extra visit rather than a regular recurring service.
+            fill(C.sage);
+            pdf.roundedRect(cx, cy, w, chipH, 3, 3, "F");
+            stroke(C.darkSage);
+            pdf.setLineWidth(0.8);
+            pdf.roundedRect(cx, cy, w, chipH, 3, 3, "S");
+            setFont(6.8, "bold", C.ink);
           } else {
             fill(C.chip);
             pdf.roundedRect(cx, cy, w, chipH, 3, 3, "F");

@@ -217,6 +217,14 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 0,
     defaultRecurring: 0,
   },
+  "One-Time Pest Service": {
+    frequency: 0,
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    proposedServices:
+      `<b>One-Time Pest Service:</b><br>• Inspect exterior for potential pest entry points, harborage areas, and signs of infestation<br>• Remove webs from the exterior of the property including eaves, windows, outdoor furniture, and high visibility areas<br>• Create a pest barrier around your home and property by targeted exterior treatments. Treat the garage and interior upon request.<br><br><b>Additional Details:</b> One-time services are designed to knock down your current pest activity. Our products typically take 7-10 days to take full effect (this gives the products time to spread back to the larger colonies). Because this is a stand-alone treatment, it does not include the ongoing protection of our recurring service plans.`,
+    defaultInitial: 150,
+    defaultRecurring: 0,
+  },
   "General Pest Control": {
     frequency: 30,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
@@ -319,7 +327,7 @@ const extractServiceHeaderLabel = (html: string): string => {
   return m ? m[1].replace(/:\s*$/, "").trim() : "";
 };
 
-const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG);
+const SERVICE_TYPE_OPTIONS = Object.keys(SERVICE_CONFIG).sort((a, b) => a.localeCompare(b));
 
 // Preset exclusion clauses that can be multi-selected for the Limitations / Exclusions section
 const EXCLUSION_PRESETS: { label: string; text: string }[] = [
@@ -354,6 +362,61 @@ const formatScheduleChip = (date: Date, isHighFreq: boolean) => {
   return `${month} W${week}`;
 };
 
+type ScheduleChipData = { label: string; isFirst: boolean; isFollowUp: boolean };
+
+// Single source of truth for a service row's schedule chips (screen grid,
+// print table, and PDF all consume this). When the 30-day follow-up box is
+// checked, a "Follow-Up" chip is inserted one month after the initial service
+// — but only when the regular schedule doesn't already put us there (one-time
+// services and frequencies longer than 30 days).
+const buildScheduleChipData = (frequency: number, followUp30?: boolean): ScheduleChipData[] => {
+  const today = new Date();
+  const isHighFreq = frequency === 7 || frequency === 14;
+  const chips: ScheduleChipData[] = [];
+  if (frequency > 0) {
+    const count = isHighFreq ? 8 : 6;
+    for (let i = 0; i < count; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i * frequency);
+      chips.push({ label: formatScheduleChip(d, isHighFreq), isFirst: i === 0, isFollowUp: false });
+    }
+  }
+  if (followUp30 && (frequency <= 0 || frequency > 30)) {
+    if (chips.length === 0) {
+      chips.push({ label: formatScheduleChip(today, false), isFirst: true, isFollowUp: false });
+    }
+    const fu = new Date(today);
+    fu.setDate(fu.getDate() + 30);
+    chips.splice(1, 0, { label: `${formatScheduleChip(fu, false)} Follow-Up`, isFirst: false, isFollowUp: true });
+  }
+  return chips;
+};
+
+// Canonical 30-day follow-up paragraph appended to the Proposed Services
+// description whenever a service row has the follow-up box checked.
+const FOLLOW_UP_LANGUAGE =
+  `<b>30-Day Follow-Up:</b> This proposal includes a follow-up service roughly 30 days after the initial service (shown in the schedule above). During the follow-up we'll inspect activity levels, re-treat problem areas as needed, and break pest egg cycles to keep the issue from returning.`;
+
+const proposalHasFollowUp = (services: ServiceItem[]) =>
+  services.some((s) => s.serviceType && s.followUp30);
+
+// Keep the description in sync with the checkbox: append the canonical
+// paragraph when checked (and not already present), strip it when unchecked.
+const applyFollowUpLanguage = (html: string, services: ServiceItem[]): string => {
+  const wanted = proposalHasFollowUp(services);
+  const present = html.includes("30-Day Follow-Up:");
+  if (wanted && !present) {
+    return html ? `${html}<br><br>${FOLLOW_UP_LANGUAGE}` : FOLLOW_UP_LANGUAGE;
+  }
+  if (!wanted && present) {
+    const escaped = FOLLOW_UP_LANGUAGE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return html
+      .replace(new RegExp(`(?:<br>\\s*)*${escaped}`), "")
+      .replace(/^(?:<br>\s*)+/, "");
+  }
+  return html;
+};
+
 interface AnalysisData {
   findings: string[];
   recommendations: string[];
@@ -365,6 +428,8 @@ interface ServiceItem {
   initialPrice: string;
   recurringPrice: string;
   frequency: number;
+  /** 30-day follow-up visit: adds a chip to the schedule + language to the description. */
+  followUp30?: boolean;
 }
 
 interface Proposal {
@@ -478,7 +543,7 @@ const Report = () => {
   const allServices = proposals.flatMap(p => p.services);
   const serviceTypesKey = allServices.map((s) => s.serviceType).join(",");
 
-  const handleProposalServiceChange = (proposalIndex: number, serviceIndex: number, field: keyof ServiceItem, value: string | number) => {
+  const handleProposalServiceChange = (proposalIndex: number, serviceIndex: number, field: keyof ServiceItem, value: string | number | boolean) => {
     setProposals((prev) => {
       const updated = [...prev];
       const proposal = { ...updated[proposalIndex] };
@@ -652,7 +717,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("none");
+  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("short");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
@@ -1429,6 +1494,9 @@ const Report = () => {
           completeFindings[index] = getProposalServicesText(index);
         }
       }
+      // Bake the 30-day follow-up paragraph into the saved findings so the
+      // customer view / emails show it (and strip it if the box was unchecked).
+      completeFindings[index] = applyFollowUpLanguage(completeFindings[index], proposal.services);
     });
 
     return JSON.stringify({
@@ -1769,18 +1837,6 @@ const Report = () => {
   // html2canvas screenshots of the on-screen editor. Mirrors the on-screen
   // logic for which map/services/details each option shows.
   const assembleSalesPdfData = (freshMainMap: string | null): SalesProposalPdfData => {
-    const buildScheduleChips = (frequency: number): string[] => {
-      if (frequency <= 0) return [];
-      const isHighFreq = frequency === 7 || frequency === 14;
-      const today = new Date();
-      const count = isHighFreq ? 8 : 6;
-      return Array.from({ length: count }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + i * frequency);
-        return formatScheduleChip(d, isHighFreq);
-      });
-    };
-
     const mapForOption = (i: number): string | null => {
       if (i === 0) {
         return (freshMainMap || renderedMapImage) ?? customMapImage ?? (mapUrl || null);
@@ -1797,7 +1853,8 @@ const Report = () => {
     const servicesHtmlForOption = (i: number): string => {
       const edited = proposalFindings[i] ?? "";
       const content = edited || (i === 0 ? editableFindings[0] || "" : getProposalServicesText(i));
-      return formatProposedServices(stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(content)));
+      const stripped = stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(content));
+      return formatProposedServices(applyFollowUpLanguage(stripped, proposals[i]?.services ?? []));
     };
 
     const options = proposals.map((proposal, i) => {
@@ -1813,7 +1870,7 @@ const Report = () => {
             initial: parseFloat(s.initialPrice) || 0,
             recurring: parseFloat(s.recurringPrice) || 0,
             frequencyLabel: FREQUENCY_OPTIONS.find((o) => o.days === s.frequency)?.label || "One-Time",
-            scheduleChips: buildScheduleChips(s.frequency),
+            scheduleChips: buildScheduleChipData(s.frequency, s.followUp30).map((c) => c.label),
           })),
         mapImage: mapForOption(i),
         servicesHtml: servicesHtmlForOption(i),
@@ -2428,29 +2485,43 @@ Crest Pest Control`;
                     ))}
                   </SelectContent>
                 </Select>
+                {!isReadOnly && (
+                  <label className="flex cursor-pointer select-none items-center gap-1 px-0.5 pb-1">
+                    <input
+                      type="checkbox"
+                      className="h-3 w-3 accent-secondary"
+                      checked={!!service.followUp30}
+                      onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "followUp30", e.target.checked)}
+                    />
+                    <span className="whitespace-nowrap text-[9px] text-muted-foreground">30-day follow-up</span>
+                  </label>
+                )}
               </div>
               <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5">
-                {service.frequency > 0 ? (
-                  <div className="flex flex-wrap gap-0.5">
-                    {(() => {
-                      const isHighFreq = service.frequency === 7 || service.frequency === 14;
-                      const today = new Date();
-                      const count = isHighFreq ? 8 : 6;
-                      return Array.from({ length: count }, (_, i) => {
-                        const scheduleDate = new Date(today);
-                        scheduleDate.setDate(scheduleDate.getDate() + i * service.frequency);
-                        const isFirst = i === 0;
-                        return (
-                          <span key={i} className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${isFirst ? "bg-secondary text-white font-medium" : "bg-muted text-muted-foreground"}`}>
-                            {formatScheduleChip(scheduleDate, isHighFreq)}
-                          </span>
-                        );
-                      });
-                    })()}
-                  </div>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground">One-time</span>
-                )}
+                {(() => {
+                  const chips = buildScheduleChipData(service.frequency, service.followUp30);
+                  if (chips.length === 0) {
+                    return <span className="text-[10px] text-muted-foreground">One-time</span>;
+                  }
+                  return (
+                    <div className="flex flex-wrap gap-0.5">
+                      {chips.map((chip, i) => (
+                        <span
+                          key={i}
+                          className={`px-1 py-0.5 rounded text-[9px] whitespace-nowrap ${
+                            chip.isFirst
+                              ? "bg-secondary text-white font-medium"
+                              : chip.isFollowUp
+                                ? "border border-secondary/60 bg-secondary/10 font-medium text-foreground"
+                                : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {chip.label}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 {proposal.services.length > 1 && (
@@ -2504,26 +2575,21 @@ Crest Pest Control`;
                 <td className="text-center font-semibold">${(parseInt(service.recurringPrice || "0") || 0).toLocaleString()}</td>
                 <td className="text-center">{FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "—"}</td>
                 <td>
-                  {service.frequency > 0 ? (
-                    <span className="proposal-schedule-pills">
-                      {(() => {
-                        const isHighFreq = service.frequency === 7 || service.frequency === 14;
-                        const today = new Date();
-                        const count = isHighFreq ? 8 : 6;
-                        return Array.from({ length: count }, (_, i) => {
-                          const d = new Date(today);
-                          d.setDate(d.getDate() + i * service.frequency);
-                          return (
-                            <span key={i} className={`schedule-pill ${i === 0 ? "schedule-pill--first" : ""}`}>
-                              {formatScheduleChip(d, isHighFreq)}
-                            </span>
-                          );
-                        });
-                      })()}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">One-time</span>
-                  )}
+                  {(() => {
+                    const chips = buildScheduleChipData(service.frequency, service.followUp30);
+                    if (chips.length === 0) {
+                      return <span className="text-muted-foreground">One-time</span>;
+                    }
+                    return (
+                      <span className="proposal-schedule-pills">
+                        {chips.map((chip, i) => (
+                          <span key={i} className={`schedule-pill ${chip.isFirst ? "schedule-pill--first" : ""}`}>
+                            {chip.label}
+                          </span>
+                        ))}
+                      </span>
+                    );
+                  })()}
                 </td>
               </tr>
             ))}
@@ -2852,7 +2918,7 @@ Crest Pest Control`;
                       data-pdf-content="proposed-services"
                       className="hidden print-content-formatted"
                       style={{ fontSize: `${proposedServicesFontSize}px` }}
-                      dangerouslySetInnerHTML={{ __html: formatProposedServices(stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(servicesContent))) }}
+                      dangerouslySetInnerHTML={{ __html: formatProposedServices(applyFollowUpLanguage(stripAdditionalDetailsAndDisclaimer(stripRodentGuaranteeFromHtml(servicesContent)), proposals[proposalIndex]?.services ?? [])) }}
                     />
                   </>
                 )}

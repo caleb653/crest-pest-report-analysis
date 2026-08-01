@@ -654,7 +654,7 @@ const Report = () => {
   const [customerEmail, setCustomerEmail] = useState("");
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [showComposeDialog, setShowComposeDialog] = useState(false);
-  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("none");
+  const [pdfAttachOption, setPdfAttachOption] = useState<"short" | "full" | "none">("short");
   const [emailSubject, setEmailSubject] = useState("Crest Pest Control: Service Proposal");
   const [emailMessage, setEmailMessage] = useState("");
   const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
