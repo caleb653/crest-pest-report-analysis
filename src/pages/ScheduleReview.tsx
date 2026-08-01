@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
   Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing, TrendingUp, TrendingDown, Minus,
-  Send, ChevronDown, ChevronRight,
+  Send, ChevronDown, ChevronRight, Bot,
 } from "lucide-react";
 
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
@@ -490,6 +490,12 @@ const ScheduleReview = () => {
             >
               <Clock className="w-4 h-4" /> Write Queue
             </TabsTrigger>
+            <TabsTrigger
+              value="reschedule"
+              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+            >
+              <Bot className="w-4 h-4" /> Reschedule Bot
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="review" className="mt-4 space-y-6">
             <ReviewMode staff={staff} />
@@ -502,6 +508,9 @@ const ScheduleReview = () => {
           </TabsContent>
           <TabsContent value="pending" className="mt-4 space-y-6">
             <PendingFieldRoutesWrites title="Writes awaiting approval (Slot Finder bookings + strays)" />
+          </TabsContent>
+          <TabsContent value="reschedule" className="mt-4 space-y-6">
+            <RescheduleBotMode staff={staff} />
           </TabsContent>
         </Tabs>
       </div>
@@ -2313,6 +2322,224 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             blurb="Due within tolerance, but every eligible day was at capacity or constraints left no slot. Widen the window or raise max stops."
           />
           <DeferredBucket items={result.deferred ?? []} count={result.deferred_count ?? (result.deferred?.length ?? 0)} />
+        </>
+      )}
+    </>
+  );
+}
+
+// ── Reschedule Bot ───────────────────────────────────────────────────────────
+// Optimizes BOOKED appointments: proposes moving any appointment that is NOT
+// locked and whose reminder has NOT been sent onto a better same-tech day
+// (within its frequency tolerance, target day has room, clears the same
+// geometric bars the fill rebalance uses). Accepted moves queue as paced
+// appointment/update writes — the bot reschedules them in FieldRoutes.
+type RescheduleMove = {
+  appointment_id: string; customer: string; city: string; tech: string;
+  from_date: string; to_date: string; start: string; end: string;
+  duration: number; gain_mi: number; from_dist_mi: number; to_dist_mi: number;
+  to_route_id: string; from_load: number; to_load: number;
+  special_scheduling?: string | null;
+};
+type RescheduleResult = {
+  ok: boolean; start: string; end: string; appointments: number;
+  movable: number; locked: number; notified: number;
+  moves: RescheduleMove[]; total_gain_mi: number;
+};
+
+function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
+  const [start, setStart] = useState(() => isoFromDate(new Date(Date.now() + 86400000)));
+  const [end, setEnd] = useState(() => isoFromDate(new Date(Date.now() + 13 * 86400000)));
+  const [loading, setLoading] = useState(false);
+  const [queueing, setQueueing] = useState(false);
+  const [result, setResult] = useState<RescheduleResult | null>(null);
+  const [checked, setChecked] = useState<Set<string>>(new Set());
+  const [queued, setQueued] = useState<Set<string>>(new Set());
+
+  const run = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    setLoading(true);
+    setResult(null);
+    setQueued(new Set());
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-fill", {
+        body: { staffName: staff.fullName, action: "reschedule_bot", start_date: start, end_date: end },
+      });
+      if (error) throw error;
+      if (!data?.ok || !data?.result?.ok) {
+        toast.error(data?.detail?.detail || data?.error || "Reschedule Bot failed — is the backend deployed?");
+        return;
+      }
+      const res = data.result as RescheduleResult;
+      setResult(res);
+      setChecked(new Set(res.moves.map((m) => m.appointment_id)));
+    } catch (e) {
+      console.error(e);
+      toast.error("Reschedule Bot failed — see console.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggle = (id: string) =>
+    setChecked((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const queueMoves = async () => {
+    if (!staff || !result) return;
+    const moves = result.moves.filter((m) => checked.has(m.appointment_id) && !queued.has(m.appointment_id));
+    if (!moves.length) return toast.error("Nothing selected.");
+    setQueueing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff.fullName,
+          reschedules: moves.map((m) => ({
+            appointment_id: Number(m.appointment_id),
+            customer_label: m.customer,
+            date: m.to_date, start: m.start, end: m.end,
+            duration: m.duration || 30,
+            route_id: m.to_route_id ? Number(m.to_route_id) : undefined,
+            from_date: m.from_date,
+          })),
+        },
+      });
+      if (!error && data?.ok && data?.paced === true) {
+        setQueued((cur) => new Set([...cur, ...moves.map((m) => m.appointment_id)]));
+        supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+        toast.success(`Queued ${moves.length} reschedule${moves.length === 1 ? "" : "s"} — `
+          + `the bot moves them in FieldRoutes (~${Math.max(1, Math.ceil(moves.length / 40))} min)`);
+      } else {
+        toast.error(data?.error === "no_valid_items"
+          ? "Backend rejected the moves — see console."
+          : "Could not queue — is the new backend deployed?");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not queue reschedules — see console.");
+    } finally {
+      setQueueing(false);
+    }
+  };
+
+  const byTech = new Map<string, RescheduleMove[]>();
+  for (const m of result?.moves ?? []) {
+    if (!byTech.has(m.tech)) byTech.set(m.tech, []);
+    byTech.get(m.tech)!.push(m);
+  }
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="w-5 h-5" /> Reschedule Bot
+          </CardTitle>
+          <CardDescription>
+            Looks at appointments <strong>already booked</strong> in FieldRoutes and proposes moving
+            them onto tighter days — only appointments that are <strong>not locked</strong> and whose
+            <strong> notification hasn't been sent</strong>, only to the same tech's days within the
+            customer's normal flexibility, and only when the move genuinely shortens driving.
+            Queued moves are rescheduled in FieldRoutes by the paced bot.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Window start</Label>
+              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Window end</Label>
+              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            </div>
+            <div className="flex items-end">
+              <Button onClick={run} disabled={loading}>
+                <Bot className="w-4 h-4 mr-2" />
+                {loading ? "Analyzing…" : "Find better days"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {result && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <StatCard label="Booked appts" value={result.appointments} />
+            <StatCard label="Movable" value={result.movable} />
+            <StatCard label="Locked (stay)" value={result.locked} small />
+            <StatCard label="Notified (stay)" value={result.notified} small />
+            <StatCard label="Miles saved if all moved" value={`${result.total_gain_mi} mi`} tone={result.moves.length ? "ok" : "neutral"} />
+          </div>
+
+          {result.moves.length === 0 ? (
+            <Card>
+              <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                No worthwhile moves found — the movable appointments already sit on their best days.
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-sm font-semibold">
+                  {result.moves.length} proposed move{result.moves.length === 1 ? "" : "s"}
+                  <button type="button" className="ml-3 text-xs underline text-muted-foreground"
+                          onClick={() => setChecked(new Set(result.moves.map((m) => m.appointment_id)))}>
+                    select all
+                  </button>
+                  <button type="button" className="ml-2 text-xs underline text-muted-foreground"
+                          onClick={() => setChecked(new Set())}>
+                    none
+                  </button>
+                </span>
+                <Button onClick={queueMoves} disabled={queueing || checked.size === 0}>
+                  <Send className="w-4 h-4 mr-2" />
+                  {queueing ? "Queueing…" : `Queue ${[...checked].filter((id) => !queued.has(id)).length} reschedules`}
+                </Button>
+              </div>
+              {[...byTech.entries()].map(([tech, moves]) => (
+                <Card key={tech}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">{tech} · {moves.length} move{moves.length === 1 ? "" : "s"}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1.5">
+                    {moves.map((m) => {
+                      const isQueued = queued.has(m.appointment_id);
+                      return (
+                        <label key={m.appointment_id}
+                               className={`flex items-start gap-2 rounded-md border p-2 text-xs cursor-pointer ${
+                                 isQueued ? "bg-muted/60 text-muted-foreground" : "bg-background hover:bg-muted/30"}`}>
+                          <Checkbox
+                            checked={checked.has(m.appointment_id) || isQueued}
+                            disabled={isQueued}
+                            onCheckedChange={() => toggle(m.appointment_id)}
+                            className="mt-0.5"
+                          />
+                          <span className="flex-1 min-w-0">
+                            <span className="font-semibold text-sm">{m.customer}</span>
+                            <span className="text-muted-foreground"> · {m.city}</span>
+                            {isQueued && <Badge variant="outline" className="ml-2 text-[10px] h-4 text-muted-foreground">queued</Badge>}
+                            <br />
+                            {weekdayLabel(m.from_date)} → <span className="font-semibold">{weekdayLabel(m.to_date)}</span>
+                            {" · "}<span className="font-bold text-emerald-700">saves ~{m.gain_mi} mi</span>
+                            {" "}({m.from_dist_mi} → {m.to_dist_mi} mi from the day's route)
+                            {" · "}loads {m.from_load}→{m.to_load}
+                            {m.special_scheduling && (
+                              <><br /><span className="text-amber-700">note: {m.special_scheduling}</span></>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          )}
         </>
       )}
     </>

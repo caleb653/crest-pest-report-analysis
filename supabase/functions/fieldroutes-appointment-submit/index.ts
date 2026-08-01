@@ -69,6 +69,53 @@ serve(async (req) => {
       return json({ ok: false, error: "missing_auth" }, 401);
     }
 
+    // ── RESCHEDULES (Reschedule Bot): queue paced appointment/update writes
+    // that MOVE existing booked appointments to better days. ──
+    const reschedules = Array.isArray(body?.reschedules) ? body.reschedules : null;
+    if (reschedules) {
+      if (reschedules.length === 0 || reschedules.length > 300) {
+        return json({ ok: false, error: "bad_reschedule_size" }, 400);
+      }
+      const rows: Record<string, unknown>[] = [];
+      let rejected = 0;
+      for (const it of reschedules) {
+        const apptId = Number(it?.appointment_id ?? 0);
+        const rDate = String(it?.date ?? "").trim();
+        const rStart = String(it?.start ?? "").trim();
+        const rEnd = String(it?.end ?? "").trim();
+        if (!apptId || apptId <= 0 || !/^\d{4}-\d{2}-\d{2}$/.test(rDate)
+            || !/^\d{2}:\d{2}(:\d{2})?$/.test(rStart) || !/^\d{2}:\d{2}(:\d{2})?$/.test(rEnd)) {
+          rejected++;
+          continue;
+        }
+        const label = String(it?.customer_label ?? "").trim();
+        rows.push({
+          entity: "appointment",
+          action: "update",
+          endpoint: "/api/fr/appointment-update",
+          payload: {
+            appointment_id: apptId,
+            date: rDate,
+            start: rStart.length === 5 ? `${rStart}:00` : rStart,
+            end: rEnd.length === 5 ? `${rEnd}:00` : rEnd,
+            duration: it?.duration == null ? null : Number(it.duration),
+            route_id: it?.route_id == null || it?.route_id === "" ? null : Number(it.route_id),
+            _label: { customer: label, requested_by: requestedBy,
+                      moved_from: String(it?.from_date ?? "") },
+          },
+          summary: `Reschedule ${label || `appointment ${apptId}`} `
+            + `${it?.from_date ? `from ${it.from_date} ` : ""}to ${rDate} ${rStart}–${rEnd}`,
+          status: "auto",
+          requested_by: requestedBy,
+        });
+      }
+      if (!rows.length) return json({ ok: false, error: "no_valid_items", rejected }, 400);
+      const { data: ins, error: insErr } = await supabase
+        .from("fieldroutes_write_queue").insert(rows).select("id");
+      if (insErr) return json({ ok: false, error: "enqueue_failed", detail: insErr.message }, 500);
+      return json({ ok: true, paced: true, queued_count: ins?.length ?? rows.length, rejected });
+    }
+
     // ── BULK enqueue (push a tech's whole week / ALL open routes): validate
     // each item and insert them all as pre-approved paced 'auto' rows in ONE
     // statement; the fieldroutes-queue-worker drains them 30s apart. ──

@@ -128,6 +128,30 @@ serve(async (req) => {
       return json({ ok: true, result: rr });
     }
 
+    // ── Action: Reschedule Bot — propose moves of BOOKED appointments (never
+    // locked / reminder-sent) to better days. Read-only upstream. ──
+    if (String(body?.action ?? "") === "reschedule_bot") {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        await logAttempt(false, "bad_dates");
+        return json({ ok: false, error: "bad_dates" });
+      }
+      const rbUrl = Deno.env.get("SCHEDULING_API_URL");
+      const rbKey = Deno.env.get("SCHEDULING_API_KEY");
+      if (!rbUrl || !rbKey) { await logAttempt(false, "api_not_configured"); return json({ ok: false, error: "api_not_configured" }); }
+      const up = await fetch(`${rbUrl.replace(/\/+$/, "")}/api/reschedule-bot`, {
+        method: "POST",
+        headers: { "X-API-Key": rbKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ start_date: startDate, end_date: endDate, max_stops: maxStops }),
+      });
+      const rb = await up.json().catch(() => ({}));
+      if (!up.ok) {
+        await logAttempt(false, `upstream_${up.status}`);
+        return json({ ok: false, error: "upstream_failed", status: up.status, detail: rb });
+      }
+      await logAttempt(true, null);
+      return json({ ok: true, result: rb });
+    }
+
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
       await logAttempt(false, "bad_dates");
       return json({ ok: false, error: "bad_dates", detail: "start_date and end_date must be YYYY-MM-DD" });
