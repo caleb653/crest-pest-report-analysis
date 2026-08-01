@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon, Trophy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
@@ -109,12 +109,23 @@ const reportTypes = [
     hoverBg: "hover:bg-indigo-100",
     border: "hover:border-indigo-300",
   },
+  {
+    id: "competition",
+    title: "Competition",
+    description: "Company scoreboards — team & sales competitions",
+    icon: Trophy,
+    path: "/competition",
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    hoverBg: "hover:bg-amber-100",
+    border: "hover:border-amber-300",
+  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
 //         row3 = slot-finder, schedule-review
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8];
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9];
 
 const Index = () => {
   const navigate = useNavigate();
