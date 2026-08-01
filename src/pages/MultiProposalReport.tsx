@@ -2418,8 +2418,8 @@ Crest Pest Control`;
         >
         {/* ── Interactive grid (screen only) ── */}
         <div className="space-y-1 print:hidden">
-          {/* Header Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
+          {/* Header Row — desktop only; the mobile card layout labels its own cells */}
+          <div className="hidden md:grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center text-sm font-bold uppercase border-b border-border pb-1">
             <span className="pl-1">Service Type</span>
             <span className="text-center">Initial</span>
             <span className="text-center">
@@ -2440,18 +2440,21 @@ Crest Pest Control`;
             <span></span>
           </div>
 
-          {/* Service Rows */}
+          {/* Service Rows — 6-column grid on desktop (unchanged); below md the
+              same cells re-flow into a labeled card: service on top, the two
+              prices side by side, frequency, then the schedule chips. */}
           {proposal.services.map((service, serviceIndex) => (
             <div
               key={serviceIndex}
-              className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center"
+              className="relative grid grid-cols-2 gap-1.5 max-md:rounded-lg max-md:border max-md:border-border/60 max-md:bg-muted/20 max-md:p-2 md:grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] md:items-center"
             >
-              <div className="bg-white/80 rounded px-1">
+              <div className="bg-white/80 rounded px-1 col-span-2 md:col-span-1 max-md:pr-8">
+                <span className="md:hidden block pl-1 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Service Type</span>
                 <Select
                   value={service.serviceType}
                   onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "serviceType", val)}
                 >
-                  <SelectTrigger className="h-6 text-xs w-full bg-transparent border-0 shadow-none">
+                  <SelectTrigger className="h-6 max-md:h-9 text-xs max-md:text-sm w-full bg-transparent border-0 shadow-none">
                     <SelectValue placeholder="Select service..." />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
@@ -2461,22 +2464,29 @@ Crest Pest Control`;
                   </SelectContent>
                 </Select>
               </div>
-              <div className="relative bg-white/80 rounded">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                <Input type="text" inputMode="numeric" value={service.initialPrice}
-                  onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "initialPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder="0" className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
+              <div className="bg-white/80 rounded">
+                <span className="md:hidden block pl-1.5 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Initial</span>
+                <div className="relative">
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" inputMode="numeric" value={service.initialPrice}
+                    onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "initialPrice", e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="0" className="h-6 max-md:h-9 text-xs max-md:text-sm pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
+                </div>
               </div>
-              <div className="relative bg-white/80 rounded">
-                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
-                <Input type="text" inputMode="numeric" value={service.recurringPrice}
-                  onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "recurringPrice", e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder="0" className="h-6 text-xs pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
+              <div className="bg-white/80 rounded">
+                <span className="md:hidden block pl-1.5 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">{resolveRecurringLabel(proposal)}</span>
+                <div className="relative">
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">$</span>
+                  <Input type="text" inputMode="numeric" value={service.recurringPrice}
+                    onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "recurringPrice", e.target.value.replace(/[^0-9]/g, ""))}
+                    placeholder="0" className="h-6 max-md:h-9 text-xs max-md:text-sm pl-4 text-center pr-1 bg-transparent border-0 shadow-none" />
+                </div>
               </div>
-              <div className="bg-white/80 rounded px-1">
+              <div className="bg-white/80 rounded px-1 col-span-2 md:col-span-1">
+                <span className="md:hidden block pl-1 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Frequency</span>
                 <Select value={service.frequency.toString()}
                   onValueChange={(val) => handleProposalServiceChange(proposalIndex, serviceIndex, "frequency", parseInt(val))}>
-                  <SelectTrigger className="h-6 text-xs w-full bg-transparent border-0 shadow-none">
+                  <SelectTrigger className="h-6 max-md:h-9 text-xs max-md:text-sm w-full bg-transparent border-0 shadow-none">
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent className="bg-white z-50">
@@ -2497,7 +2507,8 @@ Crest Pest Control`;
                   </label>
                 )}
               </div>
-              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5">
+              <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5 col-span-2 md:col-span-1">
+                <span className="md:hidden block pl-0.5 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Schedule</span>
                 {(() => {
                   const chips = buildScheduleChipData(service.frequency, service.followUp30);
                   if (chips.length === 0) {
@@ -2523,9 +2534,9 @@ Crest Pest Control`;
                   );
                 })()}
               </div>
-              <div>
+              <div className="max-md:absolute max-md:top-1 max-md:right-1">
                 {proposal.services.length > 1 && (
-                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6"
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6 max-md:h-8 max-md:w-8"
                     onClick={() => removeServiceFromProposal(proposalIndex, serviceIndex)}>
                     <X className="w-3 h-3" />
                   </Button>
@@ -2535,22 +2546,24 @@ Crest Pest Control`;
           ))}
 
           {/* Totals Row */}
-          <div className="grid grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center pt-1 border-t border-border">
-            <div className="text-xs font-bold text-right">Total:</div>
-            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
+          <div className="grid grid-cols-2 md:grid-cols-[minmax(100px,1fr)_70px_70px_120px_minmax(140px,1.5fr)_24px] gap-1.5 items-center pt-1 border-t border-border">
+            <div className="text-xs font-bold text-right col-span-2 md:col-span-1 max-md:text-left max-md:pl-1">Total:</div>
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6 max-md:h-9 max-md:text-sm max-md:gap-1">
+              <span className="md:hidden text-[9px] font-bold uppercase text-muted-foreground mr-1">Initial</span>
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.initialPrice) || 0), 0)).toLocaleString()}</span>
             </div>
-            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6">
+            <div className="text-xs bg-white/80 rounded-lg py-0.5 px-1 flex items-center justify-center h-6 max-md:h-9 max-md:text-sm max-md:gap-1">
+              <span className="md:hidden text-[9px] font-bold uppercase text-muted-foreground mr-1 truncate">{resolveRecurringLabel(proposal)}</span>
               <span className="text-muted-foreground">$</span>
               <span className="font-bold">{Math.round(proposal.services.reduce((sum, s) => sum + (parseFloat(s.recurringPrice) || 0), 0)).toLocaleString()}</span>
             </div>
-            <div></div><div></div><div></div>
+            <div className="hidden md:block"></div><div className="hidden md:block"></div><div className="hidden md:block"></div>
           </div>
 
           {proposal.services.length < 5 && !isReadOnly && (
             <Button type="button" variant="outline" size="sm" onClick={() => addServiceToProposal(proposalIndex)}
-              className="h-6 text-[10px] mt-1">
+              className="h-6 max-md:h-9 text-[10px] max-md:text-xs mt-1 max-md:w-full">
               <Plus className="w-3 h-3 mr-1" /> Add Service
             </Button>
           )}
@@ -3742,7 +3755,7 @@ Crest Pest Control`;
 
           {/* Recommended Proposal Selector — editor only */}
           {proposals.length > 1 && !isReadOnly && (
-            <div className="no-print flex items-center gap-3 p-2 bg-muted/50 rounded-lg border border-border">
+            <div className="no-print flex items-center gap-3 max-md:gap-2 max-md:flex-wrap p-2 bg-muted/50 rounded-lg border border-border">
               <Star className="h-5 w-5 text-primary fill-primary shrink-0" />
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Set Recommended:</span>
               <Select value={recommendedProposal.toString()} onValueChange={(v) => setRecommendedProposal(parseInt(v))}>
@@ -3761,7 +3774,8 @@ Crest Pest Control`;
           {/* Scheduling + Products + Pesticide Notice in a row */}
           <div className={cn(
             "grid gap-1.5 print:gap-0.5",
-            showSchedulingSection ? "grid-cols-[1fr_1fr_2fr]" : "grid-cols-[2fr_3fr]",
+            // Phone: these info cards stack; md+ keeps the original columns.
+            showSchedulingSection ? "grid-cols-1 md:grid-cols-[1fr_1fr_2fr]" : "grid-cols-1 md:grid-cols-[2fr_3fr]",
             showSchedulingSection ? "print:grid-cols-[1fr_1fr_2fr]" : "print:grid-cols-[2fr_3fr]",
           )}>
             {/* Scheduling & Communication */}
@@ -3817,7 +3831,7 @@ Crest Pest Control`;
                 <span className="text-base print:text-sm font-bold uppercase">Products</span>
               </div>
               <div className="p-2.5 print:p-1.5">
-                <div className="text-[11px] leading-snug text-foreground columns-2 gap-2">
+                <div className="text-[11px] leading-snug text-foreground columns-1 sm:columns-2 gap-2">
                   {displayedProducts.map((product, index) => (
                     <div key={index} className="flex items-center gap-1 group">
                       <p className="flex-1">
