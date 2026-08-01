@@ -31,17 +31,17 @@ const DAY_COLORS: Record<number, string> = {
   6: "#e87ba4", // Sat  magenta (dashed line)
 };
 
-function weekdayIdx(iso: string): number {
+export function weekdayIdx(iso: string): number {
   return new Date(`${iso}T12:00:00`).getDay();
 }
-function dayColor(iso: string): string {
+export function dayColor(iso: string): string {
   return DAY_COLORS[weekdayIdx(iso)] || "#52514e";
 }
 
 // Small circle marker in the day color with a white ring — deliberately more
 // compact than the single-day map's numbered pins, since a whole week of stops
 // is on screen at once.
-function dotIcon(color: string, highlight = false) {
+export function dotIcon(color: string, highlight = false) {
   const r = highlight ? 9 : 7;
   const size = r * 2 + 4;
   const c = size / 2;

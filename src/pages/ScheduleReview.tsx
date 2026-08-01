@@ -32,7 +32,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
-import WeekRouteMap, { type MapMoveGroup } from "@/components/scheduling/WeekRouteMap";
+import WeekRouteMap, { type MapMoveGroup, dayColor, dotIcon } from "@/components/scheduling/WeekRouteMap";
+import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -2347,6 +2348,85 @@ type RescheduleResult = {
   moves: RescheduleMove[]; total_gain_mi: number;
 };
 
+// Map view of the bot's proposals: each movable stop is a dot in its TARGET
+// day's color — click a dot (or a day chip) to bulk-toggle which moves get
+// queued. The visual answer to "where do these go?".
+function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onToggleDate }: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  moves: RescheduleMove[];
+  checked: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleDate: (date: string) => void;
+}) {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open || apiKey) return;
+    supabase.functions.invoke("get-maps-key").then(({ data }) => {
+      const k = (data as { key?: string } | null)?.key || "";
+      if (k) setApiKey(k);
+    });
+  }, [open, apiKey]);
+  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey || "x" });
+  const geo = moves.filter((m) => typeof (m as any).lat === "number" && typeof (m as any).lng === "number");
+  const dates = [...new Set(moves.map((m) => m.to_date))].sort();
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  useEffect(() => {
+    if (!map || !geo.length) return;
+    const b = new google.maps.LatLngBounds();
+    geo.forEach((m) => b.extend({ lat: (m as any).lat, lng: (m as any).lng }));
+    map.fitBounds(b, 48);
+  }, [map, moves.length]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Proposed reschedules — dot color = the day it should move TO</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-wrap gap-1.5">
+          {dates.map((date) => {
+            const n = moves.filter((m) => m.to_date === date).length;
+            const sel = moves.filter((m) => m.to_date === date && checked.has(m.appointment_id)).length;
+            return (
+              <button key={date} type="button" onClick={() => onToggleDate(date)}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${sel ? "" : "opacity-40"}`}
+                      style={{ borderColor: dayColor(date) }}
+                      title={`Toggle all moves to ${weekdayLabel(date)}`}>
+                <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
+                → {weekdayLabel(date)} · {sel}/{n}
+              </button>
+            );
+          })}
+          <span className="text-xs text-muted-foreground self-center">click a dot or chip to include/exclude moves</span>
+        </div>
+        <div className="flex-1 min-h-0">
+          {apiKey && isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={{ width: "100%", height: "100%" }}
+              onLoad={setMap}
+              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
+            >
+              {geo.map((m) => (
+                <MarkerF
+                  key={m.appointment_id}
+                  position={{ lat: (m as any).lat, lng: (m as any).lng }}
+                  icon={dotIcon(dayColor(m.to_date), checked.has(m.appointment_id))}
+                  opacity={checked.has(m.appointment_id) ? 1 : 0.35}
+                  onClick={() => onToggle(m.appointment_id)}
+                  title={`${m.customer} — ${weekdayLabel(m.from_date)} → ${weekdayLabel(m.to_date)} (saves ~${m.gain_mi} mi)`}
+                />
+              ))}
+            </GoogleMap>
+          ) : (
+            <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [start, setStart] = useState(() => isoFromDate(new Date(Date.now() + 86400000)));
   const [end, setEnd] = useState(() => isoFromDate(new Date(Date.now() + 13 * 86400000)));
@@ -2355,6 +2435,18 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [result, setResult] = useState<RescheduleResult | null>(null);
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [mapOpen, setMapOpen] = useState(false);
+
+  const toggleDateGroup = (date: string) => {
+    if (!result) return;
+    const ids = result.moves.filter((m) => m.to_date === date).map((m) => m.appointment_id);
+    setChecked((cur) => {
+      const next = new Set(cur);
+      const allIn = ids.every((id) => next.has(id));
+      ids.forEach((id) => (allIn ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  };
 
   const run = async () => {
     if (!staff) return toast.error("Please sign in again.");
@@ -2496,11 +2588,24 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                     none
                   </button>
                 </span>
-                <Button onClick={queueMoves} disabled={queueing || checked.size === 0}>
-                  <Send className="w-4 h-4 mr-2" />
-                  {queueing ? "Queueing…" : `Queue ${[...checked].filter((id) => !queued.has(id)).length} reschedules`}
-                </Button>
+                <span className="flex items-center gap-2">
+                  <Button variant="outline" onClick={() => setMapOpen(true)}>
+                    <MapPin className="w-4 h-4 mr-2" /> Map view
+                  </Button>
+                  <Button onClick={queueMoves} disabled={queueing || checked.size === 0}>
+                    <Send className="w-4 h-4 mr-2" />
+                    {queueing ? "Queueing…" : `Queue ${[...checked].filter((id) => !queued.has(id)).length} reschedules`}
+                  </Button>
+                </span>
               </div>
+              <RescheduleMapDialog
+                open={mapOpen}
+                onOpenChange={setMapOpen}
+                moves={result.moves}
+                checked={checked}
+                onToggle={toggle}
+                onToggleDate={toggleDateGroup}
+              />
               {[...byTech.entries()].map(([tech, moves]) => (
                 <Card key={tech}>
                   <CardHeader className="pb-2">
