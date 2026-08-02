@@ -2518,7 +2518,7 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
     geo.forEach((s) => b.extend({ lat: s.lat as number, lng: s.lng as number }));
     map.fitBounds(b, 48);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, data.stops.length]);
+  }, [map, allStops.length]);
 
   const toggleStop = (s: BookedStop) => {
     if (movedTo.has(s.appointment_id))
