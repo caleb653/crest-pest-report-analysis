@@ -20,6 +20,7 @@ const USERS: Record<string, { password: string; fullName: string }> = {
   dlongoria: { password: "crest02", fullName: "David Longoria" },
   nstovall: { password: "Crest75!", fullName: "Nick Stovall" },
   ccarnival: { password: "Crest125!", fullName: "Cade Carnival" },
+  blyttle: { password: "Crest250!", fullName: "Brock Lyttle" },
 };
 
 const PinGate = ({ children }: { children: React.ReactNode }) => {
