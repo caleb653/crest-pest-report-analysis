@@ -2792,7 +2792,10 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
         toast.error(data?.detail?.detail || data?.error || "Reschedule Bot failed — is the backend deployed?");
         return;
       }
-      const res = data.result as RescheduleResult;
+      // Defensive: a stale backend routes unknown actions to the Fill handler,
+      // which returns ok:true but no moves[] — that used to crash the page.
+      const raw = data.result as RescheduleResult;
+      const res: RescheduleResult = { ...raw, moves: Array.isArray(raw?.moves) ? raw.moves : [] };
       setResult(res);
       setChecked(new Set(res.moves.map((m) => m.appointment_id)));
     } catch (e) {
