@@ -2367,16 +2367,8 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
       if (k) setApiKey(k);
     });
   }, [open, apiKey]);
-  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey || "x", libraries: GMAPS_LIBRARIES });
   const geo = moves.filter((m) => typeof (m as any).lat === "number" && typeof (m as any).lng === "number");
   const dates = [...new Set(moves.map((m) => m.to_date))].sort();
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  useEffect(() => {
-    if (!map || !geo.length) return;
-    const b = new google.maps.LatLngBounds();
-    geo.forEach((m) => b.extend({ lat: (m as any).lat, lng: (m as any).lng }));
-    map.fitBounds(b, 48);
-  }, [map, moves.length]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -2401,29 +2393,51 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
           <span className="text-xs text-muted-foreground self-center">click a dot or chip to include/exclude moves</span>
         </div>
         <div className="flex-1 min-h-0">
-          {apiKey && isLoaded ? (
-            <GoogleMap
-              mapContainerStyle={{ width: "100%", height: "100%" }}
-              onLoad={setMap}
-              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
-            >
-              {geo.map((m) => (
-                <MarkerF
-                  key={m.appointment_id}
-                  position={{ lat: (m as any).lat, lng: (m as any).lng }}
-                  icon={dotIcon(dayColor(m.to_date), checked.has(m.appointment_id))}
-                  opacity={checked.has(m.appointment_id) ? 1 : 0.35}
-                  onClick={() => onToggle(m.appointment_id)}
-                  title={`${m.customer} — ${weekdayLabel(m.from_date)} → ${weekdayLabel(m.to_date)} (saves ~${m.gain_mi} mi)`}
-                />
-              ))}
-            </GoogleMap>
+          {apiKey ? (
+            <RescheduleProposalMapInner apiKey={apiKey} geo={geo} checked={checked} onToggle={onToggle} />
           ) : (
             <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
           )}
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Inner map body, mounted ONLY once the real Maps key exists. useJsApiLoader
+// requires IDENTICAL options at every call site — initializing it with the
+// old `apiKey || "x"` placeholder poisoned the shared loader for every other
+// map in the session (they all hang at "Loading map…").
+function RescheduleProposalMapInner({ apiKey, geo, checked, onToggle }: {
+  apiKey: string; geo: RescheduleMove[]; checked: Set<string>; onToggle: (id: string) => void;
+}) {
+  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  useEffect(() => {
+    if (!map || !geo.length) return;
+    const b = new google.maps.LatLngBounds();
+    geo.forEach((m) => b.extend({ lat: (m as any).lat, lng: (m as any).lng }));
+    map.fitBounds(b, 48);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, geo.length]);
+  if (!isLoaded) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
+  return (
+    <GoogleMap
+      mapContainerStyle={{ width: "100%", height: "100%" }}
+      onLoad={setMap}
+      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
+    >
+      {geo.map((m) => (
+        <MarkerF
+          key={m.appointment_id}
+          position={{ lat: (m as any).lat, lng: (m as any).lng }}
+          icon={dotIcon(dayColor(m.to_date), checked.has(m.appointment_id))}
+          opacity={checked.has(m.appointment_id) ? 1 : 0.35}
+          onClick={() => onToggle(m.appointment_id)}
+          title={`${m.customer} — ${weekdayLabel(m.from_date)} → ${weekdayLabel(m.to_date)} (saves ~${m.gain_mi} mi)`}
+        />
+      ))}
+    </GoogleMap>
   );
 }
 
