@@ -31,6 +31,12 @@ const DAY_COLORS: Record<number, string> = {
   6: "#e87ba4", // Sat  magenta (dashed line)
 };
 
+// Shared Google Maps JS loader libraries. Every useJsApiLoader in the app uses
+// id "route-map-script" — the loader requires IDENTICAL options everywhere, so
+// any map that needs an extra library must add it HERE, not locally.
+// "drawing" powers the Reschedule map's circle-select tool.
+export const GMAPS_LIBRARIES: "drawing"[] = ["drawing"];
+
 export function weekdayIdx(iso: string): number {
   return new Date(`${iso}T12:00:00`).getDay();
 }
@@ -116,6 +122,7 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
+    libraries: GMAPS_LIBRARIES,
   });
 
   const techs = useMemo(

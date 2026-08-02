@@ -128,6 +128,30 @@ serve(async (req) => {
       return json({ ok: true, result: rr });
     }
 
+    // ── Action: booked-stops inventory for the manual map-move tool (circle
+    // stops, filter by frequency, bulk-move to a chosen day). Read-only. ──
+    if (String(body?.action ?? "") === "list_booked") {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        await logAttempt(false, "bad_dates");
+        return json({ ok: false, error: "bad_dates" });
+      }
+      const lbUrl = Deno.env.get("SCHEDULING_API_URL");
+      const lbKey = Deno.env.get("SCHEDULING_API_KEY");
+      if (!lbUrl || !lbKey) { await logAttempt(false, "api_not_configured"); return json({ ok: false, error: "api_not_configured" }); }
+      const up = await fetch(`${lbUrl.replace(/\/+$/, "")}/api/booked-stops`, {
+        method: "POST",
+        headers: { "X-API-Key": lbKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ start_date: startDate, end_date: endDate }),
+      });
+      const lb = await up.json().catch(() => ({}));
+      if (!up.ok) {
+        await logAttempt(false, `upstream_${up.status}`);
+        return json({ ok: false, error: "upstream_failed", status: up.status, detail: lb });
+      }
+      await logAttempt(true, null);
+      return json({ ok: true, result: lb });
+    }
+
     // ── Action: Reschedule Bot — propose moves of BOOKED appointments (never
     // locked / reminder-sent) to better days. Read-only upstream. ──
     if (String(body?.action ?? "") === "reschedule_bot") {

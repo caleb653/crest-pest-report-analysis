@@ -32,8 +32,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
-import WeekRouteMap, { type MapMoveGroup, dayColor, dotIcon } from "@/components/scheduling/WeekRouteMap";
-import { GoogleMap, MarkerF, useJsApiLoader } from "@react-google-maps/api";
+import WeekRouteMap, { type MapMoveGroup, dayColor, dotIcon, GMAPS_LIBRARIES } from "@/components/scheduling/WeekRouteMap";
+import { GoogleMap, MarkerF, DrawingManagerF, useJsApiLoader } from "@react-google-maps/api";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -2367,7 +2367,7 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
       if (k) setApiKey(k);
     });
   }, [open, apiKey]);
-  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey || "x" });
+  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey || "x", libraries: GMAPS_LIBRARIES });
   const geo = moves.filter((m) => typeof (m as any).lat === "number" && typeof (m as any).lng === "number");
   const dates = [...new Set(moves.map((m) => m.to_date))].sort();
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -2427,6 +2427,289 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
   );
 }
 
+// ── Manual map-move ──────────────────────────────────────────────────────────
+// Caleb: "circle the existing stops, filter to just the quarterlies, move them
+// all to a different day — I click the stops myself instead of the bot
+// proposing." Every booked stop in the window is a dot in its CURRENT day's
+// color. Click dots (or circle-select a cluster), optionally filter by service
+// frequency, pick a target day, and the moves queue through the same paced
+// FieldRoutes appointment/update writer the bot uses.
+type BookedStop = {
+  appointment_id: string; customer: string; city: string; tech: string;
+  date: string; start: string; end: string; duration: number;
+  time_window?: string | null; lat: number | null; lng: number | null;
+  service_type: string; frequency_days: number; frequency: string;
+  locked: boolean; notified: boolean; movable: boolean; special?: string;
+};
+type BookedRoute = { tech: string; date: string; route_id: string; stops: number };
+type BookedResult = {
+  ok: boolean; start: string; end: string; count: number; movable: number;
+  stops: BookedStop[]; routes: BookedRoute[];
+};
+
+const FREQ_ORDER = ["Quarterly", "Bi-monthly", "Monthly", "Semi-annual", "Annual", "One-time"];
+
+function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371000, toRad = (x: number) => (x * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat), dLng = toRad(bLng - aLng);
+  const h = Math.sin(dLat / 2) ** 2
+    + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function ManualMoveMap({ staff, data }: { staff: { fullName: string } | null; data: BookedResult }) {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.functions.invoke("get-maps-key").then(({ data: d }) => {
+      const k = (d as { key?: string } | null)?.key || "";
+      if (k) setApiKey(k);
+    });
+  }, []);
+  if (!apiKey) return <Card><CardContent className="py-6 text-sm text-muted-foreground">Loading map…</CardContent></Card>;
+  return <ManualMoveMapInner staff={staff} data={data} apiKey={apiKey} />;
+}
+
+function ManualMoveMapInner({ staff, data, apiKey }: {
+  staff: { fullName: string } | null; data: BookedResult; apiKey: string;
+}) {
+  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [freqFilter, setFreqFilter] = useState<Set<string>>(new Set());
+  const [targetDate, setTargetDate] = useState<string>("");
+  const [drawMode, setDrawMode] = useState(false);
+  const [queueing, setQueueing] = useState(false);
+  // appointment_id -> the date it was queued to (recolors the dot, blocks re-moves)
+  const [movedTo, setMovedTo] = useState<Map<string, string>>(new Map());
+
+  const geo = data.stops.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
+  const displayDate = (s: BookedStop) => movedTo.get(s.appointment_id) ?? s.date;
+  const freqs = [...new Set(data.stops.map((s) => s.frequency))]
+    .sort((a, b) => FREQ_ORDER.indexOf(a) - FREQ_ORDER.indexOf(b));
+  const passesFreq = (s: BookedStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
+  const visible = geo.filter(passesFreq);
+  const dates = [...new Set(data.stops.map((s) => displayDate(s)))].sort();
+  const routeDates = [...new Set(data.routes.map((r) => r.date))].sort();
+  const routeFor = (tech: string, date: string) =>
+    data.routes.find((r) => r.tech === tech && r.date === date);
+
+  useEffect(() => {
+    if (!map || !geo.length) return;
+    const b = new google.maps.LatLngBounds();
+    geo.forEach((s) => b.extend({ lat: s.lat as number, lng: s.lng as number }));
+    map.fitBounds(b, 48);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, data.stops.length]);
+
+  const toggleStop = (s: BookedStop) => {
+    if (movedTo.has(s.appointment_id))
+      return toast.error(`${s.customer} is already queued to ${weekdayLabel(movedTo.get(s.appointment_id)!)}.`);
+    if (!s.movable)
+      return toast.error(`${s.customer} can't move — ${s.locked ? "locked in FieldRoutes" : "the customer was already notified"}.`);
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(s.appointment_id)) next.delete(s.appointment_id); else next.add(s.appointment_id);
+      return next;
+    });
+  };
+
+  const toggleDay = (date: string) => {
+    const ids = visible
+      .filter((s) => s.movable && !movedTo.has(s.appointment_id) && displayDate(s) === date)
+      .map((s) => s.appointment_id);
+    if (!ids.length) return;
+    setSelected((cur) => {
+      const next = new Set(cur);
+      const allIn = ids.every((id) => next.has(id));
+      ids.forEach((id) => (allIn ? next.delete(id) : next.add(id)));
+      return next;
+    });
+  };
+
+  const onCircle = (circle: google.maps.Circle) => {
+    const c = circle.getCenter();
+    const r = circle.getRadius();
+    circle.setMap(null);
+    setDrawMode(false);
+    if (!c) return;
+    const ids = visible
+      .filter((s) => s.movable && !movedTo.has(s.appointment_id))
+      .filter((s) => metersBetween(c.lat(), c.lng(), s.lat as number, s.lng as number) <= r)
+      .map((s) => s.appointment_id);
+    if (!ids.length) return toast.error("No movable stops inside that circle (check the frequency filter).");
+    setSelected((cur) => new Set([...cur, ...ids]));
+    toast.success(`Circled ${ids.length} stop${ids.length === 1 ? "" : "s"}`);
+  };
+
+  const moveSelected = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    if (!targetDate) return toast.error("Pick a target day first.");
+    const chosen = geo.filter((s) => selected.has(s.appointment_id) && s.movable && !movedTo.has(s.appointment_id));
+    const noRoute: BookedStop[] = [];
+    const items = chosen.filter((s) => s.date !== targetDate).filter((s) => {
+      if (routeFor(s.tech, targetDate)) return true;
+      noRoute.push(s);
+      return false;
+    });
+    if (noRoute.length) {
+      toast.error(`${[...new Set(noRoute.map((s) => s.tech))].join(", ")} has no FieldRoutes route on `
+        + `${weekdayLabel(targetDate)} — ${noRoute.length} stop${noRoute.length === 1 ? "" : "s"} skipped. Create the route in FR first.`);
+    }
+    if (!items.length) {
+      if (!noRoute.length) toast.error(`Everything selected is already on ${weekdayLabel(targetDate)}.`);
+      return;
+    }
+    setQueueing(true);
+    try {
+      const { data: resp, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff.fullName,
+          reschedules: items.map((s) => ({
+            appointment_id: Number(s.appointment_id),
+            customer_label: s.customer,
+            date: targetDate, start: s.start, end: s.end,
+            duration: s.duration || 30,
+            route_id: Number(routeFor(s.tech, targetDate)!.route_id) || undefined,
+            from_date: s.date,
+          })),
+        },
+      });
+      if (!error && resp?.ok && resp?.paced === true) {
+        setMovedTo((cur) => {
+          const next = new Map(cur);
+          items.forEach((s) => next.set(s.appointment_id, targetDate));
+          return next;
+        });
+        setSelected(new Set());
+        supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+        toast.success(`Queued ${items.length} move${items.length === 1 ? "" : "s"} to ${weekdayLabel(targetDate)} — `
+          + `the paced bot reschedules them in FieldRoutes (~${Math.max(1, Math.ceil(items.length / 2))} min).`);
+      } else {
+        toast.error(resp?.error === "no_valid_items"
+          ? "Backend rejected the moves — see console."
+          : "Could not queue — is the new backend deployed?");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not queue moves — see console.");
+    } finally {
+      setQueueing(false);
+    }
+  };
+
+  const chip = (active: boolean) =>
+    `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${active ? "" : "opacity-40"}`;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">
+          {data.count} booked stops · {data.movable} movable — click dots or circle a cluster, pick a day, move them
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Show:</span>
+          <button type="button" className={chip(freqFilter.size === 0)} onClick={() => setFreqFilter(new Set())}>
+            All · {geo.length}
+          </button>
+          {freqs.map((f) => (
+            <button key={f} type="button" className={chip(freqFilter.size === 0 || freqFilter.has(f))}
+                    onClick={() => setFreqFilter((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(f)) next.delete(f); else next.add(f);
+                      return next;
+                    })}>
+              {f} · {geo.filter((s) => s.frequency === f).length}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {dates.map((date) => {
+            const n = visible.filter((s) => displayDate(s) === date).length;
+            const sel = visible.filter((s) => displayDate(s) === date && selected.has(s.appointment_id)).length;
+            return (
+              <button key={date} type="button" onClick={() => toggleDay(date)}
+                      className={chip(sel > 0)} style={{ borderColor: dayColor(date) }}
+                      title={`Toggle all visible movable stops on ${weekdayLabel(date)}`}>
+                <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
+                {weekdayLabel(date)} · {sel}/{n}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={drawMode ? "default" : "outline"} onClick={() => setDrawMode((d) => !d)}>
+            <MapPin className="w-4 h-4 mr-1.5" />
+            {drawMode ? "Drag on the map to draw the circle…" : "Circle-select"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
+            <X className="w-4 h-4 mr-1.5" /> Clear
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {selected.size} selected · faded dots are locked/notified (can't move)
+          </span>
+        </div>
+        <div className="h-[60vh] rounded-md overflow-hidden border">
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={{ width: "100%", height: "100%" }}
+              onLoad={setMap}
+              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
+            >
+              {visible.map((s) => {
+                const queuedTo = movedTo.get(s.appointment_id);
+                const isSel = selected.has(s.appointment_id);
+                return (
+                  <MarkerF
+                    key={s.appointment_id}
+                    position={{ lat: s.lat as number, lng: s.lng as number }}
+                    icon={dotIcon(dayColor(displayDate(s)), isSel)}
+                    opacity={queuedTo ? 0.9 : !s.movable ? 0.25 : isSel ? 1 : 0.75}
+                    onClick={() => toggleStop(s)}
+                    title={`${s.customer} · ${s.frequency} · ${weekdayLabel(displayDate(s))} ${s.start}`
+                      + `${queuedTo ? " (queued)" : !s.movable ? (s.locked ? " (locked)" : " (notified)") : ""}`}
+                  />
+                );
+              })}
+              {drawMode && (
+                <DrawingManagerF
+                  drawingMode={google.maps.drawing.OverlayType.CIRCLE}
+                  options={{
+                    drawingControl: false,
+                    circleOptions: {
+                      fillColor: "#4f46e5", fillOpacity: 0.1,
+                      strokeColor: "#4f46e5", strokeWeight: 2,
+                      clickable: false, editable: false, zIndex: 10,
+                    },
+                  }}
+                  onCircleComplete={onCircle}
+                />
+              )}
+            </GoogleMap>
+          ) : (
+            <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium">Move to:</span>
+          {routeDates.map((date) => (
+            <button key={date} type="button" onClick={() => setTargetDate((cur) => (cur === date ? "" : date))}
+                    className={chip(targetDate === date)} style={{ borderColor: dayColor(date) }}>
+              <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
+              {weekdayLabel(date)}
+            </button>
+          ))}
+          <Button size="sm" onClick={moveSelected} disabled={queueing || selected.size === 0 || !targetDate}>
+            <Send className="w-4 h-4 mr-1.5" />
+            {queueing ? "Queueing…" : `Move ${selected.size} → ${targetDate ? weekdayLabel(targetDate) : "pick a day"}`}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [start, setStart] = useState(() => isoFromDate(new Date(Date.now() + 86400000)));
   const [end, setEnd] = useState(() => isoFromDate(new Date(Date.now() + 13 * 86400000)));
@@ -2436,6 +2719,30 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [queued, setQueued] = useState<Set<string>>(new Set());
   const [mapOpen, setMapOpen] = useState(false);
+  const [booked, setBooked] = useState<BookedResult | null>(null);
+  const [loadingBooked, setLoadingBooked] = useState(false);
+
+  const loadBooked = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    setLoadingBooked(true);
+    setBooked(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-fill", {
+        body: { staffName: staff.fullName, action: "list_booked", start_date: start, end_date: end },
+      });
+      if (error) throw error;
+      if (!data?.ok || !data?.result?.ok) {
+        toast.error(data?.detail?.detail || data?.error || "Could not load booked stops — is the backend deployed?");
+        return;
+      }
+      setBooked(data.result as BookedResult);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not load booked stops — see console.");
+    } finally {
+      setLoadingBooked(false);
+    }
+  };
 
   const toggleDateGroup = (date: string) => {
     if (!result) return;
@@ -2531,11 +2838,12 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
             <Bot className="w-5 h-5" /> Reschedule Bot
           </CardTitle>
           <CardDescription>
-            Looks at appointments <strong>already booked</strong> in FieldRoutes and proposes moving
-            them onto tighter days — only appointments that are <strong>not locked</strong> and whose
-            <strong> notification hasn't been sent</strong>, only to the same tech's days within the
-            customer's normal flexibility, and only when the move genuinely shortens driving.
-            Queued moves are rescheduled in FieldRoutes by the paced bot.
+            <strong>Load the map</strong> to see every booked stop in the window — click dots or
+            circle-select a cluster (filter to just the quarterlies if you want), pick a target day,
+            and move them yourself. Or let the bot <strong>propose</strong> better days. Either way,
+            only appointments that are <strong>not locked</strong> and whose
+            <strong> notification hasn't been sent</strong> can move, and queued moves are
+            rescheduled in FieldRoutes by the paced bot.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -2548,15 +2856,21 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
               <Label>Window end</Label>
               <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
             </div>
-            <div className="flex items-end">
-              <Button onClick={run} disabled={loading}>
+            <div className="flex items-end gap-2 flex-wrap">
+              <Button onClick={loadBooked} disabled={loadingBooked}>
+                <MapPin className="w-4 h-4 mr-2" />
+                {loadingBooked ? "Loading…" : "Load map — move stops myself"}
+              </Button>
+              <Button variant="outline" onClick={run} disabled={loading}>
                 <Bot className="w-4 h-4 mr-2" />
-                {loading ? "Analyzing…" : "Find better days"}
+                {loading ? "Analyzing…" : "Find better days (bot)"}
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {booked && <ManualMoveMap staff={staff} data={booked} />}
 
       {result && (
         <>

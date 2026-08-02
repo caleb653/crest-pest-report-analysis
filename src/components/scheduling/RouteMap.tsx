@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "@/integrations/supabase/client";
+import { GMAPS_LIBRARIES } from "./WeekRouteMap";
 
 // Shape we need off each stop. Keeps this component reusable for the Fill
 // day card AND the Schedule-Review route card — both expose `stops[]` with
@@ -68,6 +69,7 @@ function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: strin
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
+    libraries: GMAPS_LIBRARIES,
   });
   const [activeOrder, setActiveOrder] = useState<number | null>(null);
 
