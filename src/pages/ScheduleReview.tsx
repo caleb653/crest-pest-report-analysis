@@ -2472,7 +2472,9 @@ function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): 
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function ManualMoveMap({ staff, data }: { staff: { fullName: string } | null; data: BookedResult }) {
+function ManualMoveMap({ staff, data, targetRoutes }: {
+  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[];
+}) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   useEffect(() => {
     supabase.functions.invoke("get-maps-key").then(({ data: d }) => {
@@ -2481,11 +2483,11 @@ function ManualMoveMap({ staff, data }: { staff: { fullName: string } | null; da
     });
   }, []);
   if (!apiKey) return <Card><CardContent className="py-6 text-sm text-muted-foreground">Loading map…</CardContent></Card>;
-  return <ManualMoveMapInner staff={staff} data={data} apiKey={apiKey} />;
+  return <ManualMoveMapInner staff={staff} data={data} targetRoutes={targetRoutes} apiKey={apiKey} />;
 }
 
-function ManualMoveMapInner({ staff, data, apiKey }: {
-  staff: { fullName: string } | null; data: BookedResult; apiKey: string;
+function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
+  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[]; apiKey: string;
 }) {
   const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -2508,9 +2510,13 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
   const passesFreq = (s: BookedStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
   const visible = geo.filter(passesFreq);
   const dates = [...new Set(allStops.map((s) => displayDate(s)))].sort();
-  const routeDates = [...new Set(allRoutes.map((r) => r.date))].sort();
+  // Phase 2: target days come from the SEPARATE move-to range's routes, not
+  // the source window.
+  const routeDates = [...new Set(targetRoutes.map((r) => r.date))].sort();
   const routeFor = (tech: string, date: string) =>
-    allRoutes.find((r) => r.tech === tech && r.date === date);
+    targetRoutes.find((r) => r.tech === tech && r.date === date);
+  const loadOn = (date: string) =>
+    targetRoutes.filter((r) => r.date === date).reduce((n, r) => n + (r.stops || 0), 0);
 
   useEffect(() => {
     if (!map || !geo.length) return;
@@ -2623,7 +2629,7 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm">
-          {data.count} booked stops · {data.movable} movable — click dots or circle a cluster, pick a day, move them
+          {data.count} booked stops · {data.movable} movable — 1&#41; select stops on the map, 2&#41; pick the day they move to
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -2658,6 +2664,7 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
           })}
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium">1 · Select:</span>
           <Button size="sm" variant={drawMode ? "default" : "outline"} onClick={() => setDrawMode((d) => !d)}>
             <MapPin className="w-4 h-4 mr-1.5" />
             {drawMode ? "Drag on the map to draw the circle…" : "Circle-select"}
@@ -2711,12 +2718,18 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
           )}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-medium">Move to:</span>
+          <span className="text-xs font-medium">2 · Move to (current stop count shown):</span>
+          {routeDates.length === 0 && (
+            <span className="text-xs text-destructive">
+              no FieldRoutes routes in the move-to range — adjust the range and reload
+            </span>
+          )}
           {routeDates.map((date) => (
             <button key={date} type="button" onClick={() => setTargetDate((cur) => (cur === date ? "" : date))}
-                    className={chip(targetDate === date)} style={{ borderColor: dayColor(date) }}>
+                    className={chip(targetDate === date)} style={{ borderColor: dayColor(date) }}
+                    title={`${loadOn(date)} stops already booked across techs on ${weekdayLabel(date)}`}>
               <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
-              {weekdayLabel(date)}
+              {weekdayLabel(date)} · {loadOn(date)}
             </button>
           ))}
           <Button size="sm" onClick={moveSelected} disabled={queueing || selected.size === 0 || !targetDate}>
@@ -2739,17 +2752,28 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [queued, setQueued] = useState<Set<string>>(new Set());
   const [mapOpen, setMapOpen] = useState(false);
   const [booked, setBooked] = useState<BookedResult | null>(null);
+  const [targetRoutes, setTargetRoutes] = useState<BookedRoute[]>([]);
   const [loadingBooked, setLoadingBooked] = useState(false);
+  // Phase 2 range: where the stops land. Defaults to the two weeks after the
+  // default source window.
+  const [targetStart, setTargetStart] = useState(() => isoFromDate(new Date(Date.now() + 14 * 86400000)));
+  const [targetEnd, setTargetEnd] = useState(() => isoFromDate(new Date(Date.now() + 27 * 86400000)));
 
   const loadBooked = async () => {
     if (!staff) return toast.error("Please sign in again.");
+    if (targetEnd < targetStart) return toast.error("The move-to range ends before it starts.");
     setLoadingBooked(true);
     setBooked(null);
     try {
-      const { data, error } = await supabase.functions.invoke("scheduling-fill", {
-        body: { staffName: staff.fullName, action: "list_booked", start_date: start, end_date: end },
+      // Two windows, one endpoint: the source call supplies the stops to
+      // select; the target call is only mined for its routes (which tech has
+      // a FieldRoutes route on which day, and how loaded that day already is).
+      const call = (s: string, e: string) => supabase.functions.invoke("scheduling-fill", {
+        body: { staffName: staff.fullName, action: "list_booked", start_date: s, end_date: e },
       });
-      if (error) throw error;
+      const [src, tgt] = await Promise.all([call(start, end), call(targetStart, targetEnd)]);
+      if (src.error) throw src.error;
+      const data = src.data;
       // Shape check, not just ok-check: an out-of-date edge function routes
       // unknown actions to the Fill handler, which also returns ok:true but
       // has no stops[] — trusting it blank-screened the whole page once.
@@ -2759,6 +2783,12 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
           : data?.detail?.detail || data?.error || "Could not load booked stops — is the backend deployed?");
         return;
       }
+      const tr = tgt.data?.result;
+      const tRoutes: BookedRoute[] = Array.isArray(tr?.routes) ? tr.routes : [];
+      if (!tRoutes.length) {
+        toast.error("No FieldRoutes routes found in the move-to range — stops can only move onto days that have a route.");
+      }
+      setTargetRoutes(tRoutes);
       setBooked(data.result as BookedResult);
     } catch (e) {
       console.error(e);
@@ -2873,31 +2903,53 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
             rescheduled in FieldRoutes by the paced bot.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Window start</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                1 · Pick stops FROM this range
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Start</Label>
+                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End</Label>
+                  <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Window end</Label>
-              <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                2 · Move them TO a day in this range
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Start</Label>
+                  <Input type="date" value={targetStart} onChange={(e) => setTargetStart(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>End</Label>
+                  <Input type="date" value={targetEnd} onChange={(e) => setTargetEnd(e.target.value)} />
+                </div>
+              </div>
             </div>
-            <div className="flex items-end gap-2 flex-wrap">
-              <Button onClick={loadBooked} disabled={loadingBooked}>
-                <MapPin className="w-4 h-4 mr-2" />
-                {loadingBooked ? "Loading…" : "Load map — move stops myself"}
-              </Button>
-              <Button variant="outline" onClick={run} disabled={loading}>
-                <Bot className="w-4 h-4 mr-2" />
-                {loading ? "Analyzing…" : "Find better days (bot)"}
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button onClick={loadBooked} disabled={loadingBooked}>
+              <MapPin className="w-4 h-4 mr-2" />
+              {loadingBooked ? "Loading…" : "Load map — move stops myself"}
+            </Button>
+            <Button variant="outline" onClick={run} disabled={loading}>
+              <Bot className="w-4 h-4 mr-2" />
+              {loading ? "Analyzing…" : "Find better days (bot)"}
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {booked && <ManualMoveMap staff={staff} data={booked} />}
+      {booked && <ManualMoveMap staff={staff} data={booked} targetRoutes={targetRoutes} />}
 
       {result && (
         <>
