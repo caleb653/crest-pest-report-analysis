@@ -1894,6 +1894,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       // write queue) so they render grey and can't be re-pushed — even after
       // a reload or a fresh run, before the FR data sync catches up.
       const res = data.result as FillResult;
+      if (!Array.isArray(res?.proposed)) res.proposed = [];
       const pushedKeys = new Set(
         ((data.pushed ?? []) as Array<{ subscription_id?: unknown; date?: unknown }>)
           .map((p) => `${p.subscription_id}|${p.date}`));
