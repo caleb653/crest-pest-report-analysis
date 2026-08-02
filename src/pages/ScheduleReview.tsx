@@ -2496,16 +2496,20 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
   // appointment_id -> the date it was queued to (recolors the dot, blocks re-moves)
   const [movedTo, setMovedTo] = useState<Map<string, string>>(new Map());
 
-  const geo = data.stops.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
+  // Defensive defaults: a stale backend must degrade to an empty map, never
+  // crash the page.
+  const allStops = Array.isArray(data.stops) ? data.stops : [];
+  const allRoutes = Array.isArray(data.routes) ? data.routes : [];
+  const geo = allStops.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
   const displayDate = (s: BookedStop) => movedTo.get(s.appointment_id) ?? s.date;
-  const freqs = [...new Set(data.stops.map((s) => s.frequency))]
+  const freqs = [...new Set(allStops.map((s) => s.frequency))]
     .sort((a, b) => FREQ_ORDER.indexOf(a) - FREQ_ORDER.indexOf(b));
   const passesFreq = (s: BookedStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
   const visible = geo.filter(passesFreq);
-  const dates = [...new Set(data.stops.map((s) => displayDate(s)))].sort();
-  const routeDates = [...new Set(data.routes.map((r) => r.date))].sort();
+  const dates = [...new Set(allStops.map((s) => displayDate(s)))].sort();
+  const routeDates = [...new Set(allRoutes.map((r) => r.date))].sort();
   const routeFor = (tech: string, date: string) =>
-    data.routes.find((r) => r.tech === tech && r.date === date);
+    allRoutes.find((r) => r.tech === tech && r.date === date);
 
   useEffect(() => {
     if (!map || !geo.length) return;
@@ -2745,8 +2749,13 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
         body: { staffName: staff.fullName, action: "list_booked", start_date: start, end_date: end },
       });
       if (error) throw error;
-      if (!data?.ok || !data?.result?.ok) {
-        toast.error(data?.detail?.detail || data?.error || "Could not load booked stops — is the backend deployed?");
+      // Shape check, not just ok-check: an out-of-date edge function routes
+      // unknown actions to the Fill handler, which also returns ok:true but
+      // has no stops[] — trusting it blank-screened the whole page once.
+      if (!data?.ok || !data?.result?.ok || !Array.isArray(data?.result?.stops)) {
+        toast.error(Array.isArray(data?.result?.stops) === false && data?.result?.ok
+          ? "The backend is still deploying the map-move update — try again in a couple minutes."
+          : data?.detail?.detail || data?.error || "Could not load booked stops — is the backend deployed?");
         return;
       }
       setBooked(data.result as BookedResult);
