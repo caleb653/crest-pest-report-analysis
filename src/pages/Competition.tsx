@@ -22,8 +22,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 
-// Everyone at the company: the login roster plus field techs not in it.
-const PEOPLE = [...STAFF_NAMES, "Brock Lyttle"];
+// Everyone at the company (login roster is the source of truth).
+const PEOPLE = Array.from(new Set(STAFF_NAMES));
 
 const EDIT_PASSWORD = "18444";
 

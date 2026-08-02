@@ -14,3 +14,5 @@ Passwords:
 - clopez: crest15
 - dgallegos: crest50
 - jlatham: crest25
+- ccarnival: Crest125!
+- blyttle: Crest250!
