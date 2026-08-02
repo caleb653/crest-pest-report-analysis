@@ -1894,6 +1894,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       // write queue) so they render grey and can't be re-pushed — even after
       // a reload or a fresh run, before the FR data sync catches up.
       const res = data.result as FillResult;
+      if (!Array.isArray(res?.proposed)) res.proposed = [];
       const pushedKeys = new Set(
         ((data.pushed ?? []) as Array<{ subscription_id?: unknown; date?: unknown }>)
           .map((p) => `${p.subscription_id}|${p.date}`));
@@ -2517,7 +2518,7 @@ function ManualMoveMapInner({ staff, data, apiKey }: {
     geo.forEach((s) => b.extend({ lat: s.lat as number, lng: s.lng as number }));
     map.fitBounds(b, 48);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, data.stops.length]);
+  }, [map, allStops.length]);
 
   const toggleStop = (s: BookedStop) => {
     if (movedTo.has(s.appointment_id))
@@ -2792,7 +2793,10 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
         toast.error(data?.detail?.detail || data?.error || "Reschedule Bot failed — is the backend deployed?");
         return;
       }
-      const res = data.result as RescheduleResult;
+      // Defensive: a stale backend routes unknown actions to the Fill handler,
+      // which returns ok:true but no moves[] — that used to crash the page.
+      const raw = data.result as RescheduleResult;
+      const res: RescheduleResult = { ...raw, moves: Array.isArray(raw?.moves) ? raw.moves : [] };
       setResult(res);
       setChecked(new Set(res.moves.map((m) => m.appointment_id)));
     } catch (e) {
