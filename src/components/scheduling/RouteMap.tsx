@@ -20,7 +20,18 @@ export type RouteMapStop = {
   already_scheduled?: boolean;
   locked?: boolean;
   special_scheduling?: string | null;
+  subscription_id?: string;
+  notification_sent?: boolean;
+  pushed_to_fr?: boolean;
 };
+
+// A stop the office can still act on from the map (push / remove): a planner
+// proposal that isn't booked, locked, notified, or already queued.
+export function isActionableStop(s: RouteMapStop, queuedIds?: Set<string>): boolean {
+  return !!s.subscription_id && !s.locked && !s.already_scheduled
+    && !s.notification_sent && !s.pushed_to_fr
+    && !(queuedIds?.has(s.subscription_id));
+}
 
 const CONTAINER_STYLE = { width: "100%", height: "70vh" } as const;
 
@@ -46,7 +57,16 @@ function pinIcon(color: string) {
   } as google.maps.Icon;
 }
 
-export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
+type RouteMapActions = {
+  /** Queue this stop's FieldRoutes write (same paced push as the card button). */
+  onPushStop?: (s: RouteMapStop) => void;
+  /** Remove this stop from the day — off the route AND this map. */
+  onRemoveStop?: (s: RouteMapStop) => void;
+  /** Subscriptions already queued this session (greys out the push button). */
+  queuedIds?: Set<string>;
+};
+
+export default function RouteMap({ stops, onPushStop, onRemoveStop, queuedIds }: { stops: RouteMapStop[] } & RouteMapActions) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
   useEffect(() => {
@@ -62,10 +82,12 @@ export default function RouteMap({ stops }: { stops: RouteMapStop[] }) {
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <RouteMapInner stops={stops} apiKey={apiKey} />;
+  return <RouteMapInner stops={stops} apiKey={apiKey} onPushStop={onPushStop}
+                        onRemoveStop={onRemoveStop} queuedIds={queuedIds} />;
 }
 
-function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: string }) {
+function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
+                       { stops: RouteMapStop[]; apiKey: string } & RouteMapActions) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
@@ -144,6 +166,30 @@ function RouteMapInner({ stops, apiKey }: { stops: RouteMapStop[]; apiKey: strin
               {active.special_scheduling && (
                 <div className="text-amber-700 font-medium">note: {active.special_scheduling}</div>
               )}
+              {active.pushed_to_fr || (active.subscription_id && queuedIds?.has(active.subscription_id)) ? (
+                <div className="text-muted-foreground italic">pushed to FieldRoutes</div>
+              ) : isActionableStop(active, queuedIds) ? (
+                <div className="flex gap-1 mt-1">
+                  {onPushStop && (
+                    <button
+                      type="button"
+                      className="flex-1 rounded border border-indigo-400 bg-indigo-50 px-2 py-1 font-medium text-indigo-700 hover:bg-indigo-100"
+                      onClick={() => onPushStop(active)}
+                    >
+                      Push to FR
+                    </button>
+                  )}
+                  {onRemoveStop && (
+                    <button
+                      type="button"
+                      className="flex-1 rounded border border-red-300 bg-red-50 px-2 py-1 font-medium text-red-700 hover:bg-red-100"
+                      onClick={() => { setActiveOrder(null); onRemoveStop(active); }}
+                    >
+                      Remove from route
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </div>
           </InfoWindowF>
         )}

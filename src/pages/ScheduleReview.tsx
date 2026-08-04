@@ -1421,6 +1421,27 @@ type FillDeferred = {
   reason: string;
   best_day?: FillDeferredBestDay | null;
 };
+// Overdue catch-up pool item: a FULL, placeable record (ids + coords +
+// duration ride along) so the office can drop it onto a route day and push
+// it to FieldRoutes — unlike the light read-only bucket rows.
+type FillPoolItem = FillUnscheduled & {
+  subscription_id: string;
+  customer_id: string;
+  service_type_id: string;
+  address: string;
+  lat?: number | null;
+  lng?: number | null;
+  services: string[];
+  service_label: string;
+  frequency: number;
+  production?: number;
+  duration: number;
+  days_overdue: number;
+  last_completed?: string | null;
+  zone?: string;
+  best_day?: FillDeferredBestDay | null;
+  must_schedule?: boolean;
+};
 type FillResult = {
   start: string;
   end: string;
@@ -1438,6 +1459,11 @@ type FillResult = {
   unplaced: FillUnscheduled[];
   deferred?: FillDeferred[];
   deferred_count?: number;
+  /** Overdue catch-up pool (8d..reach-back before the window) — placeable. */
+  overdue?: FillPoolItem[];
+  overdue_count?: number;
+  include_overdue?: boolean;
+  overdue_days?: number;
   summary?: FillTopSummary;
   /** "date|tech" → FieldRoutes routeID for EVERY field tech (not just the
    *  proposed days) — powers reassigning a day onto another tech's route. */
@@ -1492,8 +1518,16 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [maxStops, setMaxStops] = useState<number>(12);
   const [minStops, setMinStops] = useState<number>(6);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
+  // Overdue catch-up controls (Caleb 2026-08-03): how far BEFORE the window
+  // start to pull overdue jobs from, and whether the planner may auto-place
+  // them (default NO — they come back as a placeable pool instead).
+  const [overdueDays, setOverdueDays] = useState<number>(120);
+  const [includeOverdue, setIncludeOverdue] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
+  // Stops the office X'd out of the plan: OFF the day, OFF the map, OFF the
+  // route — parked here so they can be re-placed from the Job Pool.
+  const [removedStops, setRemovedStops] = useState<{ stop: FillStop; fromKey: string }[]>([]);
   const [weekMapOpen, setWeekMapOpen] = useState(false);
   // Tech-by-tech layout (Caleb 2026-07-30): the plan reads one TECH at a time
   // down the page — never day-by-day with all techs interleaved. "*" = every
@@ -1642,6 +1676,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // efficiency and re-project its ETAs, so the times shown stay honest.
   // Failures keep the manual order (times just show as re-computed pending).
   const rerouteKeys = async (keys: string[]) => {
+    // Let React flush the setResult that preceded this call before reading the
+    // ref — otherwise the FIRST day reroutes from the stale stop list (a
+    // removed stop would ride back in on rr.stops, a placed one would vanish).
+    await new Promise((r) => setTimeout(r, 0));
     for (const key of [...new Set(keys)]) {
       const cur = resultRef.current;
       const day = cur?.proposed.find((d) => `${d.date}|${d.tech}` === key);
@@ -1661,6 +1699,171 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           }));
         }
       } catch { /* keep the manual order if the reroute call fails */ }
+    }
+  };
+
+  // ── X a stop = ACTUALLY remove it: off the day card, off the map, off the
+  // route (the day re-routes without it). Parked in the Job Pool so it can be
+  // dragged back onto any day. (Caleb 2026-08-03: the old X only skipped the
+  // push — the stop kept haunting the map and the route times.) ──
+  const removeStopFromDay = (fromKey: string, stopId: string) => {
+    const cur = resultRef.current;
+    const src = cur?.proposed.find((d) => `${d.date}|${d.tech}` === fromKey);
+    const stop = src?.stops.find((s) => fillStopKey(s) === stopId);
+    if (!cur || !src || !stop) return;
+    if (stop.already_scheduled || stop.locked || stop.notification_sent || stop.pushed_to_fr) {
+      toast.error("That appointment is already booked/locked in FieldRoutes — cancel it there instead.");
+      return;
+    }
+    setRemovedStops((list) => [...list, { stop, fromKey }]);
+    setResult((prev) => (!prev ? prev : {
+      ...prev,
+      proposed: prev.proposed.map((d) => (`${d.date}|${d.tech}` !== fromKey ? d : {
+        ...d,
+        stops: d.stops.filter((s) => fillStopKey(s) !== stopId)
+          .map((s, i) => ({ ...s, order: i + 1 })),
+        stop_count: d.stop_count - 1,
+      })),
+    }));
+    void rerouteKeys([fromKey]);
+    toast.success(`Removed ${stop.customer} from ${weekdayLabel(fromKey.split("|")[0])} — moved to the Job Pool below.`);
+  };
+
+  // Mark one subscription as queued everywhere (cards, maps, bulk buttons).
+  const markPushed = (subId: string) => {
+    setBulkQueued((curSet) => new Set(curSet).add(subId));
+    setResult((prev) => (!prev ? prev : {
+      ...prev,
+      proposed: prev.proposed.map((d) => ({
+        ...d,
+        stops: d.stops.map((s) => (s.subscription_id === subId && !s.already_scheduled
+          ? { ...s, pushed_to_fr: true } : s)),
+      })),
+    }));
+  };
+
+  // Push ONE stop straight from a map view (day map or week map). Same paced
+  // write the card buttons use; route_id resolved from the stop, its day, or
+  // routes_all so map pushes can never book a routeless (invisible) appt.
+  const pushFromMap = async (dayInfo: { date: string; tech: string }, s: FillStop) => {
+    if (!staff) { toast.error("Please sign in again."); return; }
+    const cur = resultRef.current;
+    const day = cur?.proposed.find((d) => d.date === dayInfo.date && d.tech === dayInfo.tech);
+    const rid = s.route_id
+      || (day?.route_id != null && day.route_id !== "" ? String(day.route_id) : undefined)
+      || cur?.routes_all?.[`${dayInfo.date}|${dayInfo.tech}`];
+    if (!s.subscription_id) { toast.error("This stop has no subscription — push it from FieldRoutes directly."); return; }
+    if (!rid) {
+      toast.error(`No FieldRoutes route for ${dayInfo.tech} on ${weekdayLabel(dayInfo.date)} — create it in FR first.`);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff.fullName, commit: true, paced: true,
+          customer_id: Number(s.customer_id), customer_label: s.customer,
+          service_type_id: Number(s.service_type_id) || 0, service_type_label: s.service_label,
+          date: dayInfo.date, start: s.start, end: s.end, duration: s.duration || 30,
+          subscription_id: Number(s.subscription_id), route_id: Number(rid),
+        },
+      });
+      if (!error && data?.ok === true && (data?.pushed === true || data?.paced === true)) {
+        markPushed(s.subscription_id);
+        supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+        toast.success(`Queued ${s.customer} — the bot writes it within seconds`);
+      } else {
+        toast.error(`Failed to queue ${s.customer} — see console.`);
+      }
+    } catch {
+      toast.error(`Failed to queue ${s.customer} — see console.`);
+    }
+  };
+
+  // ── Job Pool placement: put an overdue/removed stop ON a route day. ──
+  const poolStopFromItem = (p: FillPoolItem): FillStop => ({
+    order: 0,
+    subscription_id: p.subscription_id,
+    customer_id: p.customer_id,
+    service_type_id: p.service_type_id,
+    customer: p.customer,
+    city: p.city,
+    address: p.address,
+    lat: p.lat, lng: p.lng,
+    services: p.services || [],
+    service_label: p.service_label || p.service,
+    frequency: p.frequency,
+    duration: p.duration || 30,
+    // Times are provisional until the day re-routes and projects real ETAs.
+    window: "Anytime", start: "08:00", end: "08:30",
+    due_date: p.due_date,
+    days_off_target: 0,
+    special_scheduling: p.special_scheduling,
+    confirm: false,
+    off_zone_day: false,
+    production: p.production,
+    flag: `Overdue — was due ${p.due_date} (${p.days_overdue}d before this window)`,
+  });
+
+  const placePoolStop = (stop: FillStop, date: string, tech: string, onPlaced: () => void) => {
+    const cur = resultRef.current;
+    if (!cur) return;
+    const toKey = `${date}|${tech}`;
+    let dst = cur.proposed.find((d) => d.date === date && d.tech === tech);
+    if (!dst) {
+      const rid = cur.routes_all?.[toKey];
+      if (!rid) {
+        toast.error(`${tech} has no FieldRoutes route on ${weekdayLabel(date)} — create it in FR first.`);
+        return;
+      }
+      const wd = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(`${date}T12:00:00`).getDay()];
+      const dstDay: FillDay = { date, weekday: wd, tech, zone: "", stop_count: 0,
+                                capacity: cur.max_stops || 12, stops: [], route_id: rid };
+      dst = dstDay;
+      setResult((prev) => (prev ? { ...prev, proposed: [...prev.proposed, dstDay] } : prev));
+    }
+    if (dst.stop_count >= dst.capacity) {
+      toast(`${weekdayLabel(date)} is at capacity (${dst.stop_count}/${dst.capacity}) — placing anyway; consider moving something off.`);
+    }
+    const placed: FillStop = {
+      ...stop,
+      order: dst.stops.length + 1,
+      days_off_target: dayDiffFromDue(date, stop.due_date),
+      route_id: dst.route_id != null && dst.route_id !== "" ? String(dst.route_id) : undefined,
+      eta: undefined, drive_from_prev_min: undefined, moved: true,
+    };
+    setResult((prev) => (!prev ? prev : {
+      ...prev,
+      proposed: prev.proposed.map((d) => (`${d.date}|${d.tech}` === toKey
+        ? { ...d, stops: [...d.stops, placed], stop_count: d.stop_count + 1 }
+        : d)),
+    }));
+    onPlaced();
+    void rerouteKeys([toKey]);
+    toast.success(`Placed ${stop.customer} on ${weekdayLabel(date)} · ${tech} — re-routing…`);
+    return;
+  };
+
+  // Pool row ids used by the panel AND by drag payloads onto day cards.
+  const poolIdOfOverdue = (p: FillPoolItem) => `ov|${p.subscription_id || p.customer_id}|${p.due_date}`;
+  const poolIdOfRemoved = (r: { stop: FillStop }) => `rm|${fillStopKey(r.stop)}`;
+
+  const placePoolById = (poolId: string, date: string, tech: string) => {
+    const cur = resultRef.current;
+    if (!cur) return;
+    if (poolId.startsWith("ov|")) {
+      const item = (cur.overdue ?? []).find((p) => poolIdOfOverdue(p) === poolId);
+      if (!item) return;
+      placePoolStop(poolStopFromItem(item), date, tech, () =>
+        setResult((prev) => (!prev ? prev : {
+          ...prev,
+          overdue: (prev.overdue ?? []).filter((p) => poolIdOfOverdue(p) !== poolId),
+          overdue_count: Math.max(0, (prev.overdue_count ?? 1) - 1),
+        })));
+    } else if (poolId.startsWith("rm|")) {
+      const entry = removedStops.find((r) => poolIdOfRemoved(r) === poolId);
+      if (!entry) return;
+      placePoolStop(entry.stop, date, tech, () =>
+        setRemovedStops((list) => list.filter((r) => poolIdOfRemoved(r) !== poolId)));
     }
   };
 
@@ -1882,8 +2085,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     setLoading(true);
     setResult(null);
     try {
+      setRemovedStops([]);
       const { data, error } = await supabase.functions.invoke("scheduling-fill", {
-        body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops, min_stops: minStops },
+        body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops, min_stops: minStops,
+                include_overdue: includeOverdue,
+                overdue_days: Math.min(365, Math.max(0, Math.trunc(overdueDays) || 0)) },
       });
       if (error) throw error;
       if (!data?.ok) {
@@ -1968,6 +2174,30 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               </div>
             </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
+            <div className="space-y-2">
+              <Label>Pull overdue from last (days)</Label>
+              <Input type="number" min={0} max={365} value={overdueDays}
+                     onChange={(e) => setOverdueDays(Math.min(365, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                How far before the window start to pull overdue jobs from. They land in the
+                searchable Job Pool below — you choose where each one goes. 0 = in-window only.
+              </p>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label className="opacity-0 hidden md:block">.</Label>
+              <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
+                <Checkbox checked={includeOverdue} onCheckedChange={(v) => setIncludeOverdue(v === true)} />
+                <span>
+                  Auto-place overdue in the plan
+                  <span className="block text-[11px] text-muted-foreground leading-tight">
+                    Off (default): overdue jobs return as a pool for manual placement.
+                    On: the planner slots them onto the earliest feasible days itself.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
           <Button onClick={run} disabled={loading} className="mt-4">
             <Wand2 className="w-4 h-4 mr-2" />
             {loading ? "Building plan…" : "Propose schedule"}
@@ -1977,10 +2207,12 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
       {result && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
             <StatCard label="Window" value={`${result.start} – ${result.end}`} small />
             <StatCard label="Due in window" value={result.schedulable} />
             <StatCard label="Placed" value={result.assigned_count} tone={result.assigned_count > 0 ? "ok" : "neutral"} />
+            <StatCard label="Overdue pool" value={result.overdue_count ?? (result.overdue?.length ?? 0)}
+                      tone={(result.overdue_count ?? 0) > 0 ? "warn" : "ok"} />
             <StatCard label="Manual" value={result.manual_count} tone={result.manual_count > 0 ? "warn" : "ok"} />
             <StatCard label="Other tech job pool" value={result.needs_reassignment_count} small />
             <StatCard label="Unplaced" value={result.unplaced_count} tone={result.unplaced_count > 0 ? "info" : "ok"} />
@@ -2150,10 +2382,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                             {gridItems.map((item) => (item.kind === "day" ? (
                               <FillDayCard key={`${item.d.date}|${item.d.tech}`} day={item.d} staff={staff}
                                            onMoveStop={requestMove} externQueued={bulkQueued}
-                                           reassignTechs={FILL_TECHS} onReassign={requestReassignDay} />
+                                           reassignTechs={FILL_TECHS} onReassign={requestReassignDay}
+                                           onRemoveStop={removeStopFromDay} onDropPool={placePoolById} />
                             ) : (
                               <EmptyFillDayCard key={`empty-${item.date}-${tech}`} date={item.date} tech={tech}
-                                                onDropStop={requestMoveToDate} />
+                                                onDropStop={requestMoveToDate} onDropPool={placePoolById} />
                             )))}
                           </div>
                         </div>
@@ -2200,6 +2433,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     <WeekRouteMap days={result.proposed.filter((d) => d.stops.length > 0)}
                                   onMoveStops={handleMapMoves}
                                   onMergeDays={handleMergeDays}
+                                  onPushStop={(d, s) => { void pushFromMap({ date: d.date, tech: d.tech }, s as FillStop); }}
+                                  onRemoveStop={(d, s) => removeStopFromDay(`${d.date}|${d.tech}`, fillStopKey(s as FillStop))}
+                                  queuedIds={bulkQueued}
                                   windowDates={(() => {
                                     const out: string[] = [];
                                     const endD = new Date(`${result.end}T12:00:00`);
@@ -2311,19 +2547,37 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             </>
           )}
 
-          <UnscheduledBucket
-            title="Needs manual scheduling"
-            items={result.manual}
-            blurb='Flagged "call to schedule / do not auto-schedule" — handle these by phone.'
+          {/* Unified, SEARCHABLE job pool: everything pending that is not on a
+              route — overdue catch-up (placeable), stops X'd off a day
+              (placeable), couldn't-fit, call-to-schedule, and held-for-later.
+              Replaces the old read-only amber/sky buckets. */}
+          <JobPoolPanel
+            overdue={result.overdue ?? []}
+            removed={removedStops}
+            unplaced={result.unplaced}
+            manual={result.manual}
+            deferred={result.deferred ?? []}
+            dayOptions={(() => {
+              const opts: { value: string; label: string }[] = [];
+              const seen = new Set<string>();
+              for (const d of [...result.proposed].sort((a, b) =>
+                  a.date.localeCompare(b.date) || a.tech.localeCompare(b.tech))) {
+                seen.add(`${d.date}|${d.tech}`);
+                opts.push({ value: `${d.date}|${d.tech}`,
+                            label: `${weekdayLabel(d.date)} · ${d.tech} (${d.stop_count}/${d.capacity})` });
+              }
+              for (const key of Object.keys(result.routes_all ?? {}).sort()) {
+                if (seen.has(key)) continue;
+                const [dt, tech] = key.split("|");
+                if (dt < result.start || dt > result.end) continue;
+                opts.push({ value: key, label: `${weekdayLabel(dt)} · ${tech} (empty)` });
+              }
+              return opts;
+            })()}
+            onPlace={(poolId, date, tech) => placePoolById(poolId, date, tech)}
+            poolIdOfOverdue={poolIdOfOverdue}
+            poolIdOfRemoved={poolIdOfRemoved}
           />
-          {/* "Other tech job pool" — customers whose preferred tech isn't a field
-              tech. Shown only as the count stat above; the full list is noise. */}
-          <UnscheduledBucket
-            title="Couldn't fit in the window"
-            items={result.unplaced}
-            blurb="Due within tolerance, but every eligible day was at capacity or constraints left no slot. Widen the window or raise max stops."
-          />
-          <DeferredBucket items={result.deferred ?? []} count={result.deferred_count ?? (result.deferred?.length ?? 0)} />
         </>
       )}
     </>
@@ -3047,10 +3301,12 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
 // A 0-stop day the tech COULD work (their FieldRoutes route exists for the
 // date): a dashed drop target so the office can drag stops onto it and seed
 // a fresh day — the plan's day materializes on first drop.
-function EmptyFillDayCard({ date, tech, onDropStop }: {
+function EmptyFillDayCard({ date, tech, onDropStop, onDropPool }: {
   date: string;
   tech: string;
   onDropStop: (fromKey: string, stopId: string, date: string, tech: string) => void;
+  /** A Job Pool row (overdue / removed stop) dropped onto this empty day. */
+  onDropPool?: (poolId: string, date: string, tech: string) => void;
 }) {
   const [over, setOver] = useState(false);
   return (
@@ -3063,7 +3319,8 @@ function EmptyFillDayCard({ date, tech, onDropStop }: {
         setOver(false);
         try {
           const p = JSON.parse(e.dataTransfer.getData("text/plain"));
-          if (p?.from && p?.id) onDropStop(p.from, p.id, date, tech);
+          if (p?.pool && onDropPool) onDropPool(p.pool, date, tech);
+          else if (p?.from && p?.id) onDropStop(p.from, p.id, date, tech);
         } catch { /* not a stop drag */ }
       }}
     >
@@ -3080,8 +3337,10 @@ function EmptyFillDayCard({ date, tech, onDropStop }: {
 // button and a whole-day "Push route to FR" button. Each push books straight
 // through fieldroutes-appointment-submit with commit:true — the write-queue
 // row is kept only as the audit trail; there is no approval step. X a stop to
-// keep it out of the day push.
-function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onReassign }: {
+// REMOVE it from the day entirely (off the route + map; it parks in the Job
+// Pool below and can be re-placed).
+function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onReassign,
+                       onRemoveStop, onDropPool }: {
   day: FillDay;
   staff: { fullName: string } | null;
   onMoveStop?: (fromKey: string, stopId: string, toKey: string) => void;
@@ -3091,39 +3350,30 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   /** Field techs this day can be reassigned to (whole-day move). */
   reassignTechs?: string[];
   onReassign?: (day: FillDay, targetTech: string) => void;
+  /** X = REALLY remove the stop from this day (state + reroute + Job Pool). */
+  onRemoveStop?: (dayKey: string, stopId: string) => void;
+  /** A Job Pool row (overdue / removed stop) dropped onto this day card. */
+  onDropPool?: (poolId: string, date: string, tech: string) => void;
 }) {
   const dayKey = `${day.date}|${day.tech}`;
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
   const [stopPushing, setStopPushing] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
-  // Per-card exclusion set: when the user X's someone, we drop them from the
-  // queueing list so they will NOT be sent to FieldRoutes for this day.
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
   const over = day.stop_count > day.capacity;
   const stopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
   // Bookable = has a subscription, isn't already on the books, isn't locked,
-  // hasn't been notified, and hasn't been X'd out by the user.
+  // and hasn't been notified. (X'd stops are gone from day.stops entirely.)
   const bookable = day.stops.filter((s) =>
     s.subscription_id &&
     !s.already_scheduled &&
     !s.locked &&
     !s.notification_sent &&
-    !s.pushed_to_fr &&
-    !excluded.has(stopKey(s)),
+    !s.pushed_to_fr,
   );
   const remaining = bookable.filter((s) =>
     !queued.has(s.subscription_id) && !externQueued?.has(s.subscription_id));
   const allQueued = bookable.length > 0 && remaining.length === 0;
-
-  const toggleExclude = (s: FillStop) => {
-    setExcluded((cur) => {
-      const next = new Set(cur);
-      const k = stopKey(s);
-      if (next.has(k)) next.delete(k); else next.add(k);
-      return next;
-    });
-  };
 
   // Enqueue one booking as a PACED write (Caleb 2026-07-30: FieldRoutes
   // tolerates ~50 writes/min, so writes are queued and the
@@ -3215,13 +3465,14 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   return (
     <Card
       className="border-l-4 border-l-indigo-500"
-      onDragOver={(e) => { if (onMoveStop) e.preventDefault(); }}
+      onDragOver={(e) => { if (onMoveStop || onDropPool) e.preventDefault(); }}
       onDrop={(e) => {
-        if (!onMoveStop) return;
+        if (!onMoveStop && !onDropPool) return;
         e.preventDefault();
         try {
           const p = JSON.parse(e.dataTransfer.getData("text/plain"));
-          if (p?.from && p?.id) onMoveStop(p.from, p.id, dayKey);
+          if (p?.pool && onDropPool) onDropPool(p.pool, day.date, day.tech);
+          else if (p?.from && p?.id && onMoveStop) onMoveStop(p.from, p.id, dayKey);
         } catch { /* not a stop drag */ }
       }}
     >
@@ -3281,13 +3532,11 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
           const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id)
             || !!s.pushed_to_fr;
           const key = stopKey(s);
-          const isExcluded = excluded.has(key);
           // Color rules (per user request):
           //  - locked OR notification already sent → black (and locked-in)
           //  - already scheduled on this day        → green
           //  - pushed/queued to FieldRoutes         → GREY (it's an appointment
           //    now — persists across reloads via the write queue)
-          //  - excluded by user                     → muted/struck
           //  - default                              → indigo (planner proposal)
           const isBlack = !!(s.locked || s.notification_sent);
           const isGreen = !isBlack && !!s.already_scheduled;
@@ -3296,10 +3545,9 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             isBlack ? "bg-foreground/90 text-background"
             : isGreen ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
             : isPushed ? "bg-muted/70 text-muted-foreground border border-muted-foreground/20"
-            : isExcluded ? "bg-muted text-muted-foreground line-through opacity-60"
             : "bg-indigo-50";
-          // Lock the X button when the row is system-locked.
-          const canExclude = !isBlack && !isQueued;
+          // X removes the stop from the day for real — only planner proposals.
+          const canRemove = !!onRemoveStop && !isBlack && !isGreen && !isQueued;
           // Proposed, un-pushed stops can be dragged onto another day card.
           const canDrag = !!onMoveStop && !isBlack && !isGreen && !isQueued;
           return (
@@ -3338,7 +3586,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
                   </span>
-                  {!isQueued && !isBlack && !isGreen && !isExcluded && s.subscription_id && (
+                  {!isQueued && !isBlack && !isGreen && s.subscription_id && (
                     <Button
                       type="button"
                       size="icon"
@@ -3353,16 +3601,16 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                         : <Send className="w-3.5 h-3.5 text-indigo-600" />}
                     </Button>
                   )}
-                  {canExclude && (
+                  {canRemove && (
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
                       className="h-6 w-6"
-                      title={isExcluded ? "Re-include in this day" : "Exclude from this day (won't send to FieldRoutes)"}
-                      onClick={() => toggleExclude(s)}
+                      title="Remove from this day — off the route & map; parks in the Job Pool below"
+                      onClick={() => onRemoveStop!(dayKey, key)}
                     >
-                      <X className={`w-3.5 h-3.5 ${isExcluded ? "text-emerald-700" : "text-red-600"}`} />
+                      <X className="w-3.5 h-3.5 text-red-600" />
                     </Button>
                   )}
                 </span>
@@ -3405,11 +3653,6 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                     already scheduled
                   </Badge>
                 )}
-                {isExcluded && (
-                  <Badge variant="outline" className="text-red-700 border-red-300">
-                    excluded — won't send to FR
-                  </Badge>
-                )}
               </div>
               {s.special_scheduling && (
                 <div className="mt-1 text-amber-700">
@@ -3435,80 +3678,200 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
               {day.summary ? ` · ${day.summary.efficiency_pct}% efficient` : ""}
             </DialogTitle>
           </DialogHeader>
-          <RouteMap stops={day.stops} />
+          <RouteMap
+            stops={day.stops}
+            queuedIds={new Set([...queued, ...(externQueued ?? [])])}
+            onPushStop={(ms) => {
+              const s = day.stops.find((x) => x.order === ms.order);
+              if (s) void pushStop(s);
+            }}
+            onRemoveStop={onRemoveStop ? (ms) => {
+              const s = day.stops.find((x) => x.order === ms.order);
+              if (s) onRemoveStop(dayKey, stopKey(s));
+            } : undefined}
+          />
         </DialogContent>
       </Dialog>
     </Card>
   );
 }
 
-// Read-only list of due customers the planner did NOT auto-place, with the reason.
-function UnscheduledBucket({ title, items, blurb }: { title: string; items: FillUnscheduled[]; blurb: string }) {
-  if (!items || items.length === 0) return null;
-  return (
-    <Card className="border-l-4 border-l-amber-500">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Phone className="w-4 h-4 text-amber-600" /> {title} ({items.length})
-        </CardTitle>
-        <CardDescription>{blurb}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {items.map((m, i) => (
-          <div key={`${m.customer}-${m.due_date}-${i}`} className="text-xs bg-amber-50 rounded p-2">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="font-semibold text-sm">{m.customer}</span>
-              <span className="text-muted-foreground">due {m.due_date}</span>
-            </div>
-            <div className="text-muted-foreground mt-0.5">
-              {m.city} · {m.service}{m.tech ? <> · prefers {m.tech}</> : null}
-            </div>
-            <div className="text-amber-700 mt-0.5">{m.reason}</div>
-            {m.special_scheduling && m.special_scheduling !== m.reason && (
-              <div className="text-muted-foreground mt-0.5 italic">{m.special_scheduling}</div>
-            )}
-          </div>
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
+// ── Job Pool: one searchable panel for EVERYTHING pending that isn't on a
+// route — the overdue catch-up pool (placeable: drag onto a day card or pick
+// a day), stops the office X'd off a day (placeable the same way), plus the
+// couldn't-fit / call-to-schedule / held-for-later lists. ──
+type PoolRow = {
+  id: string;
+  kind: "overdue" | "removed" | "unplaced" | "manual" | "deferred";
+  customer: string;
+  city: string;
+  service: string;
+  due_date: string;
+  tech: string | null;
+  reason: string;
+  address?: string;
+  days_overdue?: number;
+  best_day?: FillDeferredBestDay | null;
+  special_scheduling?: string | null;
+  placeable: boolean;
+};
 
-// Customers the planner intentionally held for a later week — not failures.
-// Shown separately so they don't get confused with the "couldn't fit" bucket.
-function DeferredBucket({ items, count }: { items: FillDeferred[]; count: number }) {
-  if (!items || items.length === 0) return null;
+const POOL_KIND_META: Record<PoolRow["kind"], { label: string; row: string; badge: string }> = {
+  overdue:  { label: "Overdue",       row: "bg-red-50",   badge: "text-red-700 border-red-300" },
+  removed:  { label: "Removed",       row: "bg-muted/60", badge: "text-muted-foreground border-muted-foreground/40" },
+  unplaced: { label: "Couldn't fit",  row: "bg-amber-50", badge: "text-amber-700 border-amber-300" },
+  manual:   { label: "Call/manual",   row: "bg-amber-50", badge: "text-amber-700 border-amber-300" },
+  deferred: { label: "Held for later", row: "bg-sky-50",  badge: "text-sky-700 border-sky-300" },
+};
+
+function JobPoolPanel({ overdue, removed, unplaced, manual, deferred, dayOptions, onPlace,
+                        poolIdOfOverdue, poolIdOfRemoved }: {
+  overdue: FillPoolItem[];
+  removed: { stop: FillStop; fromKey: string }[];
+  unplaced: FillUnscheduled[];
+  manual: FillUnscheduled[];
+  deferred: FillDeferred[];
+  dayOptions: { value: string; label: string }[];
+  onPlace: (poolId: string, date: string, tech: string) => void;
+  poolIdOfOverdue: (p: FillPoolItem) => string;
+  poolIdOfRemoved: (r: { stop: FillStop }) => string;
+}) {
+  const [search, setSearch] = useState("");
+  const [kind, setKind] = useState<"all" | PoolRow["kind"]>("all");
+
+  const rows: PoolRow[] = [
+    ...overdue.map((p): PoolRow => ({
+      id: poolIdOfOverdue(p), kind: "overdue", customer: p.customer, city: p.city,
+      service: p.service_label || p.service, due_date: p.due_date, tech: p.tech,
+      reason: p.reason, address: p.address, days_overdue: p.days_overdue,
+      best_day: p.best_day, special_scheduling: p.special_scheduling, placeable: true,
+    })),
+    ...removed.map((r): PoolRow => ({
+      id: poolIdOfRemoved(r), kind: "removed", customer: r.stop.customer, city: r.stop.city,
+      service: r.stop.service_label, due_date: r.stop.due_date, tech: r.fromKey.split("|")[1] ?? null,
+      reason: `Removed from ${r.fromKey.split("|")[0]} by you — place it wherever it fits.`,
+      address: r.stop.address, special_scheduling: r.stop.special_scheduling, placeable: true,
+    })),
+    ...unplaced.map((m, i): PoolRow => ({
+      id: `up|${m.customer}|${m.due_date}|${i}`, kind: "unplaced", customer: m.customer,
+      city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
+      best_day: (m as FillUnscheduled & { best_day?: FillDeferredBestDay | null }).best_day,
+      special_scheduling: m.special_scheduling, placeable: false,
+    })),
+    ...manual.map((m, i): PoolRow => ({
+      id: `mn|${m.customer}|${m.due_date}|${i}`, kind: "manual", customer: m.customer,
+      city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
+      special_scheduling: m.special_scheduling, placeable: false,
+    })),
+    ...deferred.map((m, i): PoolRow => ({
+      id: `df|${m.customer}|${m.due_date}|${i}`, kind: "deferred", customer: m.customer,
+      city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
+      best_day: m.best_day, placeable: false,
+    })),
+  ];
+  if (rows.length === 0) return null;
+
+  const q = search.trim().toLowerCase();
+  const visible = rows.filter((r) =>
+    (kind === "all" || r.kind === kind)
+    && (!q || [r.customer, r.city, r.service, r.address ?? "", r.tech ?? ""]
+          .some((f) => f.toLowerCase().includes(q))));
+  const countOf = (k: PoolRow["kind"]) => rows.filter((r) => r.kind === k).length;
+
   return (
-    <Card className="border-l-4 border-l-sky-500">
+    <Card className="border-l-4 border-l-red-500">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <CalendarPlus className="w-4 h-4 text-sky-600" /> Held for a later week ({count})
+          <Phone className="w-4 h-4 text-red-600" /> Job Pool — pending &amp; overdue ({rows.length})
         </CardTitle>
         <CardDescription>
-          Due soon but a better-fit week is coming up — the planner is waiting on
-          purpose. Not failures. The <code>reason</code> is the source of truth;{" "}
-          <em>best fit</em> is a soft pointer to the nearest matching zone-day.
+          Everything owed that is not on a route. <strong>Overdue</strong> and{" "}
+          <strong>Removed</strong> stops are placeable: drag one onto any day card
+          (or an empty day), or pick a day right here. Placing re-routes that day;
+          nothing books until you push it.
         </CardDescription>
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <Input placeholder="Search name, city, address, service…" value={search}
+                 onChange={(e) => setSearch(e.target.value)} className="h-8 max-w-xs" />
+          <Button size="sm" variant={kind === "all" ? "default" : "outline"} onClick={() => setKind("all")}>
+            All ({rows.length})
+          </Button>
+          {(Object.keys(POOL_KIND_META) as PoolRow["kind"][]).map((k) => (
+            countOf(k) > 0 && (
+              <Button key={k} size="sm" variant={kind === k ? "default" : "outline"} onClick={() => setKind(k)}>
+                {POOL_KIND_META[k].label} ({countOf(k)})
+              </Button>
+            )
+          ))}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {items.map((m, i) => (
-          <div key={`${m.customer}-${m.due_date}-${i}`} className="text-xs bg-sky-50 rounded p-2">
+      <CardContent className="space-y-2 max-h-[32rem] overflow-y-auto">
+        {visible.length === 0 && (
+          <div className="text-sm text-muted-foreground py-2">No matches.</div>
+        )}
+        {visible.map((r) => (
+          <div
+            key={r.id}
+            className={`text-xs rounded p-2 ${POOL_KIND_META[r.kind].row}${r.placeable ? " cursor-grab active:cursor-grabbing" : ""}`}
+            draggable={r.placeable}
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", JSON.stringify({ pool: r.id }));
+              e.dataTransfer.effectAllowed = "move";
+            }}
+          >
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="font-semibold text-sm">{m.customer}</span>
-              <span className="text-muted-foreground">due {m.due_date}</span>
+              <span className="font-semibold text-sm flex items-center gap-1.5">
+                {r.customer}
+                <Badge variant="outline" className={`${POOL_KIND_META[r.kind].badge} text-[10px] h-4`}>
+                  {POOL_KIND_META[r.kind].label}
+                </Badge>
+                {typeof r.days_overdue === "number" && (
+                  <Badge variant="outline" className="text-red-700 border-red-300 text-[10px] h-4">
+                    {r.days_overdue}d overdue
+                  </Badge>
+                )}
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="text-muted-foreground">due {r.due_date}</span>
+                {r.placeable && dayOptions.length > 0 && (
+                  <select
+                    className="text-xs border rounded-md px-1.5 py-1 bg-background cursor-pointer"
+                    value=""
+                    title="Place this stop on a route day (re-routes that day; push it after)"
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      e.target.value = "";
+                      if (!v) return;
+                      const [date, tech] = v.split("|");
+                      onPlace(r.id, date, tech);
+                    }}
+                  >
+                    <option value="">Place on…</option>
+                    {dayOptions.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                )}
+              </span>
             </div>
             <div className="text-muted-foreground mt-0.5">
-              {m.city} · {m.service}{m.tech ? <> · prefers {m.tech}</> : null}
+              {r.city} · {r.service}{r.tech ? <> · prefers {r.tech}</> : null}
+              {r.address ? <> · {r.address}</> : null}
             </div>
-            {m.best_day && (
+            {r.best_day && (
               <div className="text-sky-700 mt-0.5">
-                best fit {m.best_day.weekday} {m.best_day.date}
-                {m.best_day.in_zone === false && " · off-zone"}
-                {m.best_day.in_window === false && " · outside current window"}
-                {typeof m.best_day.load === "number" && ` · load ${m.best_day.load}`}
+                best fit {r.best_day.weekday} {r.best_day.date}
+                {r.best_day.in_zone === false && " · off-zone"}
+                {r.best_day.in_window === false && " · outside current window"}
+                {typeof r.best_day.load === "number" && ` · load ${r.best_day.load}`}
               </div>
             )}
-            <div className="text-sky-800/80 mt-0.5 italic">{m.reason}</div>
+            <div className={`mt-0.5 ${r.kind === "overdue" ? "text-red-700" : r.kind === "deferred" ? "text-sky-800/80 italic" : "text-amber-700"}`}>
+              {r.reason}
+            </div>
+            {r.special_scheduling && r.special_scheduling !== r.reason && (
+              <div className="text-muted-foreground mt-0.5 italic">{r.special_scheduling}</div>
+            )}
           </div>
         ))}
       </CardContent>

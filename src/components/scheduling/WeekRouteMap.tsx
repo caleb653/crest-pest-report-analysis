@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "@/integrations/supabase/client";
-import type { RouteMapStop } from "./RouteMap";
+import { isActionableStop, type RouteMapStop } from "./RouteMap";
 
 // Week-overview map: EVERY proposed route overlaid on one map, one color per
 // weekday, so cross-day clustering is auditable at a glance — if two neighbors
@@ -75,9 +75,16 @@ type WeekRouteMapProps = {
   /** ALL dates in the plan window — 0-stop days render as chips too, so a
    *  selection can be moved onto a day nobody visits yet. */
   windowDates?: string[];
+  /** Queue this stop's FieldRoutes write straight from the map. */
+  onPushStop?: (day: WeekRouteDay, stop: RouteMapStop) => void;
+  /** Remove this stop from its day — off the route and off this map. */
+  onRemoveStop?: (day: WeekRouteDay, stop: RouteMapStop) => void;
+  /** Subscriptions already queued this session (greys the push button). */
+  queuedIds?: Set<string>;
 };
 
-export default function WeekRouteMap({ days, onMoveStops, onMergeDays, windowDates }: WeekRouteMapProps) {
+export default function WeekRouteMap({ days, onMoveStops, onMergeDays, windowDates,
+                                        onPushStop, onRemoveStop, queuedIds }: WeekRouteMapProps) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
   useEffect(() => {
@@ -94,7 +101,8 @@ export default function WeekRouteMap({ days, onMoveStops, onMergeDays, windowDat
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
   return <WeekRouteMapInner days={days} apiKey={apiKey} onMoveStops={onMoveStops}
-                            onMergeDays={onMergeDays} windowDates={windowDates} />;
+                            onMergeDays={onMergeDays} windowDates={windowDates}
+                            onPushStop={onPushStop} onRemoveStop={onRemoveStop} queuedIds={queuedIds} />;
 }
 
 type ActiveStop = { routeKey: string; stop: RouteMapStop; day: WeekRouteDay };
@@ -118,7 +126,8 @@ const milesBetween = (lat1: number, lng1: number, lat2: number, lng2: number) =>
   return 2 * 3958.8 * Math.asin(Math.sqrt(a));
 };
 
-function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates }: WeekRouteMapProps & { apiKey: string }) {
+function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates,
+                             onPushStop, onRemoveStop, queuedIds }: WeekRouteMapProps & { apiKey: string }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
@@ -503,6 +512,40 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
               ) : (
                 <div className="text-muted-foreground italic">booked in FieldRoutes — can't be moved here</div>
               ))}
+              {(active.stop as RouteMapStop).pushed_to_fr
+                || ((active.stop.subscription_id) && queuedIds?.has(active.stop.subscription_id)) ? (
+                <div className="text-muted-foreground italic">pushed to FieldRoutes</div>
+              ) : isActionableStop(active.stop, queuedIds) ? (
+                <div className="flex gap-1 mt-1">
+                  {onPushStop && (
+                    <button
+                      type="button"
+                      className="flex-1 rounded border border-indigo-400 bg-indigo-50 px-2 py-1 font-medium text-indigo-700 hover:bg-indigo-100"
+                      onClick={() => onPushStop(active.day, active.stop)}
+                    >
+                      Push to FR
+                    </button>
+                  )}
+                  {onRemoveStop && (
+                    <button
+                      type="button"
+                      className="flex-1 rounded border border-red-300 bg-red-50 px-2 py-1 font-medium text-red-700 hover:bg-red-100"
+                      onClick={() => {
+                        const a = active;
+                        setActive(null);
+                        setSelected((cur) => {
+                          const next = new Map(cur);
+                          next.delete(`${a.routeKey}#${mapStopKey(a.stop)}`);
+                          return next;
+                        });
+                        onRemoveStop(a.day, a.stop);
+                      }}
+                    >
+                      Remove from route
+                    </button>
+                  )}
+                </div>
+              ) : null}
             </div>
           </InfoWindowF>
         )}

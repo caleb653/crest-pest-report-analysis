@@ -86,6 +86,14 @@ serve(async (req) => {
     if (Number.isFinite(body?.min_stops)) {
       minStops = Math.min(maxStops, Math.max(0, Math.trunc(Number(body.min_stops))));
     }
+    // Overdue catch-up controls (Caleb 2026-08-03): reach-back is tunable,
+    // auto-placement is strictly opt-in — default returns overdue as a
+    // placeable pool instead of scattering it into the plan.
+    const includeOverdue = body?.include_overdue === true;
+    let overdueDays = 120;
+    if (Number.isFinite(body?.overdue_days)) {
+      overdueDays = Math.min(365, Math.max(0, Math.trunc(Number(body.overdue_days))));
+    }
 
     // Auth: known staff name OR valid admin session.
     if (sessionToken) {
@@ -213,6 +221,7 @@ serve(async (req) => {
       method: "POST",
       headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops,
+                             include_overdue: includeOverdue, overdue_days: overdueDays,
                              pending_pushes: pushed.map(({ date, customer_id, subscription_id }) =>
                                ({ date, customer_id, subscription_id })) }),
     });
