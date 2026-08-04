@@ -469,31 +469,31 @@ const ScheduleReview = () => {
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
             <TabsTrigger
               value="review"
-              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-2 text-base max-sm:text-sm font-semibold px-3 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <ClipboardList className="w-4 h-4" /> Review
             </TabsTrigger>
             <TabsTrigger
               value="fill"
-              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-2 text-base max-sm:text-sm font-semibold px-3 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <Wand2 className="w-4 h-4" /> Fill
             </TabsTrigger>
             <TabsTrigger
               value="efficiency"
-              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-2 text-base max-sm:text-sm font-semibold px-3 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <TrendingUp className="w-4 h-4" /> Efficiency
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-2 text-base max-sm:text-sm font-semibold px-3 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <Clock className="w-4 h-4" /> Write Queue
             </TabsTrigger>
             <TabsTrigger
               value="reschedule"
-              className="gap-2 text-base font-semibold px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-2 text-base max-sm:text-sm font-semibold px-3 sm:px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <Bot className="w-4 h-4" /> Reschedule Bot
             </TabsTrigger>
@@ -1518,10 +1518,12 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [maxStops, setMaxStops] = useState<number>(12);
   const [minStops, setMinStops] = useState<number>(6);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
-  // Overdue catch-up controls (Caleb 2026-08-03): how far BEFORE the window
-  // start to pull overdue jobs from, and whether the planner may auto-place
-  // them (default NO — they come back as a placeable pool instead).
-  const [overdueDays, setOverdueDays] = useState<number>(120);
+  // Overdue catch-up controls (Caleb 2026-08-03). Jobs due before the window
+  // but within their own current cycle ALWAYS schedule into the window (the
+  // engine handles that). These knobs govern OLDER overdue only: how far back
+  // to surface it (0 = off, the default) and whether the planner may
+  // auto-place it (default NO — it comes back as a placeable pool instead).
+  const [overdueDays, setOverdueDays] = useState<number>(0);
   const [includeOverdue, setIncludeOverdue] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
@@ -2176,12 +2178,14 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mt-4">
             <div className="space-y-2">
-              <Label>Pull overdue from last (days)</Label>
+              <Label>Older overdue: pull from last (days)</Label>
               <Input type="number" min={0} max={365} value={overdueDays}
                      onChange={(e) => setOverdueDays(Math.min(365, Math.max(0, parseInt(e.target.value, 10) || 0)))} />
               <p className="text-[11px] text-muted-foreground leading-tight">
-                How far before the window start to pull overdue jobs from. They land in the
-                searchable Job Pool below — you choose where each one goes. 0 = in-window only.
+                Jobs due earlier in the period (within one of their own cycles) are ALWAYS
+                scheduled into this window. This pulls in OLDER missed-cycle overdue too —
+                into the searchable Job Pool below, where you choose where each one goes.
+                0 = off (default). Try 120.
               </p>
             </div>
             <div className="space-y-2 md:col-span-2">
@@ -2189,9 +2193,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
                 <Checkbox checked={includeOverdue} onCheckedChange={(v) => setIncludeOverdue(v === true)} />
                 <span>
-                  Auto-place overdue in the plan
+                  Auto-place older overdue in the plan
                   <span className="block text-[11px] text-muted-foreground leading-tight">
-                    Off (default): overdue jobs return as a pool for manual placement.
+                    Off (default): they return as a pool for manual placement.
                     On: the planner slots them onto the earliest feasible days itself.
                   </span>
                 </span>
@@ -2221,7 +2225,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
           {result.summary && result.summary.route_count > 0 && (
             <>
               <Card className="border-l-4 border-l-emerald-500">
-                <CardContent className="py-3 grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm">
+                <CardContent className="py-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3 text-sm">
                   {([
                     ["Routes", String(result.summary.route_count)],
                     ["Total stops", String(result.summary.total_stops)],
