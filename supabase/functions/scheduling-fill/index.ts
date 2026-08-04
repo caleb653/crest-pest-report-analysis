@@ -186,20 +186,12 @@ serve(async (req) => {
     const apiKey = Deno.env.get("SCHEDULING_API_KEY");
     if (!apiUrl || !apiKey) { await logAttempt(false, "api_not_configured"); return json({ ok: false, error: "api_not_configured" }); }
 
-    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fill-schedule`, {
-      method: "POST",
-      headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops }),
-    });
-    const result = await upstream.json().catch(() => ({}));
-    if (!upstream.ok) {
-      await logAttempt(false, `upstream_${upstream.status}`);
-      return json({ ok: false, error: "upstream_failed", status: upstream.status, detail: result });
-    }
     // Everything already pushed to FieldRoutes in this window (queued for the
-    // paced bot, in-flight, or committed) — the app greys these stops out and
-    // blocks re-pushing, and it must survive reloads/fresh runs even before
-    // the FieldRoutes data sync reflects the new appointments.
+    // paced bot, in-flight, or committed). Fetched BEFORE the engine call so
+    // it can (a) skip subscriptions a previous run already committed — the
+    // appointment sync lags the write queue by minutes-to-hours — and (b)
+    // glue a customer's other services to the already-committed day instead
+    // of booking a second trip (the Cano/Abi Najm splits, 2026-08-03).
     let pushed: Array<Record<string, unknown>> = [];
     try {
       const { data: rows } = await supabase
@@ -215,7 +207,23 @@ serve(async (req) => {
         return { date: p.date, customer_id: p.customer_id,
                  subscription_id: p.subscription_id, status: r.status };
       });
-    } catch (_e) { /* non-fatal — the app treats missing `pushed` as empty */ }
+    } catch (_e) { /* non-fatal — engine falls back to BigQuery-only view */ }
+
+    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/fill-schedule`, {
+      method: "POST",
+      headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops,
+                             pending_pushes: pushed.map(({ date, customer_id, subscription_id }) =>
+                               ({ date, customer_id, subscription_id })) }),
+    });
+    const result = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) {
+      await logAttempt(false, `upstream_${upstream.status}`);
+      return json({ ok: false, error: "upstream_failed", status: upstream.status, detail: result });
+    }
+    // `pushed` (fetched above, pre-engine) also rides the response — the app
+    // greys these stops out and blocks re-pushing, surviving reloads/fresh
+    // runs even before the FieldRoutes data sync reflects the new appointments.
     await logAttempt(true, null);
     return json({ ok: true, result, pushed });
   } catch (e) {
