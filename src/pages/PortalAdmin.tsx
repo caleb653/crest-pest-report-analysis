@@ -402,7 +402,11 @@ const PortalAdmin = () => {
       return;
     }
     const id = deletePropertyId!;
-    await supabase.from("portal_properties").update({ archived_at: new Date().toISOString() } as any).eq("id", id);
+    const { error } = await supabase.from("portal_properties").update({ archived_at: new Date().toISOString() } as any).eq("id", id);
+    if (error) {
+      toast({ title: "Delete failed", description: error.message, variant: "destructive" });
+      return;
+    }
     if (selectedProperty?.id === id) setSelectedProperty(null);
     setDeletePropertyId(null);
     setDeletePropertyPw("");
@@ -832,7 +836,7 @@ const PortalAdmin = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity" onClick={e => { e.stopPropagation(); deleteProperty(p.id); }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                               <ChevronRight className="w-5 h-5 text-muted-foreground" />
                             </div>
                           </div>
