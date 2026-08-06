@@ -31,6 +31,7 @@ const Notifications        = lazy(() => import("./pages/Notifications"));
 const PreApplicationNoticePage = lazy(() => import("./pages/PreApplicationNoticePage"));
 const SlotFinder           = lazy(() => import("./pages/SlotFinder"));
 const ScheduleReview       = lazy(() => import("./pages/ScheduleReview"));
+const CustomerLookup       = lazy(() => import("./pages/CustomerLookup"));
 const AdminLogin           = lazy(() => import("./pages/AdminLogin"));
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/slot-finder" element={<SlotFinder />} />
                     <Route path="/schedule-review" element={<ScheduleReview />} />
+                    <Route path="/customer-lookup" element={<CustomerLookup />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
