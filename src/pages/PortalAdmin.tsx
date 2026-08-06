@@ -763,15 +763,25 @@ const PortalAdmin = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {propertySubTab === "commercial" && (
-                    <div className="mb-3">
-                      <Input
-                        placeholder="Search commercial properties, clients, addresses…"
-                        value={propertySearch}
-                        onChange={e => setPropertySearch(e.target.value)}
-                      />
-                    </div>
-                  )}
+                  <div className="mb-3 relative">
+                    <Input
+                      type="search"
+                      placeholder="Search customers by name, address…"
+                      value={propertySearch}
+                      onChange={e => setPropertySearch(e.target.value)}
+                      className="pr-8"
+                    />
+                    {propertySearch && (
+                      <button
+                        type="button"
+                        aria-label="Clear search"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
+                        onClick={() => setPropertySearch("")}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                   <Tabs value={propertySubTab} onValueChange={(v) => setPropertySubTab(v as PropertyType | "all")} className="mb-4">
                     <TabsList>
                       <TabsTrigger value="all">
@@ -790,7 +800,7 @@ const PortalAdmin = () => {
                     </TabsList>
                   </Tabs>
                   {(() => {
-                    const q = propertySubTab === "commercial" ? propertySearch.trim().toLowerCase() : "";
+                    const q = propertySearch.trim().toLowerCase();
                     const filtered = allProperties.filter(p => {
                       if (propertySubTab !== "all" && getPropertyType(p) !== propertySubTab) return false;
                       if (!q) return true;
