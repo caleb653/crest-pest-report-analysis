@@ -526,21 +526,27 @@ function DayRoutesMapInner({ routes, colorFor, apiKey }: {
 }
 
 // Day pills → EVERY tech's route on one map (one color per tech; pills toggle
-// techs on/off). Used for the default "what do the next 3 days look like" view.
-function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | null; loading: boolean }) {
-  const dates = useMemo(
-    () => [...new Set((dayRoutes ?? []).map((r) => r.date))].sort(),
-    [dayRoutes],
-  );
+// techs on/off). Shows the next 3 working days by default, plus an "Any day"
+// date picker that pulls any other day's routes on demand (same free
+// sentinel fetch — BigQuery only).
+function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookupDay }: {
+  dayRoutes: DayRoute[];
+  /** Ordered dates to offer as pills (defaults + any looked-up days). */
+  dates: string[];
+  loading: boolean;
+  lookupLoading: boolean;
+  /** Fetch routes for a day not already loaded (from the Any-day picker). */
+  onLookupDay: (iso: string) => void;
+}) {
   // Stable tech → color across all days.
   const colorFor = useMemo(() => {
-    const techs = [...new Set((dayRoutes ?? []).map((r) => r.tech_name))].sort();
+    const techs = [...new Set(dayRoutes.map((r) => r.tech_name))].sort();
     const m = new Map(techs.map((t, i) => [t, TECH_PALETTE[i % TECH_PALETTE.length]]));
     return (t: string) => m.get(t) ?? TECH_PALETTE[TECH_PALETTE.length - 1];
   }, [dayRoutes]);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
   const date = pickedDate && dates.includes(pickedDate) ? pickedDate : dates[0];
-  const routesForDate = (dayRoutes ?? []).filter((r) => r.date === date);
+  const routesForDate = dayRoutes.filter((r) => r.date === date);
   const [hiddenTechs, setHiddenTechs] = useState<Set<string>>(new Set());
   const toggleTech = (t: string) =>
     setHiddenTechs((cur) => {
@@ -566,12 +572,9 @@ function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | nu
       </CardHeader>
       <CardContent className="space-y-3">
         {loading && <p className="text-sm text-muted-foreground">Loading routes…</p>}
-        {!loading && dates.length === 0 && (
-          <p className="text-sm italic text-muted-foreground">No field-tech routes found.</p>
-        )}
-        {dates.length > 0 && (
+        {!loading && dates.length > 0 && (
           <>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {dates.map((d) => (
                 <Button key={d} type="button" size="sm"
                   variant={d === date ? "default" : "outline"}
@@ -579,6 +582,24 @@ function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | nu
                   {isoDayLabel(d)}
                 </Button>
               ))}
+              {/* Any-day lookup: picking a date fetches that day's routes and
+                  adds it as a pill. Value stays empty so it reads as a button. */}
+              <label className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-muted"
+                     title="Look up any other day's routes">
+                <CalendarClock className="w-3.5 h-3.5" />
+                Any day
+                <input
+                  type="date"
+                  className="w-[7.5rem] bg-transparent outline-none text-sm"
+                  value=""
+                  onChange={(e) => {
+                    const iso = e.target.value;
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+                    onLookupDay(iso);
+                    setPickedDate(iso);
+                  }}
+                />
+              </label>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {routesForDate.map((r) => {
@@ -598,7 +619,9 @@ function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | nu
                 );
               })}
               {routesForDate.length === 0 && (
-                <p className="text-sm italic text-muted-foreground">No routes this day.</p>
+                <p className="text-sm italic text-muted-foreground">
+                  {lookupLoading ? "Loading routes…" : "No routes this day."}
+                </p>
               )}
             </div>
             {visible.length > 0
@@ -765,6 +788,27 @@ function FindMode({
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staff]);
+
+  // "Any day" lookups: extra dates the office pulled beyond the default 3 —
+  // same free sentinel fetch, one day at a time.
+  const defaultDates = useMemo(() => dayOptions.slice(0, 3).map((d) => d.iso), [dayOptions]);
+  const [extraDates, setExtraDates] = useState<string[]>([]);
+  const [extraRoutes, setExtraRoutes] = useState<DayRoute[]>([]);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const lookupDay = async (iso: string) => {
+    if (!staff || defaultDates.includes(iso) || extraDates.includes(iso)) return;
+    setExtraDates((cur) => [...cur, iso]);
+    setLookupLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
+        body: { staffName: staff.fullName, address: "@routes", use_google: false, dates: [iso] },
+      });
+      if (!error && data?.ok && Array.isArray(data.result?.day_routes)) {
+        setExtraRoutes((cur) => [...cur, ...(data.result.day_routes as DayRoute[])]);
+      }
+    } catch { /* pill stays; the day just reads "No routes this day." */ }
+    finally { setLookupLoading(false); }
+  };
 
   const serviceType = findServiceType(serviceTypeLabel);
   // Inspections (= "standalone") force subscription_id = -1 and hide the input.
@@ -940,7 +984,13 @@ function FindMode({
       </Card>
 
       <div className="mt-6">
-        <RoutesOverviewCard dayRoutes={defaultRoutes} loading={routesLoading} />
+        <RoutesOverviewCard
+          dayRoutes={[...(defaultRoutes ?? []), ...extraRoutes]}
+          dates={[...new Set([...defaultDates, ...extraDates])].sort()}
+          loading={routesLoading}
+          lookupLoading={lookupLoading}
+          onLookupDay={lookupDay}
+        />
       </div>
 
       {result && (
