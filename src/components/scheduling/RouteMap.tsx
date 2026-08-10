@@ -136,6 +136,11 @@ function RouteMapInner({ stops, candidate, apiKey, onPushStop, onRemoveStop, que
     path.forEach((p) => bounds.extend(p));
     if (candidate) bounds.extend({ lat: candidate.lat, lng: candidate.lng });
     map.fitBounds(bounds, 48);
+    // A 1-stop route (or tight cluster) makes fitBounds dive to house level —
+    // clamp the initial zoom to a neighborhood view. User can still zoom in.
+    google.maps.event.addListenerOnce(map, "idle", () => {
+      if ((map.getZoom() ?? 0) > 13) map.setZoom(13);
+    });
   };
 
   // Dashed connector legs prev → candidate → next ("the detour"). Drawn with

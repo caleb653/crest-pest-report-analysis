@@ -37,6 +37,8 @@ import { Badge } from "@/components/ui/badge";
 import CustomerPicker, { type FRCustomer } from "@/components/CustomerPicker";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import RouteMap, { type RouteMapStop } from "@/components/scheduling/RouteMap";
+import { GMAPS_LIBRARIES } from "@/components/scheduling/WeekRouteMap";
+import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
 import { SERVICE_TYPES, findServiceType, type ServiceType } from "@/lib/serviceTypes";
 
 // ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
@@ -377,18 +379,178 @@ function toMapStops(r: DayRoute): RouteMapStop[] {
   }));
 }
 
-// Day pills → tech pills → the route on a map. Used for the default
-// "what do the next 3 days look like" view and re-fed from search results.
+// Categorical per-tech palette (same CVD-validated hues as the week map's
+// weekday palette). Assigned by sorted tech name so a tech keeps one color
+// across all three days.
+const TECH_PALETTE = ["#2a78d6", "#c44113", "#1baf7a", "#4a3aa7", "#eda100", "#e87ba4", "#52514e"];
+
+// Compact numbered dot in the tech color — small enough that six routes can
+// share one map, big enough to carry the stop order number.
+function numberDot(color: string) {
+  const size = 26;
+  const c = size / 2;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+    `<circle cx="${c}" cy="${c}" r="${c - 2}" fill="${color}" stroke="#ffffff" stroke-width="2"/>` +
+    `</svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: typeof google !== "undefined" ? new google.maps.Size(size, size) : undefined,
+    anchor: typeof google !== "undefined" ? new google.maps.Point(c, c) : undefined,
+    labelOrigin: typeof google !== "undefined" ? new google.maps.Point(c, c) : undefined,
+  } as google.maps.Icon;
+}
+
+const DAY_MAP_STYLE = { width: "100%", height: "60vh" } as const;
+
+// One day, EVERY tech's route on the same map — one color per tech.
+function DayRoutesMap({ routes, colorFor }: {
+  routes: { route: DayRoute; stops: RouteMapStop[] }[];
+  colorFor: (tech: string) => string;
+}) {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.functions.invoke("get-maps-key").then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) { setKeyError(String(error.message || error)); return; }
+      const k = (data as { key?: string } | null)?.key || "";
+      if (!k) setKeyError("Maps key not configured.");
+      else setApiKey(k);
+    });
+    return () => { cancelled = true; };
+  }, []);
+  if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
+  if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
+  return <DayRoutesMapInner routes={routes} colorFor={colorFor} apiKey={apiKey} />;
+}
+
+function DayRoutesMapInner({ routes, colorFor, apiKey }: {
+  routes: { route: DayRoute; stops: RouteMapStop[] }[];
+  colorFor: (tech: string) => string;
+  apiKey: string;
+}) {
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: "route-map-script",
+    googleMapsApiKey: apiKey,
+    libraries: GMAPS_LIBRARIES,
+  });
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [active, setActive] = useState<{ tech: string; stop: RouteMapStop } | null>(null);
+
+  // Fit to the union of ALL techs' stops. Refit only when the day's route set
+  // changes identity (date switch), not on tech show/hide toggles.
+  const fitKey = useMemo(
+    () => routes.map((r) => `${r.route.date}|${r.route.route_id}`).sort().join(","),
+    [routes],
+  );
+  const dateKey = routes[0]?.route.date ?? "";
+  useEffect(() => {
+    if (!map) return;
+    const bounds = new google.maps.LatLngBounds();
+    let n = 0;
+    for (const r of routes) for (const s of r.stops) {
+      if (typeof s.lat === "number" && typeof s.lng === "number") {
+        bounds.extend({ lat: s.lat, lng: s.lng });
+        n++;
+      }
+    }
+    if (n === 0) return;
+    map.fitBounds(bounds, 48);
+    // Clamp: a sparse day (one stop) would otherwise zoom to house level.
+    google.maps.event.addListenerOnce(map, "idle", () => {
+      if ((map.getZoom() ?? 0) > 13) map.setZoom(13);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, dateKey]);
+
+  if (loadError) return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
+  if (!isLoaded) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
+
+  return (
+    <GoogleMap
+      key={fitKey === "" ? "empty" : "map"}
+      mapContainerStyle={DAY_MAP_STYLE}
+      onLoad={setMap}
+      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
+    >
+      {routes.map((r) => (
+        <PolylineF
+          key={`line-${r.route.route_id}`}
+          path={r.stops
+            .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
+            .map((s) => ({ lat: s.lat as number, lng: s.lng as number }))}
+          options={{ strokeColor: colorFor(r.route.tech_name), strokeOpacity: 0.7, strokeWeight: 3, geodesic: false }}
+        />
+      ))}
+      {routes.map((r) =>
+        r.stops
+          .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
+          .map((s) => (
+            <MarkerF
+              key={`${r.route.route_id}-${s.order}`}
+              position={{ lat: s.lat as number, lng: s.lng as number }}
+              icon={numberDot(colorFor(r.route.tech_name))}
+              label={{ text: String(s.order), color: "#ffffff", fontWeight: "700", fontSize: "11px" }}
+              onClick={() => setActive({ tech: r.route.tech_name, stop: s })}
+              title={`${s.customer} — ${r.route.tech_name}`}
+            />
+          )),
+      )}
+      {active && (
+        <InfoWindowF
+          position={{ lat: active.stop.lat as number, lng: active.stop.lng as number }}
+          onCloseClick={() => setActive(null)}
+        >
+          <div className="text-xs space-y-0.5 max-w-[240px]">
+            <div className="font-semibold text-sm">#{active.stop.order} {active.stop.customer}</div>
+            <div>
+              <span className="inline-block w-2.5 h-2.5 rounded-full mr-1 align-middle" style={{ background: colorFor(active.tech) }} />
+              {active.tech}
+            </div>
+            {(active.stop.address || active.stop.city) && (
+              <div className="text-muted-foreground">{[active.stop.address, active.stop.city].filter(Boolean).join(", ")}</div>
+            )}
+            {(active.stop.eta || active.stop.window) && (
+              <div>{active.stop.eta}{active.stop.eta && active.stop.window ? " · " : ""}{active.stop.window}</div>
+            )}
+            {typeof active.stop.drive_from_prev_min === "number" && active.stop.order > 1 && (
+              <div className="text-muted-foreground">+{active.stop.drive_from_prev_min} min drive from previous</div>
+            )}
+          </div>
+        </InfoWindowF>
+      )}
+    </GoogleMap>
+  );
+}
+
+// Day pills → EVERY tech's route on one map (one color per tech; pills toggle
+// techs on/off). Used for the default "what do the next 3 days look like" view.
 function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | null; loading: boolean }) {
   const dates = useMemo(
     () => [...new Set((dayRoutes ?? []).map((r) => r.date))].sort(),
     [dayRoutes],
   );
+  // Stable tech → color across all days.
+  const colorFor = useMemo(() => {
+    const techs = [...new Set((dayRoutes ?? []).map((r) => r.tech_name))].sort();
+    const m = new Map(techs.map((t, i) => [t, TECH_PALETTE[i % TECH_PALETTE.length]]));
+    return (t: string) => m.get(t) ?? TECH_PALETTE[TECH_PALETTE.length - 1];
+  }, [dayRoutes]);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
   const date = pickedDate && dates.includes(pickedDate) ? pickedDate : dates[0];
   const routesForDate = (dayRoutes ?? []).filter((r) => r.date === date);
-  const [pickedRoute, setPickedRoute] = useState<number | null>(null);
-  const route = routesForDate.find((r) => r.route_id === pickedRoute) ?? routesForDate[0];
+  const [hiddenTechs, setHiddenTechs] = useState<Set<string>>(new Set());
+  const toggleTech = (t: string) =>
+    setHiddenTechs((cur) => {
+      const next = new Set(cur);
+      if (next.has(t)) next.delete(t); else next.add(t);
+      return next;
+    });
+  const visible = routesForDate
+    .filter((r) => !hiddenTechs.has(r.tech_name))
+    .map((r) => ({ route: r, stops: toMapStops(r) }));
 
   return (
     <Card>
@@ -397,8 +559,9 @@ function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | nu
           <MapPin className="w-4 h-4" /> Upcoming routes
         </CardTitle>
         <CardDescription>
-          Booked stops per tech, in the modeled drive order. After a search, slots show
-          exactly where the new stop lands — use the Map button on each slot.
+          Every tech's booked route for the day, one color per tech (tap a name to
+          hide/show). After a search, use the Map button on a slot to see exactly
+          where the new stop lands.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -412,25 +575,37 @@ function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | nu
               {dates.map((d) => (
                 <Button key={d} type="button" size="sm"
                   variant={d === date ? "default" : "outline"}
-                  onClick={() => { setPickedDate(d); setPickedRoute(null); }}>
+                  onClick={() => setPickedDate(d)}>
                   {isoDayLabel(d)}
                 </Button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {routesForDate.map((r) => (
-                <Button key={r.route_id} type="button" size="sm"
-                  variant={route && r.route_id === route.route_id ? "secondary" : "ghost"}
-                  className="border"
-                  onClick={() => setPickedRoute(r.route_id)}>
-                  {r.tech_name} · {r.stop_count} stop{r.stop_count === 1 ? "" : "s"}{r.locked ? " · locked" : ""}
-                </Button>
-              ))}
+            <div className="flex flex-wrap gap-1.5">
+              {routesForDate.map((r) => {
+                const off = hiddenTechs.has(r.tech_name);
+                return (
+                  <button
+                    key={r.route_id}
+                    type="button"
+                    onClick={() => toggleTech(r.tech_name)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${off ? "opacity-35" : ""}`}
+                    style={{ borderColor: colorFor(r.tech_name) }}
+                    title={off ? "Show this tech" : "Hide this tech"}
+                  >
+                    <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: colorFor(r.tech_name) }} />
+                    {r.tech_name} · {r.stop_count}{r.locked ? " · locked" : ""}
+                  </button>
+                );
+              })}
               {routesForDate.length === 0 && (
                 <p className="text-sm italic text-muted-foreground">No routes this day.</p>
               )}
             </div>
-            {route && <RouteMap stops={toMapStops(route)} />}
+            {visible.length > 0
+              ? <DayRoutesMap routes={visible} colorFor={colorFor} />
+              : routesForDate.length > 0 && (
+                <p className="text-sm italic text-muted-foreground">All techs hidden — tap a name above to show a route.</p>
+              )}
           </>
         )}
       </CardContent>
