@@ -66,7 +66,22 @@ type RouteMapActions = {
   queuedIds?: Set<string>;
 };
 
-export default function RouteMap({ stops, onPushStop, onRemoveStop, queuedIds }: { stops: RouteMapStop[] } & RouteMapActions) {
+/** A prospective stop to overlay on the route (Slot Finder: "where would this
+    land?"). Drawn as a distinct pin with dashed connectors to the stops it
+    would slot between — pure client-side drawing, no API calls. */
+export type CandidateOverlay = {
+  lat: number;
+  lng: number;
+  /** Pin label, e.g. "NEW". */
+  label?: string;
+  /** Tooltip-ish caption under the pin when tapped. */
+  caption?: string;
+  prev?: { lat: number; lng: number } | null;
+  next?: { lat: number; lng: number } | null;
+};
+
+export default function RouteMap({ stops, candidate, onPushStop, onRemoveStop, queuedIds }:
+  { stops: RouteMapStop[]; candidate?: CandidateOverlay | null } & RouteMapActions) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
   useEffect(() => {
@@ -82,12 +97,12 @@ export default function RouteMap({ stops, onPushStop, onRemoveStop, queuedIds }:
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <RouteMapInner stops={stops} apiKey={apiKey} onPushStop={onPushStop}
+  return <RouteMapInner stops={stops} candidate={candidate} apiKey={apiKey} onPushStop={onPushStop}
                         onRemoveStop={onRemoveStop} queuedIds={queuedIds} />;
 }
 
-function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
-                       { stops: RouteMapStop[]; apiKey: string } & RouteMapActions) {
+function RouteMapInner({ stops, candidate, apiKey, onPushStop, onRemoveStop, queuedIds }:
+                       { stops: RouteMapStop[]; candidate?: CandidateOverlay | null; apiKey: string } & RouteMapActions) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
     googleMapsApiKey: apiKey,
@@ -109,7 +124,7 @@ function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
   if (!isLoaded) {
     return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
   }
-  if (geocoded.length === 0) {
+  if (geocoded.length === 0 && !candidate) {
     return <div className="p-6 text-sm text-muted-foreground">No geocoded stops to map.</div>;
   }
 
@@ -119,8 +134,24 @@ function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
   const onLoad = (map: google.maps.Map) => {
     const bounds = new google.maps.LatLngBounds();
     path.forEach((p) => bounds.extend(p));
+    if (candidate) bounds.extend({ lat: candidate.lat, lng: candidate.lng });
     map.fitBounds(bounds, 48);
   };
+
+  // Dashed connector legs prev → candidate → next ("the detour"). Drawn with
+  // Maps' dash-symbol trick: an invisible stroke that repeats a short line icon.
+  const DASH: google.maps.PolylineOptions = {
+    strokeOpacity: 0,
+    icons: [{
+      icon: { path: "M 0,-1 0,1", strokeOpacity: 0.9, strokeColor: "#e11d48", strokeWeight: 3, scale: 3 } as google.maps.Symbol,
+      offset: "0", repeat: "14px",
+    }],
+  };
+  const candidateLegs: { lat: number; lng: number }[][] = [];
+  if (candidate) {
+    if (candidate.prev) candidateLegs.push([{ lat: candidate.prev.lat, lng: candidate.prev.lng }, { lat: candidate.lat, lng: candidate.lng }]);
+    if (candidate.next) candidateLegs.push([{ lat: candidate.lat, lng: candidate.lng }, { lat: candidate.next.lat, lng: candidate.next.lng }]);
+  }
 
   return (
     <div className="space-y-2">
@@ -128,6 +159,9 @@ function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: "#4f46e5" }} /> proposed</span>
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: "#059669" }} /> already scheduled</span>
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: "#1f2937" }} /> locked</span>
+        {candidate && (
+          <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded-full" style={{ background: "#e11d48" }} /> new stop</span>
+        )}
         <span className="ml-auto">{geocoded.length} of {stops.length} stops mapped</span>
       </div>
       <GoogleMap mapContainerStyle={CONTAINER_STYLE} onLoad={onLoad} options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}>
@@ -146,6 +180,18 @@ function RouteMapInner({ stops, apiKey, onPushStop, onRemoveStop, queuedIds }:
             zIndex={s.order}
           />
         ))}
+        {candidateLegs.map((leg, i) => (
+          <PolylineF key={`cand-leg-${i}`} path={leg} options={DASH} />
+        ))}
+        {candidate && (
+          <MarkerF
+            position={{ lat: candidate.lat, lng: candidate.lng }}
+            icon={pinIcon("#e11d48")}
+            label={{ text: candidate.label || "NEW", color: "#ffffff", fontWeight: "700", fontSize: "10px" }}
+            zIndex={9999}
+            title={candidate.caption || "New stop"}
+          />
+        )}
         {active && (
           <InfoWindowF
             position={{ lat: active.lat as number, lng: active.lng as number }}

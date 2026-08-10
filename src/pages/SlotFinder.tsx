@@ -36,14 +36,33 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import CustomerPicker, { type FRCustomer } from "@/components/CustomerPicker";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
+import RouteMap, { type RouteMapStop } from "@/components/scheduling/RouteMap";
 import { SERVICE_TYPES, findServiceType, type ServiceType } from "@/lib/serviceTypes";
 
 // ── Shared types (mirror tools/slot_finder.py output) ───────────────────────
 
 type Stop = {
   customer_name: string; city: string; start_time: string; end_time: string;
+  lat?: number | null; lng?: number | null;
   /** Modeled clocks from the backend's assumed schedule (may be absent). */
   est_arrival_min?: number | null; est_depart_min?: number | null;
+};
+
+/** One booked stop of an existing route, in assumed drive order (from
+    day_routes — free haversine simulation, no Google). */
+type DayRouteStop = {
+  order: number;
+  appointment_id?: string | null;
+  lat?: number | null; lng?: number | null;
+  customer: string;
+  address?: string | null; city?: string | null;
+  window?: string; eta?: string | null;
+  drive_from_prev_min?: number | null;
+};
+
+type DayRoute = {
+  date: string; route_id: number; tech_name: string; locked: boolean;
+  stop_count: number; stops: DayRouteStop[];
 };
 
 type WindowCounts = { "8-12"?: number; "10-2"?: number; "1-5"?: number };
@@ -75,6 +94,7 @@ type SlotCandidate = {
   extra_miles_haversine: number;
   est_min: number | null;
   route_date: string;
+  route_id?: number;
   tech_name: string;
   insertion_kind?: string;
   detour_min?: number;
@@ -105,6 +125,7 @@ type FindResult = {
   horizon_72h?: SlotCandidate[];
   routes_scored: number;
   stops_in_horizon: number;
+  day_routes?: DayRoute[];
   error?: string;
 };
 
@@ -322,6 +343,101 @@ function upcomingBusinessDays(count: number): { iso: string; label: string }[] {
   return out;
 }
 
+// ── Route maps (free: data rides along with the search / sentinel fetch;
+//    the map draws pins + straight lines only — no Directions calls) ─────────
+
+// "08:00-12:00" → "8:00 AM – 12:00 PM"; "anytime" passes through.
+function fmtRouteWindow(w?: string): string {
+  if (!w || !w.includes("-")) return w ?? "";
+  const [a, b] = w.split("-");
+  return `${fmtHHMMSS(a)} – ${fmtHHMMSS(b)}`;
+}
+
+// "2026-08-10" → "Mon, Aug 10"
+function isoDayLabel(iso: string): string {
+  try {
+    return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, {
+      weekday: "short", month: "short", day: "numeric",
+    });
+  } catch { return iso; }
+}
+
+function toMapStops(r: DayRoute): RouteMapStop[] {
+  return r.stops.map((s) => ({
+    order: s.order,
+    lat: s.lat, lng: s.lng,
+    customer: s.customer,
+    address: s.address ?? undefined,
+    city: s.city ?? undefined,
+    eta: s.eta ? fmtHHMMSS(s.eta) : undefined,
+    window: fmtRouteWindow(s.window),
+    drive_from_prev_min: s.drive_from_prev_min ?? undefined,
+    already_scheduled: true,
+    locked: r.locked,
+  }));
+}
+
+// Day pills → tech pills → the route on a map. Used for the default
+// "what do the next 3 days look like" view and re-fed from search results.
+function RoutesOverviewCard({ dayRoutes, loading }: { dayRoutes: DayRoute[] | null; loading: boolean }) {
+  const dates = useMemo(
+    () => [...new Set((dayRoutes ?? []).map((r) => r.date))].sort(),
+    [dayRoutes],
+  );
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+  const date = pickedDate && dates.includes(pickedDate) ? pickedDate : dates[0];
+  const routesForDate = (dayRoutes ?? []).filter((r) => r.date === date);
+  const [pickedRoute, setPickedRoute] = useState<number | null>(null);
+  const route = routesForDate.find((r) => r.route_id === pickedRoute) ?? routesForDate[0];
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <MapPin className="w-4 h-4" /> Upcoming routes
+        </CardTitle>
+        <CardDescription>
+          Booked stops per tech, in the modeled drive order. After a search, slots show
+          exactly where the new stop lands — use the Map button on each slot.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {loading && <p className="text-sm text-muted-foreground">Loading routes…</p>}
+        {!loading && dates.length === 0 && (
+          <p className="text-sm italic text-muted-foreground">No field-tech routes found.</p>
+        )}
+        {dates.length > 0 && (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {dates.map((d) => (
+                <Button key={d} type="button" size="sm"
+                  variant={d === date ? "default" : "outline"}
+                  onClick={() => { setPickedDate(d); setPickedRoute(null); }}>
+                  {isoDayLabel(d)}
+                </Button>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {routesForDate.map((r) => (
+                <Button key={r.route_id} type="button" size="sm"
+                  variant={route && r.route_id === route.route_id ? "secondary" : "ghost"}
+                  className="border"
+                  onClick={() => setPickedRoute(r.route_id)}>
+                  {r.tech_name} · {r.stop_count} stop{r.stop_count === 1 ? "" : "s"}{r.locked ? " · locked" : ""}
+                </Button>
+              ))}
+              {routesForDate.length === 0 && (
+                <p className="text-sm italic text-muted-foreground">No routes this day.</p>
+              )}
+            </div>
+            {route && <RouteMap stops={toMapStops(route)} />}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const SlotFinder = () => {
@@ -439,6 +555,41 @@ function FindMode({
   );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FindResult | null>(null);
+
+  // Default route maps: booked routes for the next 3 working days, fetched once
+  // via the "@routes" sentinel — BigQuery-only on the backend (no geocoding,
+  // no Distance Matrix), so this page-load fetch costs nothing.
+  const [defaultRoutes, setDefaultRoutes] = useState<DayRoute[] | null>(null);
+  const [routesLoading, setRoutesLoading] = useState(false);
+  useEffect(() => {
+    if (!staff || defaultRoutes !== null || routesLoading) return;
+    let cancelled = false;
+    setRoutesLoading(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
+          body: {
+            staffName: staff.fullName,
+            address: "@routes",
+            use_google: false,
+            dates: dayOptions.slice(0, 3).map((d) => d.iso),
+          },
+        });
+        if (cancelled) return;
+        if (!error && data?.ok && Array.isArray(data.result?.day_routes)) {
+          setDefaultRoutes(data.result.day_routes as DayRoute[]);
+        } else {
+          setDefaultRoutes([]);
+        }
+      } catch {
+        if (!cancelled) setDefaultRoutes([]);
+      } finally {
+        if (!cancelled) setRoutesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staff]);
 
   const serviceType = findServiceType(serviceTypeLabel);
   // Inspections (= "standalone") force subscription_id = -1 and hide the input.
@@ -613,6 +764,10 @@ function FindMode({
         </CardContent>
       </Card>
 
+      <div className="mt-6">
+        <RoutesOverviewCard dayRoutes={defaultRoutes} loading={routesLoading} />
+      </div>
+
       {result && (
         <div className="mt-6 space-y-6">
           <p className="text-xs text-muted-foreground">
@@ -745,6 +900,8 @@ function FindMode({
                     scheduleContext={scheduleContext}
                     isBestFit={bestKey === `${day.date}#${i}`}
                     widthHours={Number(windowWidth)}
+                    route={result.day_routes?.find((r) => r.date === day.date && r.route_id === c.route_id) ?? null}
+                    target={result.geocoded}
                   />
                 ))}
               </CardContent>
@@ -765,7 +922,7 @@ type ScheduleContext = {
 };
 
 function SlotCard({
-  c, rank, date, scheduleContext, isBestFit, widthHours = 4,
+  c, rank, date, scheduleContext, isBestFit, widthHours = 4, route, target,
 }: {
   c: SlotCandidate;
   rank: number;
@@ -773,10 +930,15 @@ function SlotCard({
   scheduleContext?: ScheduleContext | null;
   isBestFit?: boolean;
   widthHours?: number;
+  /** The tech-day's booked route (from day_routes) — enables the Map view. */
+  route?: DayRoute | null;
+  /** Geocoded location of the searched address — the "new stop" pin. */
+  target?: { lat: number; lng: number } | null;
 }) {
   const snap = c.route_snapshot;
   const after = c.after_insert;
   const [booking, setBooking] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   const onSchedule = async () => {
     if (!scheduleContext) return;
@@ -954,7 +1116,19 @@ function SlotCard({
         <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
       )}
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:justify-end">
+        {route && target && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowMap((v) => !v)}
+            className="w-full sm:w-auto h-10"
+            title="Show this day's route with the new stop placed on it"
+          >
+            <MapPin className="h-3.5 w-3.5 mr-1" />
+            {showMap ? "Hide map" : "Map"}
+          </Button>
+        )}
         <Button
           type="button"
           disabled={!scheduleContext || booking}
@@ -966,6 +1140,24 @@ function SlotCard({
           {booking ? "Queueing…" : "Schedule (queue for approval)"}
         </Button>
       </div>
+
+      {showMap && route && target && (
+        <div className="mt-3">
+          <RouteMap
+            stops={toMapStops(route)}
+            candidate={{
+              lat: target.lat,
+              lng: target.lng,
+              label: "NEW",
+              caption: "New stop (searched address)",
+              prev: c.prev_stop?.lat != null && c.prev_stop?.lng != null
+                ? { lat: c.prev_stop.lat, lng: c.prev_stop.lng } : null,
+              next: c.next_stop?.lat != null && c.next_stop?.lng != null
+                ? { lat: c.next_stop.lat, lng: c.next_stop.lng } : null,
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
