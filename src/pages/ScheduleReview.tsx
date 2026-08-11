@@ -2597,14 +2597,29 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 type RescheduleMove = {
   appointment_id: string; customer: string; city: string; tech: string;
   from_date: string; to_date: string; start: string; end: string;
-  duration: number; gain_mi: number; from_dist_mi: number; to_dist_mi: number;
+  duration: number; gain_mi: number; from_dist_mi: number | null; to_dist_mi: number | null;
   to_route_id: string; from_load: number; to_load: number;
   special_scheduling?: string | null;
+  // v2: why this move exists — "combine" (same customer, one trip instead of
+  // two), "geometry" (nearer route), "level" (spreads a front-loaded window).
+  kind?: "combine" | "geometry" | "level";
+  reason?: string;
+  from_tech?: string;
+};
+// v2: things the bot can't fix but the office should — duplicate bookings on
+// one subscription, and same-customer split days it couldn't auto-combine.
+type RescheduleIssue = {
+  kind: "duplicate_same_sub" | "split_days";
+  customer_id: string; customer: string; city: string;
+  dates: string[]; services: string[]; detail: string;
+  cancel_appointment_id?: string;
 };
 type RescheduleResult = {
   ok: boolean; start: string; end: string; appointments: number;
   movable: number; locked: number; notified: number;
   moves: RescheduleMove[]; total_gain_mi: number;
+  issues?: RescheduleIssue[]; level_moves?: number;
+  day_loads?: Record<string, Record<string, number>>;
 };
 
 // Map view of the bot's proposals: each movable stop is a dot in its TARGET
@@ -3211,13 +3226,46 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
 
       {result && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <StatCard label="Booked appts" value={result.appointments} />
             <StatCard label="Movable" value={result.movable} />
             <StatCard label="Locked (stay)" value={result.locked} small />
             <StatCard label="Notified (stay)" value={result.notified} small />
             <StatCard label="Miles saved if all moved" value={`${result.total_gain_mi} mi`} tone={result.moves.length ? "ok" : "neutral"} />
+            <StatCard label="Issues to fix" value={(result.issues ?? []).length}
+                      tone={(result.issues ?? []).length ? "warn" : "ok"} small />
           </div>
+
+          {(result.issues ?? []).length > 0 && (
+            <Card className="border-amber-300">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  Schedule issues the bot can't fix — needs the office
+                </CardTitle>
+                <CardDescription>
+                  Duplicate bookings get cancelled in FieldRoutes; split-day customers either
+                  get combined by hand or the reason below explains why they must stay split.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-1.5">
+                {(result.issues ?? []).map((iss, i) => (
+                  <div key={i} className="rounded-md border border-amber-200 bg-amber-50/60 p-2 text-xs">
+                    <span className="font-semibold text-sm">{iss.customer}</span>
+                    <span className="text-muted-foreground"> · {iss.city}</span>
+                    <Badge variant="outline" className="ml-2 text-[10px] h-4">
+                      {iss.kind === "duplicate_same_sub" ? "duplicate booking" : "two trips, same customer"}
+                    </Badge>
+                    <br />
+                    {iss.detail}
+                    {iss.services.length > 0 && (
+                      <span className="text-muted-foreground"> ({iss.services.join(", ")})</span>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {result.moves.length === 0 ? (
             <Card>
@@ -3278,12 +3326,28 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                           <span className="flex-1 min-w-0">
                             <span className="font-semibold text-sm">{m.customer}</span>
                             <span className="text-muted-foreground"> · {m.city}</span>
+                            {m.kind === "combine" && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-sky-300 text-sky-700">one trip</Badge>}
+                            {m.kind === "level" && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-violet-300 text-violet-700">spread the load</Badge>}
                             {isQueued && <Badge variant="outline" className="ml-2 text-[10px] h-4 text-muted-foreground">queued</Badge>}
                             <br />
                             {weekdayLabel(m.from_date)} → <span className="font-semibold">{weekdayLabel(m.to_date)}</span>
-                            {" · "}<span className="font-bold text-emerald-700">saves ~{m.gain_mi} mi</span>
-                            {" "}({m.from_dist_mi} → {m.to_dist_mi} mi from the day's route)
-                            {" · "}loads {m.from_load}→{m.to_load}
+                            {m.from_tech && m.from_tech !== m.tech && (
+                              <span className="text-amber-700"> (moves to {firstName(m.tech)})</span>
+                            )}
+                            {m.kind === "level" ? (
+                              <>{" · "}<span className="font-bold text-violet-700">loads {m.from_load}→{m.to_load}</span></>
+                            ) : (
+                              <>
+                                {" · "}<span className="font-bold text-emerald-700">saves ~{m.gain_mi} mi</span>
+                                {m.from_dist_mi != null && m.to_dist_mi != null && (
+                                  <> ({m.from_dist_mi} → {m.to_dist_mi} mi from the day's route)</>
+                                )}
+                                {" · "}loads {m.from_load}→{m.to_load}
+                              </>
+                            )}
+                            {m.reason && (
+                              <><br /><span className="text-muted-foreground">{m.reason}</span></>
+                            )}
                             {m.special_scheduling && (
                               <><br /><span className="text-amber-700">note: {m.special_scheduling}</span></>
                             )}
