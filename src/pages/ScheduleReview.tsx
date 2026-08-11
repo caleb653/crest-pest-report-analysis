@@ -33,7 +33,7 @@ import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
 import WeekRouteMap, { type MapMoveGroup, dayColor, dotIcon, GMAPS_LIBRARIES } from "@/components/scheduling/WeekRouteMap";
-import { GoogleMap, MarkerF, DrawingManagerF, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, PolylineF, DrawingManagerF, useJsApiLoader } from "@react-google-maps/api";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -2600,40 +2600,85 @@ type RescheduleMove = {
   duration: number; gain_mi: number; from_dist_mi: number | null; to_dist_mi: number | null;
   to_route_id: string; from_load: number; to_load: number;
   special_scheduling?: string | null;
-  // v2: why this move exists — "combine" (same customer, one trip instead of
-  // two), "geometry" (nearer route), "level" (spreads a front-loaded window).
-  kind?: "combine" | "geometry" | "level";
+  // Why this recommendation exists — "window" (booked outside the legal due
+  // window / on a note-forbidden day), "combine" (same customer, one trip
+  // instead of two), "geometry" (nearer route), "level" (spreads a
+  // front-loaded window).
+  kind?: "window" | "combine" | "geometry" | "level";
   reason?: string;
   from_tech?: string;
+  lat?: number | null; lng?: number | null;
+  // Rule transparency: the legal window this move honors.
+  due_date?: string | null; window_start?: string | null; window_end?: string | null;
+  days_off_due_before?: number | null; days_off_due_after?: number | null;
 };
-// v2: things the bot can't fix but the office should — duplicate bookings on
-// one subscription, and same-customer split days it couldn't auto-combine.
+// Things the recommendations can't fix but the office should — duplicate
+// bookings on one subscription, split days it couldn't auto-combine, and
+// window violations with no legal day available.
 type RescheduleIssue = {
-  kind: "duplicate_same_sub" | "split_days";
+  kind: "duplicate_same_sub" | "split_days" | "window_violation";
   customer_id: string; customer: string; city: string;
   dates: string[]; services: string[]; detail: string;
   cancel_appointment_id?: string;
+};
+// Full booked layout of the window (before any simulated move) — the map
+// draws each recommendation's why from this.
+type RescheduleStop = {
+  appointment_id: string; customer: string; city: string; service_type: string;
+  tech: string; date: string; lat: number | null; lng: number | null;
+  movable: boolean; locked: boolean; notified: boolean;
+  due_date?: string | null; window_start?: string | null; window_end?: string | null;
+  special_scheduling?: string | null;
 };
 type RescheduleResult = {
   ok: boolean; start: string; end: string; appointments: number;
   movable: number; locked: number; notified: number;
   moves: RescheduleMove[]; total_gain_mi: number;
   issues?: RescheduleIssue[]; level_moves?: number;
+  stops?: RescheduleStop[];
   day_loads?: Record<string, Record<string, number>>;
 };
 
-// Map view of the bot's proposals: each movable stop is a dot in its TARGET
-// day's color — click a dot (or a day chip) to bulk-toggle which moves get
-// queued. The visual answer to "where do these go?".
-function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onToggleDate }: {
+const MOVE_KIND_META: Record<string, { label: string; chip: string }> = {
+  window:   { label: "rule fix",        chip: "border-rose-300 text-rose-700" },
+  combine:  { label: "one trip",        chip: "border-sky-300 text-sky-700" },
+  geometry: { label: "shorter drive",   chip: "border-emerald-300 text-emerald-700" },
+  level:    { label: "spread the load", chip: "border-violet-300 text-violet-700" },
+};
+
+// "due 8/19 · legal 8/14–8/24 · now 7d early → lands 1d early ✓"
+function moveWindowLine(m: RescheduleMove): string | null {
+  if (!m.window_start || !m.window_end) return null;
+  const off = (n: number | null | undefined) =>
+    n == null ? null : n === 0 ? "on the due date" : `${Math.abs(n)}d ${n < 0 ? "early" : "late"}`;
+  const parts = [
+    m.due_date ? `due ${shortDate(m.due_date)}` : null,
+    `legal ${shortDate(m.window_start)}–${shortDate(m.window_end)}`,
+    off(m.days_off_due_before) ? `now ${off(m.days_off_due_before)}` : null,
+    off(m.days_off_due_after) ? `→ lands ${off(m.days_off_due_after)} ✓` : "→ lands in window ✓",
+  ].filter(Boolean);
+  return parts.join(" · ");
+}
+
+// The review map — the primary surface for judging recommendations (Caleb
+// 2026-08-10: "everything visible on a map so I know why it is a good idea").
+// Every recommendation is a dot in its TARGET day's color. Click a dot to see
+// its WHY: the day it's on now (grey dots + dashed line to its nearest
+// current-day stop) vs the day it should join (colored dots + solid line),
+// plus the due-window rule it honors. Include/exclude from the panel; day
+// chips bulk-toggle; kind chips filter.
+function RescheduleMapDialog({ open, onOpenChange, moves, stops, checked, onToggle, onToggleDate }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   moves: RescheduleMove[];
+  stops: RescheduleStop[];
   checked: Set<string>;
   onToggle: (id: string) => void;
   onToggleDate: (date: string) => void;
 }) {
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [kindFilter, setKindFilter] = useState<Set<string>>(new Set());
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   useEffect(() => {
     if (!open || apiKey) return;
     supabase.functions.invoke("get-maps-key").then(({ data }) => {
@@ -2641,19 +2686,41 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
       if (k) setApiKey(k);
     });
   }, [open, apiKey]);
-  const geo = moves.filter((m) => typeof (m as any).lat === "number" && typeof (m as any).lng === "number");
-  const dates = [...new Set(moves.map((m) => m.to_date))].sort();
+  const geo = moves.filter((m) => typeof m.lat === "number" && typeof m.lng === "number");
+  const visible = kindFilter.size
+    ? geo.filter((m) => kindFilter.has(m.kind ?? "geometry"))
+    : geo;
+  const dates = [...new Set(visible.map((m) => m.to_date))].sort();
+  const kinds = [...new Set(moves.map((m) => m.kind ?? "geometry"))];
+  const selected = geo.find((m) => m.appointment_id === selectedId) ?? null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] max-h-[92vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Proposed reschedules — dot color = the day it should move TO</DialogTitle>
+          <DialogTitle>Recommended reschedules — click a dot to see WHY, nothing moves until you queue it</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 items-center">
+          {kinds.map((k) => {
+            const meta = MOVE_KIND_META[k] ?? MOVE_KIND_META.geometry;
+            const n = geo.filter((m) => (m.kind ?? "geometry") === k).length;
+            const on = !kindFilter.size || kindFilter.has(k);
+            return (
+              <button key={k} type="button"
+                      onClick={() => setKindFilter((cur) => {
+                        const next = new Set(cur);
+                        if (next.has(k)) next.delete(k); else next.add(k);
+                        return next;
+                      })}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full border text-xs font-medium ${meta.chip} ${on ? "" : "opacity-35"}`}>
+                {meta.label} · {n}
+              </button>
+            );
+          })}
+          <span className="mx-2 h-4 border-l" />
           {dates.map((date) => {
-            const n = moves.filter((m) => m.to_date === date).length;
-            const sel = moves.filter((m) => m.to_date === date && checked.has(m.appointment_id)).length;
+            const n = visible.filter((m) => m.to_date === date).length;
+            const sel = visible.filter((m) => m.to_date === date && checked.has(m.appointment_id)).length;
             return (
               <button key={date} type="button" onClick={() => onToggleDate(date)}
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${sel ? "" : "opacity-40"}`}
@@ -2664,13 +2731,60 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
               </button>
             );
           })}
-          <span className="text-xs text-muted-foreground self-center">click a dot or chip to include/exclude moves</span>
         </div>
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 relative">
           {apiKey ? (
-            <RescheduleProposalMapInner apiKey={apiKey} geo={geo} checked={checked} onToggle={onToggle} />
+            <RescheduleProposalMapInner apiKey={apiKey} geo={visible} stops={stops}
+                                        checked={checked} selected={selected}
+                                        onSelect={setSelectedId} />
           ) : (
             <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
+          )}
+          {selected && (
+            <div className="absolute top-2 left-2 z-10 max-w-sm rounded-lg border bg-background/95 shadow-lg p-3 text-xs space-y-1.5">
+              <div>
+                <span className="font-semibold text-sm">{selected.customer}</span>
+                <span className="text-muted-foreground"> · {selected.city}</span>
+                <Badge variant="outline"
+                       className={`ml-2 text-[10px] h-4 ${(MOVE_KIND_META[selected.kind ?? "geometry"] ?? MOVE_KIND_META.geometry).chip}`}>
+                  {(MOVE_KIND_META[selected.kind ?? "geometry"] ?? MOVE_KIND_META.geometry).label}
+                </Badge>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{weekdayLabel(selected.from_date)}</span>
+                {" → "}
+                <span className="font-semibold" style={{ color: dayColor(selected.to_date) }}>
+                  {weekdayLabel(selected.to_date)}
+                </span>
+                {selected.from_tech && selected.from_tech !== selected.tech && (
+                  <span className="text-amber-700"> · goes to {firstName(selected.tech)}</span>
+                )}
+              </div>
+              {selected.reason && <div className="text-muted-foreground">{selected.reason}</div>}
+              {moveWindowLine(selected) && (
+                <div className="font-medium">{moveWindowLine(selected)}</div>
+              )}
+              <div className="text-muted-foreground">
+                Dashed grey line = nearest stop on its current day
+                {selected.from_dist_mi != null && <> ({selected.from_dist_mi} mi)</>};
+                solid line = nearest stop on the recommended day
+                {selected.to_dist_mi != null && <> ({selected.to_dist_mi} mi)</>}.
+                Day loads {selected.from_load}→{selected.to_load}.
+              </div>
+              {selected.special_scheduling && (
+                <div className="text-amber-700">note: {selected.special_scheduling}</div>
+              )}
+              <div className="flex gap-2 pt-1">
+                <Button size="sm" className="h-7 text-xs"
+                        variant={checked.has(selected.appointment_id) ? "secondary" : "default"}
+                        onClick={() => onToggle(selected.appointment_id)}>
+                  {checked.has(selected.appointment_id) ? "Remove from queue list" : "Include this move"}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setSelectedId(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       </DialogContent>
@@ -2678,37 +2792,96 @@ function RescheduleMapDialog({ open, onOpenChange, moves, checked, onToggle, onT
   );
 }
 
+function _miDeg(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  // Small-angle miles, fine for "which stop is nearest" on a city map.
+  const dy = (aLat - bLat) * 69;
+  const dx = (aLng - bLng) * 69 * Math.cos((aLat * Math.PI) / 180);
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 // Inner map body, mounted ONLY once the real Maps key exists. useJsApiLoader
 // requires IDENTICAL options at every call site — initializing it with the
 // old `apiKey || "x"` placeholder poisoned the shared loader for every other
 // map in the session (they all hang at "Loading map…").
-function RescheduleProposalMapInner({ apiKey, geo, checked, onToggle }: {
-  apiKey: string; geo: RescheduleMove[]; checked: Set<string>; onToggle: (id: string) => void;
+function RescheduleProposalMapInner({ apiKey, geo, stops, checked, selected, onSelect }: {
+  apiKey: string; geo: RescheduleMove[]; stops: RescheduleStop[];
+  checked: Set<string>; selected: RescheduleMove | null;
+  onSelect: (id: string | null) => void;
 }) {
   const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
   const [map, setMap] = useState<google.maps.Map | null>(null);
   useEffect(() => {
     if (!map || !geo.length) return;
     const b = new google.maps.LatLngBounds();
-    geo.forEach((m) => b.extend({ lat: (m as any).lat, lng: (m as any).lng }));
+    geo.forEach((m) => b.extend({ lat: m.lat as number, lng: m.lng as number }));
     map.fitBounds(b, 48);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, geo.length]);
   if (!isLoaded) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
+
+  // Context for the selected move: its CURRENT day's other stops (grey) and
+  // the TARGET day's stops (target color), plus a line to the nearest stop on
+  // each side — the literal geometry the recommendation was judged on.
+  const sLat = selected?.lat ?? null;
+  const sLng = selected?.lng ?? null;
+  const fromMates = selected
+    ? stops.filter((s) => s.tech === (selected.from_tech ?? selected.tech) && s.date === selected.from_date
+        && s.appointment_id !== selected.appointment_id && s.lat != null && s.lng != null)
+    : [];
+  const toMates = selected
+    ? stops.filter((s) => s.tech === selected.tech && s.date === selected.to_date
+        && s.appointment_id !== selected.appointment_id && s.lat != null && s.lng != null)
+    : [];
+  const nearest = (mates: RescheduleStop[]) =>
+    sLat == null || sLng == null || !mates.length
+      ? null
+      : mates.reduce((best, s) =>
+          _miDeg(sLat, sLng, s.lat as number, s.lng as number)
+            < _miDeg(sLat, sLng, best.lat as number, best.lng as number) ? s : best);
+  const nearFrom = nearest(fromMates);
+  const nearTo = nearest(toMates);
+  const toColor = selected ? dayColor(selected.to_date) : "#888";
+
   return (
     <GoogleMap
       mapContainerStyle={{ width: "100%", height: "100%" }}
       onLoad={setMap}
+      onClick={() => onSelect(null)}
       options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
     >
+      {/* context dots for the selected move's two days */}
+      {selected && fromMates.map((s) => (
+        <MarkerF key={`f-${s.appointment_id}`}
+                 position={{ lat: s.lat as number, lng: s.lng as number }}
+                 icon={dotIcon("#9ca3af", false)} opacity={0.85} zIndex={1}
+                 title={`${s.customer} — stays on ${weekdayLabel(s.date)}`} />
+      ))}
+      {selected && toMates.map((s) => (
+        <MarkerF key={`t-${s.appointment_id}`}
+                 position={{ lat: s.lat as number, lng: s.lng as number }}
+                 icon={dotIcon(toColor, false)} opacity={0.85} zIndex={1}
+                 title={`${s.customer} — already on ${weekdayLabel(s.date)}`} />
+      ))}
+      {selected && sLat != null && sLng != null && nearFrom && (
+        <PolylineF path={[{ lat: sLat, lng: sLng }, { lat: nearFrom.lat as number, lng: nearFrom.lng as number }]}
+                   options={{ strokeColor: "#6b7280", strokeOpacity: 0, zIndex: 2,
+                              icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 0.9, scale: 3 }, offset: "0", repeat: "12px" }] }} />
+      )}
+      {selected && sLat != null && sLng != null && nearTo && (
+        <PolylineF path={[{ lat: sLat, lng: sLng }, { lat: nearTo.lat as number, lng: nearTo.lng as number }]}
+                   options={{ strokeColor: toColor, strokeWeight: 3, strokeOpacity: 0.95, zIndex: 3 }} />
+      )}
+      {/* every recommendation, colored by its target day */}
       {geo.map((m) => (
         <MarkerF
           key={m.appointment_id}
-          position={{ lat: (m as any).lat, lng: (m as any).lng }}
+          position={{ lat: m.lat as number, lng: m.lng as number }}
           icon={dotIcon(dayColor(m.to_date), checked.has(m.appointment_id))}
-          opacity={checked.has(m.appointment_id) ? 1 : 0.35}
-          onClick={() => onToggle(m.appointment_id)}
-          title={`${m.customer} — ${weekdayLabel(m.from_date)} → ${weekdayLabel(m.to_date)} (saves ~${m.gain_mi} mi)`}
+          opacity={selected && m.appointment_id !== selected.appointment_id ? 0.4
+                   : checked.has(m.appointment_id) ? 1 : 0.75}
+          zIndex={m.appointment_id === selected?.appointment_id ? 5 : 4}
+          onClick={() => onSelect(m.appointment_id)}
+          title={`${m.customer} — ${weekdayLabel(m.from_date)} → ${weekdayLabel(m.to_date)}${m.gain_mi ? ` (saves ~${m.gain_mi} mi)` : ""} — click for why`}
         />
       ))}
     </GoogleMap>
@@ -3101,7 +3274,9 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
       const raw = data.result as RescheduleResult;
       const res: RescheduleResult = { ...raw, moves: Array.isArray(raw?.moves) ? raw.moves : [] };
       setResult(res);
-      setChecked(new Set(res.moves.map((m) => m.appointment_id)));
+      // Recommendations start UNCHECKED (Caleb 2026-08-10: "I want to do that
+      // myself and just have it recommend") — you pick what queues.
+      setChecked(new Set());
     } catch (e) {
       console.error(e);
       toast.error("Reschedule Bot failed — see console.");
@@ -3165,15 +3340,15 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot className="w-5 h-5" /> Reschedule Bot
+            <Bot className="w-5 h-5" /> Reschedule recommendations
           </CardTitle>
           <CardDescription>
-            <strong>Load the map</strong> to see every booked stop in the window — click dots or
-            circle-select a cluster (filter to just the quarterlies if you want), pick a target day,
-            and move them yourself. Or let the bot <strong>propose</strong> better days. Either way,
-            only appointments that are <strong>not locked</strong> and whose
-            <strong> notification hasn't been sent</strong> can move, and queued moves are
-            rescheduled in FieldRoutes by the paced bot.
+            Nothing moves on its own. <strong>Get recommendations</strong> ranks the best
+            reschedules — every one obeys the customer's real due window (last service +
+            cadence ± tolerance) and their scheduling notes — then <strong>you</strong> review
+            them on the map (click a dot to see exactly why it's a good idea) and queue only
+            the ones you like. Or <strong>load the map</strong> and move stops entirely by
+            hand. Locked appointments and ones whose reminder already went out never move.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -3216,7 +3391,7 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
             </Button>
             <Button variant="outline" onClick={run} disabled={loading}>
               <Bot className="w-4 h-4 mr-2" />
-              {loading ? "Analyzing…" : "Find better days (bot)"}
+              {loading ? "Analyzing…" : "Get recommendations"}
             </Button>
           </div>
         </CardContent>
@@ -3254,7 +3429,9 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                     <span className="font-semibold text-sm">{iss.customer}</span>
                     <span className="text-muted-foreground"> · {iss.city}</span>
                     <Badge variant="outline" className="ml-2 text-[10px] h-4">
-                      {iss.kind === "duplicate_same_sub" ? "duplicate booking" : "two trips, same customer"}
+                      {iss.kind === "duplicate_same_sub" ? "duplicate booking"
+                        : iss.kind === "window_violation" ? "breaks the date rules"
+                        : "two trips, same customer"}
                     </Badge>
                     <br />
                     {iss.detail}
@@ -3277,7 +3454,7 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
             <>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-sm font-semibold">
-                  {result.moves.length} proposed move{result.moves.length === 1 ? "" : "s"}
+                  {result.moves.length} recommendation{result.moves.length === 1 ? "" : "s"} — none selected until you pick
                   <button type="button" className="ml-3 text-xs underline text-muted-foreground"
                           onClick={() => setChecked(new Set(result.moves.map((m) => m.appointment_id)))}>
                     select all
@@ -3288,8 +3465,8 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                   </button>
                 </span>
                 <span className="flex items-center gap-2">
-                  <Button variant="outline" onClick={() => setMapOpen(true)}>
-                    <MapPin className="w-4 h-4 mr-2" /> Map view
+                  <Button onClick={() => setMapOpen(true)}>
+                    <MapPin className="w-4 h-4 mr-2" /> Review on the map — see why
                   </Button>
                   <Button onClick={queueMoves} disabled={queueing || checked.size === 0}>
                     <Send className="w-4 h-4 mr-2" />
@@ -3301,6 +3478,7 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                 open={mapOpen}
                 onOpenChange={setMapOpen}
                 moves={result.moves}
+                stops={result.stops ?? []}
                 checked={checked}
                 onToggle={toggle}
                 onToggleDate={toggleDateGroup}
@@ -3326,16 +3504,19 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                           <span className="flex-1 min-w-0">
                             <span className="font-semibold text-sm">{m.customer}</span>
                             <span className="text-muted-foreground"> · {m.city}</span>
-                            {m.kind === "combine" && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-sky-300 text-sky-700">one trip</Badge>}
-                            {m.kind === "level" && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-violet-300 text-violet-700">spread the load</Badge>}
+                            {m.kind && MOVE_KIND_META[m.kind] && (
+                              <Badge variant="outline" className={`ml-2 text-[10px] h-4 ${MOVE_KIND_META[m.kind].chip}`}>
+                                {MOVE_KIND_META[m.kind].label}
+                              </Badge>
+                            )}
                             {isQueued && <Badge variant="outline" className="ml-2 text-[10px] h-4 text-muted-foreground">queued</Badge>}
                             <br />
                             {weekdayLabel(m.from_date)} → <span className="font-semibold">{weekdayLabel(m.to_date)}</span>
                             {m.from_tech && m.from_tech !== m.tech && (
                               <span className="text-amber-700"> (moves to {firstName(m.tech)})</span>
                             )}
-                            {m.kind === "level" ? (
-                              <>{" · "}<span className="font-bold text-violet-700">loads {m.from_load}→{m.to_load}</span></>
+                            {m.kind === "level" || m.kind === "window" ? (
+                              <>{" · "}<span className={`font-bold ${m.kind === "window" ? "text-rose-700" : "text-violet-700"}`}>loads {m.from_load}→{m.to_load}</span></>
                             ) : (
                               <>
                                 {" · "}<span className="font-bold text-emerald-700">saves ~{m.gain_mi} mi</span>
@@ -3344,6 +3525,9 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
                                 )}
                                 {" · "}loads {m.from_load}→{m.to_load}
                               </>
+                            )}
+                            {moveWindowLine(m) && (
+                              <><br /><span className="text-muted-foreground">{moveWindowLine(m)}</span></>
                             )}
                             {m.reason && (
                               <><br /><span className="text-muted-foreground">{m.reason}</span></>
