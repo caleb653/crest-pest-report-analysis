@@ -47,13 +47,20 @@ export function dayColor(iso: string): string {
 // Small circle marker in the day color with a white ring — deliberately more
 // compact than the single-day map's numbered pins, since a whole week of stops
 // is on screen at once.
-export function dotIcon(color: string, highlight = false) {
+export function dotIcon(color: string, highlight = false, struck = false) {
   const r = highlight ? 9 : 7;
   const size = r * 2 + 4;
   const c = size / 2;
+  // `struck` = locked in FieldRoutes: a black line through the dot so it
+  // reads as untouchable at a glance (Caleb 2026-08-12).
+  const k = r * 0.7071; // 45° offsets so the slash spans the circle
+  const slash = struck
+    ? `<line x1="${c - k}" y1="${c - k}" x2="${c + k}" y2="${c + k}" stroke="#000000" stroke-width="2.5" stroke-linecap="round"/>`
+    : "";
   const svg = `<?xml version="1.0" encoding="UTF-8"?>` +
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
     `<circle cx="${c}" cy="${c}" r="${r}" fill="${color}" stroke="#ffffff" stroke-width="2.5"/>` +
+    slash +
     `</svg>`;
   return {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,

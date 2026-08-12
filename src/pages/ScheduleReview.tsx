@@ -2596,6 +2596,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 // appointment/update writes — the bot reschedules them in FieldRoutes.
 type RescheduleMove = {
   appointment_id: string; customer: string; city: string; tech: string;
+  service_type?: string;
   from_date: string; to_date: string; start: string; end: string;
   duration: number; gain_mi: number; from_dist_mi: number | null; to_dist_mi: number | null;
   to_route_id: string; from_load: number; to_load: number;
@@ -2750,6 +2751,9 @@ function RescheduleMapDialog({ open, onOpenChange, moves, stops, checked, onTogg
                   {(MOVE_KIND_META[selected.kind ?? "geometry"] ?? MOVE_KIND_META.geometry).label}
                 </Badge>
               </div>
+              {selected.service_type && (
+                <div className="text-muted-foreground">{selected.service_type}</div>
+              )}
               <div>
                 <span className="text-muted-foreground">{weekdayLabel(selected.from_date)}</span>
                 {" → "}
@@ -2760,6 +2764,12 @@ function RescheduleMapDialog({ open, onOpenChange, moves, stops, checked, onTogg
                   <span className="text-amber-700"> · goes to {firstName(selected.tech)}</span>
                 )}
               </div>
+              {selected.window_start && selected.window_end && (
+                <div>
+                  earliest possible <span className="font-medium">{shortDate(selected.window_start)}</span>
+                  {" · "}latest possible <span className="font-medium">{shortDate(selected.window_end)}</span>
+                </div>
+              )}
               {selected.reason && <div className="text-muted-foreground">{selected.reason}</div>}
               {moveWindowLine(selected) && (
                 <div className="font-medium">{moveWindowLine(selected)}</div>
@@ -2853,14 +2863,14 @@ function RescheduleProposalMapInner({ apiKey, geo, stops, checked, selected, onS
       {selected && fromMates.map((s) => (
         <MarkerF key={`f-${s.appointment_id}`}
                  position={{ lat: s.lat as number, lng: s.lng as number }}
-                 icon={dotIcon("#9ca3af", false)} opacity={0.85} zIndex={1}
-                 title={`${s.customer} — stays on ${weekdayLabel(s.date)}`} />
+                 icon={dotIcon("#9ca3af", false, s.locked)} opacity={0.85} zIndex={1}
+                 title={`${s.customer} — ${s.locked ? "locked, " : ""}stays on ${weekdayLabel(s.date)}`} />
       ))}
       {selected && toMates.map((s) => (
         <MarkerF key={`t-${s.appointment_id}`}
                  position={{ lat: s.lat as number, lng: s.lng as number }}
-                 icon={dotIcon(toColor, false)} opacity={0.85} zIndex={1}
-                 title={`${s.customer} — already on ${weekdayLabel(s.date)}`} />
+                 icon={dotIcon(toColor, false, s.locked)} opacity={0.85} zIndex={1}
+                 title={`${s.customer} — ${s.locked ? "locked, " : ""}already on ${weekdayLabel(s.date)}`} />
       ))}
       {selected && sLat != null && sLng != null && nearFrom && (
         <PolylineF path={[{ lat: sLat, lng: sLng }, { lat: nearFrom.lat as number, lng: nearFrom.lng as number }]}
@@ -2901,6 +2911,11 @@ type BookedStop = {
   time_window?: string | null; lat: number | null; lng: number | null;
   service_type: string; frequency_days: number; frequency: string;
   locked: boolean; notified: boolean; movable: boolean; special?: string;
+  // Rule transparency (backend ≥ rev 00161): the appointment's real legal
+  // window and the exact dates it could be scheduled on (window ∩ note
+  // rules). Absent on a stale backend — the map degrades to no filtering.
+  due_date?: string | null; window_start?: string | null; window_end?: string | null;
+  eligible_dates?: string[];
 };
 type BookedRoute = { tech: string; date: string; route_id: string; stops: number };
 type BookedResult = {
@@ -2944,6 +2959,9 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
   const [queueing, setQueueing] = useState(false);
   // appointment_id -> the date it was queued to (recolors the dot, blocks re-moves)
   const [movedTo, setMovedTo] = useState<Map<string, string>>(new Map());
+  // Last-clicked stop: its details (service, first/last possible day) show in
+  // a panel over the map (Caleb 2026-08-12).
+  const [info, setInfo] = useState<BookedStop | null>(null);
 
   // Defensive defaults: a stale backend must degrade to an empty map, never
   // crash the page.
@@ -2954,7 +2972,6 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
   const freqs = [...new Set(allStops.map((s) => s.frequency))]
     .sort((a, b) => FREQ_ORDER.indexOf(a) - FREQ_ORDER.indexOf(b));
   const passesFreq = (s: BookedStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
-  const visible = geo.filter(passesFreq);
   const dates = [...new Set(allStops.map((s) => displayDate(s)))].sort();
   // Phase 2: target days come from the SEPARATE move-to range's routes, not
   // the source window.
@@ -2963,6 +2980,46 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
     targetRoutes.find((r) => r.tech === tech && r.date === date);
   const loadOn = (date: string) =>
     targetRoutes.filter((r) => r.date === date).reduce((n, r) => n + (r.stops || 0), 0);
+
+  // Once stops are selected, the map shows ONLY where they could actually go
+  // (Caleb 2026-08-12: "don't show any days that aren't eligible — only show
+  // places it could actually be scheduled"): the intersection of every
+  // selected stop's legal dates (due window ∩ scheduling-note rules, from the
+  // backend). null = no filtering (nothing selected, or stale backend without
+  // eligible_dates).
+  const selStops = geo.filter((s) => selected.has(s.appointment_id));
+  let eligibleDays: Set<string> | null = null;
+  if (selStops.length && selStops.every((s) => Array.isArray(s.eligible_dates))) {
+    for (const s of selStops) {
+      const ds = s.eligible_dates as string[];
+      eligibleDays = eligibleDays === null
+        ? new Set(ds)
+        : new Set(ds.filter((d) => (eligibleDays as Set<string>).has(d)));
+    }
+  }
+  const dayEligible = (date: string) => !eligibleDays || eligibleDays.has(date);
+  // A target day must be legal for every selected stop AND have an FR route
+  // for each stop's tech.
+  const targetDates = routeDates.filter((date) =>
+    dayEligible(date) && (!selStops.length || selStops.every((s) => routeFor(s.tech, date))));
+  const visible = geo.filter(passesFreq).filter((s) =>
+    selected.has(s.appointment_id) || dayEligible(displayDate(s)));
+
+  // Deselecting can invalidate the picked target day — never leave a stale one.
+  useEffect(() => {
+    if (targetDate && !targetDates.includes(targetDate)) setTargetDate("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetDate, targetDates.join("|")]);
+
+  // "Earliest/latest possible" for the info panel: the note-legal ends of the
+  // stop's legal window when the backend sent them, else the raw window.
+  const possibleSpan = (s: BookedStop): [string, string] | null => {
+    if (Array.isArray(s.eligible_dates) && s.eligible_dates.length) {
+      return [s.eligible_dates[0], s.eligible_dates[s.eligible_dates.length - 1]];
+    }
+    if (s.window_start && s.window_end) return [s.window_start, s.window_end];
+    return null;
+  };
 
   useEffect(() => {
     if (!map || !geo.length) return;
@@ -2973,6 +3030,7 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
   }, [map, allStops.length]);
 
   const toggleStop = (s: BookedStop) => {
+    setInfo(s); // details panel always shows the clicked stop, movable or not
     if (movedTo.has(s.appointment_id))
       return toast.error(`${s.customer} is already queued to ${weekdayLabel(movedTo.get(s.appointment_id)!)}.`);
     if (!s.movable)
@@ -3099,6 +3157,7 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
           {dates.map((date) => {
             const n = visible.filter((s) => displayDate(s) === date).length;
             const sel = visible.filter((s) => displayDate(s) === date && selected.has(s.appointment_id)).length;
+            if (eligibleDays && n === 0) return null; // day filtered out for the selection
             return (
               <button key={date} type="button" onClick={() => toggleDay(date)}
                       className={chip(sel > 0)} style={{ borderColor: dayColor(date) }}
@@ -3119,10 +3178,40 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
             <X className="w-4 h-4 mr-1.5" /> Clear
           </Button>
           <span className="text-xs text-muted-foreground">
-            {selected.size} selected · faded dots are locked/notified (can't move)
+            {selected.size} selected · black slash = locked, faded = reminder sent (can't move)
+            {eligibleDays && " · showing only days the selection can legally go"}
           </span>
         </div>
-        <div className="h-[60vh] rounded-md overflow-hidden border">
+        <div className="h-[60vh] rounded-md overflow-hidden border relative">
+          {info && (
+            <div className="absolute top-2 left-2 z-10 max-w-sm rounded-lg border bg-background/95 shadow-lg p-3 text-xs space-y-1">
+              <div>
+                <span className="font-semibold text-sm">{info.customer}</span>
+                <span className="text-muted-foreground"> · {info.city}</span>
+                {info.locked && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-foreground/60">locked</Badge>}
+                {!info.locked && info.notified && <Badge variant="outline" className="ml-2 text-[10px] h-4 border-amber-400 text-amber-700">reminder sent</Badge>}
+              </div>
+              <div className="text-muted-foreground">{info.service_type || "Service"} · {info.frequency}</div>
+              <div>
+                Booked <span className="font-medium">{weekdayLabel(displayDate(info))}</span>
+                {info.due_date && <> · due {shortDate(info.due_date)}</>}
+              </div>
+              {possibleSpan(info) ? (
+                <div>
+                  earliest possible <span className="font-medium">{shortDate(possibleSpan(info)![0])}</span>
+                  {" · "}latest possible <span className="font-medium">{shortDate(possibleSpan(info)![1])}</span>
+                </div>
+              ) : (
+                <div className="text-muted-foreground">no legal-window data — reload after the backend updates</div>
+              )}
+              {info.special && <div className="text-amber-700">note: {info.special}</div>}
+              <div className="pt-1">
+                <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={() => setInfo(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
           {isLoaded ? (
             <GoogleMap
               mapContainerStyle={{ width: "100%", height: "100%" }}
@@ -3136,8 +3225,8 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
                   <MarkerF
                     key={s.appointment_id}
                     position={{ lat: s.lat as number, lng: s.lng as number }}
-                    icon={dotIcon(dayColor(displayDate(s)), isSel)}
-                    opacity={queuedTo ? 0.9 : !s.movable ? 0.25 : isSel ? 1 : 0.75}
+                    icon={dotIcon(dayColor(displayDate(s)), isSel, s.locked)}
+                    opacity={queuedTo ? 0.9 : !s.movable ? 0.35 : isSel ? 1 : 0.75}
                     onClick={() => toggleStop(s)}
                     title={`${s.customer} · ${s.frequency} · ${weekdayLabel(displayDate(s))} ${s.start}`
                       + `${queuedTo ? " (queued)" : !s.movable ? (s.locked ? " (locked)" : " (notified)") : ""}`}
@@ -3170,7 +3259,15 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
               no FieldRoutes routes in the move-to range — adjust the range and reload
             </span>
           )}
-          {routeDates.map((date) => (
+          {routeDates.length > 0 && targetDates.length === 0 && selStops.length > 0 && (
+            <span className="text-xs text-destructive">
+              none of the move-to days are legal for the selected stop{selStops.length === 1 ? "" : "s"} —
+              its window {selStops.length === 1 && possibleSpan(selStops[0])
+                ? `is ${shortDate(possibleSpan(selStops[0])![0])}–${shortDate(possibleSpan(selStops[0])![1])}`
+                : "doesn't overlap this range"} — adjust the range and reload
+            </span>
+          )}
+          {targetDates.map((date) => (
             <button key={date} type="button" onClick={() => setTargetDate((cur) => (cur === date ? "" : date))}
                     className={chip(targetDate === date)} style={{ borderColor: dayColor(date) }}
                     title={`${loadOn(date)} stops already booked across techs on ${weekdayLabel(date)}`}>
