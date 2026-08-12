@@ -2166,6 +2166,7 @@ export default function CommercialDashboardView({
                                     body: {
                                       to: recipient,
                                       propertyName: property.name,
+                                      propertyAddress: property.address || "",
                                       clientName: clientName || "",
                                       serviceType: getField(s, "service_type") || "",
                                       serviceDate: dateVal,

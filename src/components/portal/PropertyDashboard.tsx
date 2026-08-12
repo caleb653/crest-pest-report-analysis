@@ -2280,6 +2280,7 @@ const PropertyDashboard = ({
           body: {
             to: recipient,
             propertyName: property.name,
+            propertyAddress: (property as any)?.address || "",
             clientName: (client as any)?.name || clientName || "",
             serviceType: svc?.service_type || "",
             serviceDate: (svc as any)?.service_date || today,

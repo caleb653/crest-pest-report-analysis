@@ -5,6 +5,86 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// ─── Compliance data (kept inline — edge functions can't import from src/) ───
+
+// Company identity block required on CA service notifications.
+const COMPANY = {
+  name: "Crest Pest Control",
+  address: "2709 Orange Ave Ste C, Santa Ana, CA 92707",
+  license: "LIC# PR9859",
+  phone: "(949) 424-5000",
+  email: "office@crestpestcontrol.com",
+};
+
+// Technician → CA structural pest control license. Mirrors the app's
+// TECHNICIANS lists (src/lib/freeAndClearCertificate.ts).
+const TECH_LICENSE: Record<string, string> = {
+  "Darrell Tanner": "FR 62523",
+  "Jake Shubin": "FR 71068",
+  "Caleb Whalen": "FR 71183",
+  "Jackson Latham": "FR 68261",
+  "Dylan Gallegos": "RA 71068",
+  "Michael Muniz": "FR 54193",
+  "David Longoria": "FR 71710",
+  "Nick Stovall": "FR 69245",
+  "Brock Lyttle": "FR 62941",
+};
+
+// Product → active ingredient(s) + SDS path. Mirrors the app's knowledge base:
+// APPROVED_COMMERCIAL_MATERIALS (src/components/portal/CommercialApprovedMaterials.tsx,
+// authoritative for ingredients + hosted SDS PDFs) merged with the sales-report
+// PRODUCT_OPTIONS chemicals for products not on the approved-commercial list.
+// sds paths are app-relative (/public/sds) — made absolute against the app origin.
+const PRODUCT_INFO: Record<string, { ai: string; sds?: string }> = {
+  "Advion Ant Gel Bait": { ai: "Indoxacarb", sds: "/sds/Advion_Ant_Gel_SDS.pdf" },
+  "Advion Microflow": { ai: "Indoxacarb", sds: "/sds/Advion_Microflow_SDS.pdf" },
+  "Advion Cockroach Gel Bait": { ai: "Indoxacarb" },
+  "Alpine WSG": { ai: "Dinotefuran", sds: "/sds/Alpine_WSG_SDS.pdf" },
+  "Bedlam Plus": { ai: "Sumithrin, Permethrin, Pyriproxyfen, MGK-264", sds: "/sds/Bedlam_Plus_SDS.pdf" },
+  "Bedlam": { ai: "Cyclopropanecarboxylate, Dicarboximide" },
+  "Bifen I/T": { ai: "Bifenthrin", sds: "/sds/Bifen_IT_SDS.pdf" },
+  "Bifen LP": { ai: "Bifenthrin" },
+  "MasterLine / Bifen I/T": { ai: "Bifenthrin", sds: "/sds/Bifen_IT_SDS.pdf" },
+  "Contrac": { ai: "Bromethalin", sds: "/sds/Contrac_CA_Blox_SDS.pdf" },
+  "Crossfire Bedbug Concentrate": { ai: "Clothianidin, Metofluthrin, Piperonyl Butoxide" },
+  "Delta Dust": { ai: "Deltamethrin", sds: "/sds/Delta_Dust_SDS.pdf" },
+  "Essentria IC Pro": { ai: "Geraniol, Clove Oil, Cornmint Oil" },
+  "ExciteR": { ai: "Pyrethrins, Piperonyl Butoxide" },
+  "Gentrol IGR Concentrate": { ai: "(S)-Hydroprene", sds: "/sds/Gentrol_IGR_SDS.pdf" },
+  "Gentrol Aerosol": { ai: "(S)-Hydroprene" },
+  "Invade Hot Spot": { ai: "Citrus terpenes, microbes, surfactants", sds: "/sds/Invade_Hot_Spot_Plus_SDS.pdf" },
+  "In2Care Mix": { ai: "Pyriproxyfen, Beauveria bassiana Strain GHA" },
+  "Maxforce Quantum Ant Bait": { ai: "Imidacloprid", sds: "/sds/Maxforce_Quantum_SDS.pdf" },
+  "Maxforce FC Ant Gel": { ai: "Fipronil" },
+  "Niban": { ai: "Orthoboric Acid" },
+  "Nyguard IGR Concentrate": { ai: "Pyriproxyfen", sds: "/sds/Nyguard_IGR_SDS.pdf" },
+  "OneGuard": { ai: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide" },
+  "Onslaught FastCap": { ai: "Esfenvalerate, Prallethrin, PBO", sds: "/sds/Onslaught_FC_SDS.pdf" },
+  "Optigard": { ai: "Thiamethoxam", sds: "/sds/Optigard_Flex_SDS.pdf" },
+  "Phantom": { ai: "Chlorfenapyr", sds: "/sds/Phantom_SDS.pdf" },
+  "PT Alpine Flea & Bed Bug": { ai: "Dinotefuran, Pyriproxyfen, Prallethrin", sds: "/sds/PT_Alpine_Flea_Bed_Bug_SDS.pdf" },
+  "PT Wasp Freeze": { ai: "Prallethrin", sds: "/sds/PT_Wasp_Freeze_SDS.pdf" },
+  "Shockwave": { ai: "Cypermethrin, Imiprothrin, PBO", sds: "/sds/Shockwave_SDS.pdf" },
+  "Temprid FX": { ai: "Imidacloprid, Beta-Cyfluthrin", sds: "/sds/Temprid_FX_SDS.pdf" },
+  "Termidor SC": { ai: "Fipronil", sds: "/sds/Termidor_SC_SDS.pdf" },
+};
+
+// Loose name matcher: exact normalized hit, else longest key contained in the
+// product name (or vice versa) — product names vary slightly across the app
+// ("Delta Dust (Bayer)", "Invade Hot Spot +", "Contrac California").
+const normName = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+const PRODUCT_INFO_NORM = Object.entries(PRODUCT_INFO).map(([k, v]) => ({ key: normName(k), ...v }));
+function productInfoFor(name: unknown): { ai: string; sds?: string } | null {
+  const n = normName(String(name ?? ""));
+  if (!n) return null;
+  const exact = PRODUCT_INFO_NORM.find((p) => p.key === n);
+  if (exact) return exact;
+  const partial = PRODUCT_INFO_NORM
+    .filter((p) => n.includes(p.key) || p.key.includes(n))
+    .sort((a, b) => b.key.length - a.key.length);
+  return partial[0] ?? null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -15,6 +95,7 @@ serve(async (req) => {
       to,
       ccEmails,
       propertyName,
+      propertyAddress,
       clientName,
       serviceType,
       serviceDate,
@@ -50,14 +131,27 @@ serve(async (req) => {
       });
     }
 
+    // Absolute base for the hosted SDS PDFs — same origin the portal link
+    // points at (the app serves /public/sds).
+    const appOrigin = (() => {
+      try { return portalUrl ? new URL(String(portalUrl)).origin : ""; } catch { return ""; }
+    })();
+
     const safeProductsRows = Array.isArray(productsList) && productsList.length > 0
-      ? productsList.map((p: any) => `
+      ? productsList.map((p: any) => {
+        const info = productInfoFor(p.name);
+        const sdsLink = info?.sds && appOrigin
+          ? `<br/><a href="${appOrigin}${info.sds}" style="font-size:10px;color:#2563eb;text-decoration:underline;font-weight:400;">Label / SDS</a>`
+          : "";
+        return `
         <tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600;">${p.name || ""}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #eee;font-weight:600;">${p.name || ""}${sdsLink}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #eee;font-size:11px;color:#374151;">${info?.ai || "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;">${p.epa || "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;">${p.applied_amount != null ? `${p.applied_amount} ${p.applied_unit || ""}` : "—"}</td>
           <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#2A2A2A;">${p.undiluted_amount != null ? `${p.undiluted_amount} ${p.undiluted_unit || ""}` : "—"}</td>
-        </tr>`).join("")
+        </tr>`;
+      }).join("")
       : "";
 
     // Convert "HH:MM" (24h) or "H:MM AM/PM" to a friendly "h:MM AM/PM".
@@ -244,7 +338,8 @@ serve(async (req) => {
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff;">
         <div style="background:#2A2A2A;color:#fff;padding:18px 24px;border-radius:8px 8px 0 0;">
           <h2 style="margin:0;font-size:18px;font-weight:700;">Service Completed</h2>
-          <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">Crest Pest Control</p>
+          <p style="margin:4px 0 0;font-size:13px;opacity:0.85;">${COMPANY.name} · ${COMPANY.license}</p>
+          <p style="margin:2px 0 0;font-size:11px;opacity:0.7;">${COMPANY.address} · ${COMPANY.phone} · ${COMPANY.email}</p>
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;padding:22px 24px;border-radius:0 0 8px 8px;">
           <p style="margin:0 0 12px;font-size:14px;color:#374151;">Hello${clientName ? ` ${esc(clientName)}` : ""},</p>
@@ -254,8 +349,9 @@ serve(async (req) => {
           </p>
           <table style="width:100%;border-collapse:collapse;font-size:13px;color:#1f2937;margin-bottom:16px;">
             ${serviceType ? `<tr><td style="padding:6px 0;color:#6b7280;width:140px;">Service</td><td style="padding:6px 0;font-weight:600;">${esc(serviceType)}</td></tr>` : ""}
+            ${propertyAddress ? `<tr><td style="padding:6px 0;color:#6b7280;">Service address</td><td style="padding:6px 0;font-weight:600;">${esc(propertyAddress)}</td></tr>` : ""}
             ${dateDisplay ? `<tr><td style="padding:6px 0;color:#6b7280;">Date</td><td style="padding:6px 0;font-weight:600;">${esc(dateDisplay)}</td></tr>` : ""}
-            ${technician ? `<tr><td style="padding:6px 0;color:#6b7280;">Technician</td><td style="padding:6px 0;font-weight:600;">${esc(technician)}</td></tr>` : ""}
+            ${technician ? `<tr><td style="padding:6px 0;color:#6b7280;">Technician</td><td style="padding:6px 0;font-weight:600;">${esc(technician)}${TECH_LICENSE[String(technician).trim()] ? ` <span style="font-weight:400;color:#6b7280;">· License ${esc(TECH_LICENSE[String(technician).trim()])}</span>` : ""}</td></tr>` : ""}
             ${timeRange ? `<tr><td style="padding:6px 0;color:#6b7280;">On site</td><td style="padding:6px 0;font-weight:600;">${esc(timeRange)}</td></tr>` : ""}
             ${unitsCount != null ? `<tr><td style="padding:6px 0;color:#6b7280;">Areas serviced</td><td style="padding:6px 0;font-weight:600;">${unitsCount}</td></tr>` : ""}
           </table>
@@ -268,6 +364,7 @@ serve(async (req) => {
             <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1f2937;border:1px solid #eee;border-radius:6px;overflow:hidden;margin-bottom:16px;">
               <thead style="background:#f3f4f6;"><tr>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Product</th>
+                <th style="text-align:left;padding:6px 10px;font-weight:700;">Active Ingredient(s)</th>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">EPA #</th>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Diluted</th>
                 <th style="text-align:left;padding:6px 10px;font-weight:700;">Concentrated</th>
@@ -293,7 +390,8 @@ serve(async (req) => {
             </p>
           </div>
           <p style="margin:0;font-size:12px;color:#6b7280;text-align:center;">
-            Crest Pest Control · (949) 424-5000<br/>
+            ${COMPANY.name} · ${COMPANY.address} · ${COMPANY.license}<br/>
+            ${COMPANY.phone} · ${COMPANY.email}<br/>
             Reply to this email with any questions.
           </p>
         </div>
