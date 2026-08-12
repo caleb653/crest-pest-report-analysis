@@ -2933,8 +2933,8 @@ function metersBetween(aLat: number, aLng: number, bLat: number, bLng: number): 
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-function ManualMoveMap({ staff, data, targetRoutes }: {
-  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[];
+function ManualMoveMap({ staff, data, targetRoutes, targetStops }: {
+  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[]; targetStops: BookedStop[];
 }) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   useEffect(() => {
@@ -2944,11 +2944,11 @@ function ManualMoveMap({ staff, data, targetRoutes }: {
     });
   }, []);
   if (!apiKey) return <Card><CardContent className="py-6 text-sm text-muted-foreground">Loading map…</CardContent></Card>;
-  return <ManualMoveMapInner staff={staff} data={data} targetRoutes={targetRoutes} apiKey={apiKey} />;
+  return <ManualMoveMapInner staff={staff} data={data} targetRoutes={targetRoutes} targetStops={targetStops} apiKey={apiKey} />;
 }
 
-function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
-  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[]; apiKey: string;
+function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: {
+  staff: { fullName: string } | null; data: BookedResult; targetRoutes: BookedRoute[]; targetStops: BookedStop[]; apiKey: string;
 }) {
   const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -2962,17 +2962,30 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
   // Last-clicked stop: its details (service, first/last possible day) show in
   // a panel over the map (Caleb 2026-08-12).
   const [info, setInfo] = useState<BookedStop | null>(null);
+  // View filters: which days / techs are drawn. Empty set = show all.
+  const [viewDays, setViewDays] = useState<Set<string>>(new Set());
+  const [techFilter, setTechFilter] = useState<Set<string>>(new Set());
 
   // Defensive defaults: a stale backend must degrade to an empty map, never
   // crash the page.
   const allStops = Array.isArray(data.stops) ? data.stops : [];
   const allRoutes = Array.isArray(data.routes) ? data.routes : [];
-  const geo = allStops.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
+  // The move-to range's booked stops ride along as context (Caleb 2026-08-12:
+  // "pick Tuesday to schedule from and SEE if it fits on Thursday") — dedup
+  // in case the two ranges overlap.
+  const contextStops = (Array.isArray(targetStops) ? targetStops : [])
+    .filter((t) => !allStops.some((s) => s.appointment_id === t.appointment_id));
+  const merged = [...allStops, ...contextStops];
+  const geo = merged.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
   const displayDate = (s: BookedStop) => movedTo.get(s.appointment_id) ?? s.date;
-  const freqs = [...new Set(allStops.map((s) => s.frequency))]
+  const freqs = [...new Set(merged.map((s) => s.frequency))]
     .sort((a, b) => FREQ_ORDER.indexOf(a) - FREQ_ORDER.indexOf(b));
   const passesFreq = (s: BookedStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
-  const dates = [...new Set(allStops.map((s) => displayDate(s)))].sort();
+  const dates = [...new Set(merged.map((s) => displayDate(s)))].sort();
+  // Every tech gets a stable number, drawn INSIDE their dots, so each
+  // person's route reads at a glance on any day.
+  const techs = [...new Set(merged.map((s) => s.tech))].sort();
+  const techNo = (t: string) => techs.indexOf(t) + 1;
   // Phase 2: target days come from the SEPARATE move-to range's routes, not
   // the source window.
   const routeDates = [...new Set(targetRoutes.map((r) => r.date))].sort();
@@ -3002,8 +3015,11 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
   // for each stop's tech.
   const targetDates = routeDates.filter((date) =>
     dayEligible(date) && (!selStops.length || selStops.every((s) => routeFor(s.tech, date))));
+  const passesView = (s: BookedStop) => viewDays.size === 0 || viewDays.has(displayDate(s));
+  const passesTech = (s: BookedStop) => techFilter.size === 0 || techFilter.has(s.tech);
   const visible = geo.filter(passesFreq).filter((s) =>
-    selected.has(s.appointment_id) || dayEligible(displayDate(s)));
+    selected.has(s.appointment_id)
+    || (passesView(s) && passesTech(s) && dayEligible(displayDate(s))));
 
   // Deselecting can invalidate the picked target day — never leave a stale one.
   useEffect(() => {
@@ -3027,7 +3043,7 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
     geo.forEach((s) => b.extend({ lat: s.lat as number, lng: s.lng as number }));
     map.fitBounds(b, 48);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, allStops.length]);
+  }, [map, merged.length]);
 
   const toggleStop = (s: BookedStop) => {
     setInfo(s); // details panel always shows the clicked stop, movable or not
@@ -3133,7 +3149,9 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm">
-          {data.count} booked stops · {data.movable} movable — 1&#41; select stops on the map, 2&#41; pick the day they move to
+          {data.count} booked stops · {data.movable} movable
+          {contextStops.length > 0 && <> · {contextStops.length} move-to-range stops shown for context</>}
+          {" "}— 1&#41; select stops on the map, 2&#41; pick the day they move to
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -3154,10 +3172,48 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Techs (number on each dot):</span>
+          {techs.map((t) => (
+            <button key={t} type="button" className={chip(techFilter.size === 0 || techFilter.has(t))}
+                    onClick={() => setTechFilter((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(t)) next.delete(t); else next.add(t);
+                      return next;
+                    })}
+                    title={`Show/hide ${t}'s stops`}>
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-foreground text-background text-[10px] font-bold">
+                {techNo(t)}
+              </span>
+              {firstName(t)}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">View days (click to compare just the days you care about):</span>
+          <button type="button" className={chip(viewDays.size === 0)} onClick={() => setViewDays(new Set())}>
+            All
+          </button>
+          {dates.map((date) => (
+            <button key={date} type="button"
+                    className={chip(viewDays.size === 0 || viewDays.has(date))}
+                    style={{ borderColor: dayColor(date) }}
+                    onClick={() => setViewDays((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(date)) next.delete(date); else next.add(date);
+                      return next;
+                    })}
+                    title={`Show/hide ${weekdayLabel(date)} on the map`}>
+              <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: dayColor(date) }} />
+              {weekdayLabel(date)} · {geo.filter((s) => passesFreq(s) && passesTech(s) && displayDate(s) === date).length}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Select all on:</span>
           {dates.map((date) => {
             const n = visible.filter((s) => displayDate(s) === date).length;
             const sel = visible.filter((s) => displayDate(s) === date && selected.has(s.appointment_id)).length;
-            if (eligibleDays && n === 0) return null; // day filtered out for the selection
+            if (n === 0) return null; // nothing visible that day (view/eligibility filtered)
             return (
               <button key={date} type="button" onClick={() => toggleDay(date)}
                       className={chip(sel > 0)} style={{ borderColor: dayColor(date) }}
@@ -3194,6 +3250,10 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
               <div className="text-muted-foreground">{info.service_type || "Service"} · {info.frequency}</div>
               <div>
                 Booked <span className="font-medium">{weekdayLabel(displayDate(info))}</span>
+                {" · "}{firstName(info.tech)}
+                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-foreground text-background text-[10px] font-bold align-middle">
+                  {techNo(info.tech)}
+                </span>
                 {info.due_date && <> · due {shortDate(info.due_date)}</>}
               </div>
               {possibleSpan(info) ? (
@@ -3225,10 +3285,10 @@ function ManualMoveMapInner({ staff, data, targetRoutes, apiKey }: {
                   <MarkerF
                     key={s.appointment_id}
                     position={{ lat: s.lat as number, lng: s.lng as number }}
-                    icon={dotIcon(dayColor(displayDate(s)), isSel, s.locked)}
+                    icon={dotIcon(dayColor(displayDate(s)), isSel, s.locked, String(techNo(s.tech)))}
                     opacity={queuedTo ? 0.9 : !s.movable ? 0.35 : isSel ? 1 : 0.75}
                     onClick={() => toggleStop(s)}
-                    title={`${s.customer} · ${s.frequency} · ${weekdayLabel(displayDate(s))} ${s.start}`
+                    title={`${s.customer} · ${firstName(s.tech)} · ${s.frequency} · ${weekdayLabel(displayDate(s))} ${s.start}`
                       + `${queuedTo ? " (queued)" : !s.movable ? (s.locked ? " (locked)" : " (notified)") : ""}`}
                   />
                 );
@@ -3296,6 +3356,7 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
   const [mapOpen, setMapOpen] = useState(false);
   const [booked, setBooked] = useState<BookedResult | null>(null);
   const [targetRoutes, setTargetRoutes] = useState<BookedRoute[]>([]);
+  const [targetStops, setTargetStops] = useState<BookedStop[]>([]);
   const [loadingBooked, setLoadingBooked] = useState(false);
   // Phase 2 range: where the stops land. Defaults to the two weeks after the
   // default source window.
@@ -3332,6 +3393,10 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
         toast.error("No FieldRoutes routes found in the move-to range — stops can only move onto days that have a route.");
       }
       setTargetRoutes(tRoutes);
+      // The move-to range's already-booked stops ride along too — the map
+      // shows them so you can SEE whether Tuesday's stop fits Thursday's
+      // route (Caleb 2026-08-12).
+      setTargetStops(Array.isArray(tr?.stops) ? (tr.stops as BookedStop[]) : []);
       setBooked(data.result as BookedResult);
     } catch (e) {
       console.error(e);
@@ -3494,7 +3559,7 @@ function RescheduleBotMode({ staff }: { staff: { fullName: string } | null }) {
         </CardContent>
       </Card>
 
-      {booked && <ManualMoveMap staff={staff} data={booked} targetRoutes={targetRoutes} />}
+      {booked && <ManualMoveMap staff={staff} data={booked} targetRoutes={targetRoutes} targetStops={targetStops} />}
 
       {result && (
         <>
