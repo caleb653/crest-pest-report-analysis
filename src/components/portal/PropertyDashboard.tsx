@@ -179,6 +179,7 @@ const TECHNICIAN_OPTIONS = [
   "Dylan Gallegos",
   "Michael Muniz",
   "Nick Stovall",
+  "Brock Lyttle",
 ];
 
 const PRODUCT_OPTIONS_LIST = [

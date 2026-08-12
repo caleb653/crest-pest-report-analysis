@@ -22,6 +22,7 @@ const EMPLOYEES = [
   "Dylan Gallegos",
   "Michael Muniz",
   "Nick Stovall",
+  "Brock Lyttle",
 ];
 
 const SUBMITTED_DOCS_PASSWORD = "18444";

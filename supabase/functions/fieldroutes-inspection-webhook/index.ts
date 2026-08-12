@@ -51,6 +51,7 @@ const TECHNICIANS = [
   { name: "Michael Muniz", license: "FR 54193", aliases: ["michael", "mike", "muniz", "munoz", "michael m", "mike muniz"] },
   { name: "David Longoria", license: "FR 71710", aliases: ["david", "longoria", "david l"] },
   { name: "Nick Stovall", license: "FR 69245", aliases: ["nick", "stovall", "nick s", "nicholas stovall"] },
+  { name: "Brock Lyttle", license: "FR 62941", aliases: ["brock", "lyttle", "brock l"] },
 ];
 
 // FieldRoutes substitutes {{placeholders}} into the body as raw text. If a field

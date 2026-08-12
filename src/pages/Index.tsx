@@ -154,6 +154,7 @@ const Index = () => {
     "Dylan Gallegos",
     "Jackson Latham",
     "Nick Stovall",
+    "Brock Lyttle",
   ]);
   const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review"]);
   const isRestricted = RESTRICTED_USERS.has(currentUser);

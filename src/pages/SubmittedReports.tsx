@@ -73,6 +73,7 @@ const TECHNICIANS = [
   "Dylan Gallegos",
   "Michael Muniz",
   "Nick Stovall",
+  "Brock Lyttle",
 ];
 
 function getStatusLabel(report: ReportListItem): "Signed" | "Sent" | "Created" {
@@ -98,7 +99,7 @@ function isWithinDays(dateStr: string, days: number): boolean {
   return d >= cutoff;
 }
 
-const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "Nick Stovall"];
+const TECH_ONLY_USERS = ["Jackson Latham", "Darrell Tanner", "Dylan Gallegos", "Nick Stovall", "Brock Lyttle"];
 
 const SubmittedReports = () => {
   const navigate = useNavigate();

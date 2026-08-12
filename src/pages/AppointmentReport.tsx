@@ -35,6 +35,7 @@ const TECHNICIANS = [
   { name: "Michael Muniz", license: "FR 54193" },
   { name: "David Longoria", license: "FR 71710" },
   { name: "Nick Stovall", license: "FR 69245" },
+  { name: "Brock Lyttle", license: "FR 62941" },
 ];
 
 const PEST_OPTIONS = [

@@ -35,6 +35,7 @@ const TECH_LICENSE: Record<string, string> = {
   "Michael Muniz": "FR 54193",
   "David Longoria": "FR 71710",
   "Nick Stovall": "FR 69245",
+  "Brock Lyttle": "FR 62941",
 };
 
 export interface FreeAndClearContext {
