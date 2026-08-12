@@ -33,7 +33,7 @@ import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
 import WeekRouteMap, { type MapMoveGroup, dayColor, dotIcon, GMAPS_LIBRARIES } from "@/components/scheduling/WeekRouteMap";
-import { GoogleMap, MarkerF, PolylineF, DrawingManagerF, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, MarkerF, PolylineF, useJsApiLoader } from "@react-google-maps/api";
 
 // Authoritative field-tech roster (matches policy/tech-home-bases.yaml on the
 // backend). Non-field-tech routes (Jake / Caleb / Carmen / David) are excluded
@@ -1525,6 +1525,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // auto-place it (default NO — it comes back as a placeable pool instead).
   const [overdueDays, setOverdueDays] = useState<number>(0);
   const [includeOverdue, setIncludeOverdue] = useState<boolean>(false);
+  // Clump-first placement (Caleb 2026-08-12): rank a stop's candidate days by
+  // distance to that day's committed stops. Measured NEUTRAL on the live pool
+  // (the later geometric passes dominate) — kept as an opt-in experiment.
+  const [clumpFirst, setClumpFirst] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
   // Stops the office X'd out of the plan: OFF the day, OFF the map, OFF the
@@ -2122,6 +2126,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       const { data, error } = await supabase.functions.invoke("scheduling-fill", {
         body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops, min_stops: minStops,
                 include_overdue: includeOverdue,
+                strategy: clumpFirst ? "clump" : "",
                 overdue_days: Math.min(365, Math.max(0, Math.trunc(overdueDays) || 0)) },
       });
       if (error) throw error;
@@ -2233,6 +2238,18 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               </label>
             </div>
           </div>
+          <label className="mt-3 flex items-start gap-2 text-sm cursor-pointer">
+            <input type="checkbox" className="mt-0.5" checked={clumpFirst}
+                   onChange={(e) => setClumpFirst(e.target.checked)} />
+            <span>
+              Clump-first placement (experimental)
+              <span className="block text-[11px] text-muted-foreground leading-tight">
+                Pick each stop's day by how CLOSE it is to that day's other stops
+                (instead of by how full the day is). Measured about even with the
+                default so far — try both and compare.
+              </span>
+            </span>
+          </label>
           <Button onClick={run} disabled={loading} className="mt-4">
             <Wand2 className="w-4 h-4 mr-2" />
             {loading ? "Building plan…" : "Propose schedule"}
@@ -3104,6 +3121,8 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
   }, [map, merged.length]);
 
   const toggleStop = (s: BookedStop) => {
+    // Mid-circle, a tap that lands ON a dot still counts as a circle click.
+    if (drawMode) return finishCircle(s.lat as number, s.lng as number);
     setInfo(s); // details panel always shows the clicked stop, movable or not
     if (movedTo.has(s.appointment_id))
       return toast.error(`${s.customer} is already queued to ${weekdayLabel(movedTo.get(s.appointment_id)!)}.`);
@@ -3129,15 +3148,22 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
     });
   };
 
-  const onCircle = (circle: google.maps.Circle) => {
-    const c = circle.getCenter();
-    const r = circle.getRadius();
-    circle.setMap(null);
+  // Two-click circle select (Caleb 2026-08-12: drag-to-draw "doesn't work" —
+  // Google's DrawingManager drag is unreliable and dead on touch). Click the
+  // MIDDLE of the clump, then click its EDGE; everything inside selects.
+  const [circleCenter, setCircleCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const finishCircle = (lat: number, lng: number) => {
+    if (!circleCenter) {
+      setCircleCenter({ lat, lng });
+      return;
+    }
+    const r = metersBetween(circleCenter.lat, circleCenter.lng, lat, lng);
     setDrawMode(false);
-    if (!c) return;
+    const c = circleCenter;
+    setCircleCenter(null);
     const ids = visible
       .filter((s) => s.movable && !movedTo.has(s.appointment_id))
-      .filter((s) => metersBetween(c.lat(), c.lng(), s.lat as number, s.lng as number) <= r)
+      .filter((s) => metersBetween(c.lat, c.lng, s.lat as number, s.lng as number) <= Math.max(r, 60))
       .map((s) => s.appointment_id);
     if (!ids.length) return toast.error("No movable stops inside that circle (check the frequency filter).");
     setSelected((cur) => new Set([...cur, ...ids]));
@@ -3284,9 +3310,12 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium">1 · Select:</span>
-          <Button size="sm" variant={drawMode ? "default" : "outline"} onClick={() => setDrawMode((d) => !d)}>
+          <Button size="sm" variant={drawMode ? "default" : "outline"}
+                  onClick={() => { setDrawMode((d) => !d); setCircleCenter(null); }}>
             <MapPin className="w-4 h-4 mr-1.5" />
-            {drawMode ? "Drag on the map to draw the circle…" : "Circle-select"}
+            {!drawMode ? "Circle-select" : circleCenter
+              ? "Now click the EDGE of the circle…"
+              : "Click the MIDDLE of the clump…"}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
             <X className="w-4 h-4 mr-1.5" /> Clear
@@ -3339,8 +3368,13 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
             <GoogleMap
               mapContainerStyle={{ width: "100%", height: "100%" }}
               onLoad={setMap}
+              onClick={(e) => { if (drawMode && e.latLng) finishCircle(e.latLng.lat(), e.latLng.lng()); }}
               options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
             >
+              {drawMode && circleCenter && (
+                <MarkerF position={circleCenter} icon={dotIcon("#4f46e5", true)} zIndex={20}
+                         title="Circle center — now click the edge" />
+              )}
               {visible.map((s) => {
                 const queuedTo = movedTo.get(s.appointment_id);
                 const isSel = selected.has(s.appointment_id);
@@ -3356,20 +3390,6 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
                   />
                 );
               })}
-              {drawMode && (
-                <DrawingManagerF
-                  drawingMode={google.maps.drawing.OverlayType.CIRCLE}
-                  options={{
-                    drawingControl: false,
-                    circleOptions: {
-                      fillColor: "#4f46e5", fillOpacity: 0.1,
-                      strokeColor: "#4f46e5", strokeWeight: 2,
-                      clickable: false, editable: false, zIndex: 10,
-                    },
-                  }}
-                  onCircleComplete={onCircle}
-                />
-              )}
             </GoogleMap>
           ) : (
             <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
@@ -3498,6 +3518,7 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
   }, [map, data.date, pool.length]);
 
   const toggle = (s: DayPoolStop) => {
+    if (drawMode) return finishCircle(s.lat as number, s.lng as number);
     setInfo(s);
     setConfirming(false);
     if (queued.has(key(s))) return toast.error(`${s.customer} is already queued.`);
@@ -3508,16 +3529,22 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
     });
   };
 
-  const onCircle = (circle: google.maps.Circle) => {
-    const c = circle.getCenter();
-    const r = circle.getRadius();
-    circle.setMap(null);
+  // Two-click circle: click the middle of the clump, then its edge (drag-to-
+  // draw was unreliable and never worked on touch).
+  const [circleCenter, setCircleCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const finishCircle = (lat: number, lng: number) => {
+    if (!circleCenter) {
+      setCircleCenter({ lat, lng });
+      return;
+    }
+    const r = metersBetween(circleCenter.lat, circleCenter.lng, lat, lng);
+    const c = circleCenter;
     setDrawMode(false);
+    setCircleCenter(null);
     setConfirming(false);
-    if (!c) return;
     const ids = visible
       .filter((s) => !queued.has(key(s)))
-      .filter((s) => metersBetween(c.lat(), c.lng(), s.lat as number, s.lng as number) <= r)
+      .filter((s) => metersBetween(c.lat, c.lng, s.lat as number, s.lng as number) <= Math.max(r, 60))
       .map(key);
     if (!ids.length) return toast.error("No eligible stops inside that circle (check the frequency filter).");
     setSelected((cur) => new Set([...cur, ...ids]));
@@ -3603,9 +3630,12 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant={drawMode ? "default" : "outline"} onClick={() => setDrawMode((d) => !d)}>
+          <Button size="sm" variant={drawMode ? "default" : "outline"}
+                  onClick={() => { setDrawMode((d) => !d); setCircleCenter(null); }}>
             <MapPin className="w-4 h-4 mr-1.5" />
-            {drawMode ? "Drag on the map to draw the circle…" : "Circle a clump"}
+            {!drawMode ? "Circle a clump" : circleCenter
+              ? "Now click the EDGE of the circle…"
+              : "Click the MIDDLE of the clump…"}
           </Button>
           <Button size="sm" variant="outline" onClick={() => { setSelected(new Set()); setConfirming(false); }}
                   disabled={selected.size === 0}>
@@ -3646,8 +3676,13 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
             <GoogleMap
               mapContainerStyle={{ width: "100%", height: "100%" }}
               onLoad={setMap}
+              onClick={(e) => { if (drawMode && e.latLng) finishCircle(e.latLng.lat(), e.latLng.lng()); }}
               options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
             >
+              {drawMode && circleCenter && (
+                <MarkerF position={circleCenter} icon={dotIcon("#4f46e5", true)} zIndex={20}
+                         title="Circle center — now click the edge" />
+              )}
               {bookedGeo.map((s) => (
                 <MarkerF
                   key={`b-${s.appointment_id}`}
@@ -3674,20 +3709,6 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
                   />
                 );
               })}
-              {drawMode && (
-                <DrawingManagerF
-                  drawingMode={google.maps.drawing.OverlayType.CIRCLE}
-                  options={{
-                    drawingControl: false,
-                    circleOptions: {
-                      fillColor: "#4f46e5", fillOpacity: 0.1,
-                      strokeColor: "#4f46e5", strokeWeight: 2,
-                      clickable: false, editable: false, zIndex: 10,
-                    },
-                  }}
-                  onCircleComplete={onCircle}
-                />
-              )}
             </GoogleMap>
           ) : (
             <div className="p-6 text-sm text-muted-foreground">Loading map…</div>

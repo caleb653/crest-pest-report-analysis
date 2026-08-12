@@ -269,6 +269,7 @@ serve(async (req) => {
       headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops,
                              include_overdue: includeOverdue, overdue_days: overdueDays,
+                             strategy: String(body?.strategy ?? "") === "clump" ? "clump" : "",
                              pending_pushes: pushed.map(({ date, customer_id, subscription_id }) =>
                                ({ date, customer_id, subscription_id })) }),
     });
