@@ -1544,6 +1544,37 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
   const [daySummaryOpen, setDaySummaryOpen] = useState(false);
 
+  // Day-clump explorer (Caleb 2026-08-12): a separate button from Propose
+  // schedule — see everything ELIGIBLE on one chosen day, circle the tight
+  // clump on the map, queue it onto a tech's route.
+  const [dayPoolDate, setDayPoolDate] = useState<string>(defaultWindow.start);
+  const [dayPool, setDayPool] = useState<DayPoolResult | null>(null);
+  const [dayPoolLoading, setDayPoolLoading] = useState(false);
+
+  const loadDayPool = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dayPoolDate)) return toast.error("Pick a day first.");
+    setDayPoolLoading(true);
+    setDayPool(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-fill", {
+        body: { staffName: staff.fullName, action: "day_pool", date: dayPoolDate, overdue_days: overdueDays },
+      });
+      if (error) throw error;
+      if (!data?.ok || !data?.result?.ok || !Array.isArray(data?.result?.pool)) {
+        toast.error(data?.detail?.detail || data?.error
+          || "The backend is still deploying the day-pool update — try again in a couple minutes.");
+        return;
+      }
+      setDayPool(data.result as DayPoolResult);
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not load the day pool — see console.");
+    } finally {
+      setDayPoolLoading(false);
+    }
+  };
+
   // Week-map bulk moves (select stops → day chip, or drag day-chip onto
   // day-chip). Items with reasons break a rule and need the are-you-sure
   // confirm; `noTarget` stops can't move at all (their tech has no proposed
@@ -2206,8 +2237,32 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             <Wand2 className="w-4 h-4 mr-2" />
             {loading ? "Building plan…" : "Propose schedule"}
           </Button>
+          <div className="mt-4 rounded-md border p-3 space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Or build a day by hand — everything eligible on one day, you circle the clump
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2">
+                <Label>Day</Label>
+                <Input type="date" className="w-44" value={dayPoolDate}
+                       onChange={(e) => setDayPoolDate(e.target.value)} />
+              </div>
+              <Button variant="outline" onClick={loadDayPool} disabled={dayPoolLoading}>
+                <MapPin className="w-4 h-4 mr-2" />
+                {dayPoolLoading ? "Loading…" : "See eligible stops"}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                uses the same rules as the planner (due window · notes · 25-day floor);
+                older-overdue reach-back above applies here too
+              </span>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {dayPool && (
+        <DayClumpExplorer staff={staff} date={dayPool.date} data={dayPool} onReload={loadDayPool} />
+      )}
 
       {result && (
         <>
@@ -3347,6 +3402,326 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
             <Send className="w-4 h-4 mr-1.5" />
             {queueing ? "Queueing…" : `Move ${selected.size} → ${targetDate ? weekdayLabel(targetDate) : "pick a day"}`}
           </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Day-clump explorer ───────────────────────────────────────────────────────
+// Caleb 2026-08-12: "filter by any individual day and see ALL the stops that
+// are eligible to be serviced on that day, then circle them and put them
+// together" — the manual version of clump-first scheduling. Pool dots are
+// indigo (amber = overdue), the day's already-booked stops ride along in grey
+// with tech numbers, and a circled clump queues onto the chosen tech's real
+// FieldRoutes route for that day.
+type DayPoolStop = {
+  customer_id: string; subscription_id: string; service_type_id: string;
+  customer: string; address: string; city: string;
+  lat: number | null; lng: number | null;
+  services: string[]; duration: number;
+  frequency_days: number; frequency: string; tech: string;
+  due_date: string; window_start: string; window_end: string;
+  days_overdue: number; special: string; freq_inferred: boolean; production: number;
+};
+type DayPoolResult = {
+  ok: boolean; date: string; pool: DayPoolStop[]; pool_size: number;
+  booked: BookedStop[]; routes: BookedRoute[];
+};
+
+function DayClumpExplorer({ staff, date, data, onReload }: {
+  staff: { fullName: string } | null; date: string; data: DayPoolResult; onReload: () => void;
+}) {
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.functions.invoke("get-maps-key").then(({ data: d }) => {
+      const k = (d as { key?: string } | null)?.key || "";
+      if (k) setApiKey(k);
+    });
+  }, []);
+  if (!apiKey) return <Card><CardContent className="py-6 text-sm text-muted-foreground">Loading map…</CardContent></Card>;
+  return <DayClumpExplorerInner staff={staff} date={date} data={data} onReload={onReload} apiKey={apiKey} />;
+}
+
+function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
+  staff: { fullName: string } | null; date: string; data: DayPoolResult; onReload: () => void; apiKey: string;
+}) {
+  const { isLoaded } = useJsApiLoader({ id: "route-map-script", googleMapsApiKey: apiKey, libraries: GMAPS_LIBRARIES });
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [freqFilter, setFreqFilter] = useState<Set<string>>(new Set());
+  const [drawMode, setDrawMode] = useState(false);
+  const [queueing, setQueueing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [tech, setTech] = useState<string>("");
+  const [info, setInfo] = useState<DayPoolStop | null>(null);
+
+  const pool = Array.isArray(data.pool) ? data.pool : [];
+  const booked = Array.isArray(data.booked) ? data.booked : [];
+  const routes = Array.isArray(data.routes) ? data.routes : [];
+  const key = (s: DayPoolStop) => `${s.customer_id}|${s.subscription_id}`;
+  const geo = pool.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
+  const bookedGeo = booked.filter((s) => typeof s.lat === "number" && typeof s.lng === "number");
+  const freqs = [...new Set(pool.map((s) => s.frequency))]
+    .sort((a, b) => FREQ_ORDER.indexOf(a) - FREQ_ORDER.indexOf(b));
+  const passesFreq = (s: DayPoolStop) => freqFilter.size === 0 || freqFilter.has(s.frequency);
+  const visible = geo.filter(passesFreq);
+  const techsOnDay = [...new Set([...routes.map((r) => r.tech), ...booked.map((s) => s.tech)])].sort();
+  const techNo = (t: string) => techsOnDay.indexOf(t) + 1;
+  const routeFor = (t: string) => routes.find((r) => r.tech === t);
+  const chosen = geo.filter((s) => selected.has(key(s)) && !queued.has(key(s)));
+
+  // Clump tightness at a glance: the widest gap across the selection (pure
+  // client-side haversine — free).
+  let spreadMi: number | null = null;
+  if (chosen.length >= 2) {
+    let worst = 0;
+    for (let i = 0; i < chosen.length; i++) {
+      for (let j = i + 1; j < chosen.length; j++) {
+        worst = Math.max(worst, metersBetween(
+          chosen[i].lat as number, chosen[i].lng as number,
+          chosen[j].lat as number, chosen[j].lng as number));
+      }
+    }
+    spreadMi = worst / 1609.34;
+  }
+
+  useEffect(() => {
+    if (!map) return;
+    const pts = [...geo, ...bookedGeo];
+    if (!pts.length) return;
+    const b = new google.maps.LatLngBounds();
+    pts.forEach((s) => b.extend({ lat: s.lat as number, lng: s.lng as number }));
+    map.fitBounds(b, 48);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, data.date, pool.length]);
+
+  const toggle = (s: DayPoolStop) => {
+    setInfo(s);
+    setConfirming(false);
+    if (queued.has(key(s))) return toast.error(`${s.customer} is already queued.`);
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(key(s))) next.delete(key(s)); else next.add(key(s));
+      return next;
+    });
+  };
+
+  const onCircle = (circle: google.maps.Circle) => {
+    const c = circle.getCenter();
+    const r = circle.getRadius();
+    circle.setMap(null);
+    setDrawMode(false);
+    setConfirming(false);
+    if (!c) return;
+    const ids = visible
+      .filter((s) => !queued.has(key(s)))
+      .filter((s) => metersBetween(c.lat(), c.lng(), s.lat as number, s.lng as number) <= r)
+      .map(key);
+    if (!ids.length) return toast.error("No eligible stops inside that circle (check the frequency filter).");
+    setSelected((cur) => new Set([...cur, ...ids]));
+    toast.success(`Circled ${ids.length} stop${ids.length === 1 ? "" : "s"}`);
+  };
+
+  const queueClump = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    const route = routeFor(tech);
+    if (!route) return toast.error("Pick the tech whose route this clump joins.");
+    if (!chosen.length) return toast.error("Nothing selected.");
+    setQueueing(true);
+    try {
+      const { data: resp, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff.fullName,
+          bulk: chosen.map((s) => ({
+            customer_id: Number(s.customer_id),
+            customer_label: s.customer,
+            service_type_id: Number(s.service_type_id) || 0,
+            service_type_label: (s.services || []).join(", "),
+            date,
+            start: "08:00", end: "20:00",
+            duration: s.duration || 30,
+            subscription_id: Number(s.subscription_id),
+            route_id: Number(route.route_id) || undefined,
+          })),
+        },
+      });
+      if (!error && resp?.ok && typeof resp?.queued_count === "number") {
+        setQueued((cur) => new Set([...cur, ...chosen.map(key)]));
+        setSelected(new Set());
+        setConfirming(false);
+        supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
+        toast.success(`Queued ${chosen.length} stop${chosen.length === 1 ? "" : "s"} on ${firstName(tech)}'s `
+          + `${weekdayLabel(date)} route — the paced bot books them in FieldRoutes.`);
+      } else {
+        toast.error("Could not queue — is the backend deployed?");
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Could not queue the clump — see console.");
+    } finally {
+      setQueueing(false);
+    }
+  };
+
+  const chip = (active: boolean) =>
+    `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium ${active ? "" : "opacity-40"}`;
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">
+          {weekdayLabel(date)} — {pool.length} stops could be serviced this day
+          {" "}· {booked.length} already booked · circle a tight clump, pick the tech, queue it
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Show:</span>
+          <button type="button" className={chip(freqFilter.size === 0)} onClick={() => setFreqFilter(new Set())}>
+            All · {geo.length}
+          </button>
+          {freqs.map((f) => (
+            <button key={f} type="button" className={chip(freqFilter.size === 0 || freqFilter.has(f))}
+                    onClick={() => setFreqFilter((cur) => {
+                      const next = new Set(cur);
+                      if (next.has(f)) next.delete(f); else next.add(f);
+                      return next;
+                    })}>
+              {f} · {geo.filter((s) => s.frequency === f).length}
+            </button>
+          ))}
+          <span className="mx-1 h-4 border-l" />
+          {techsOnDay.map((t) => (
+            <span key={t} className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-foreground text-background text-[10px] font-bold">
+                {techNo(t)}
+              </span>
+              {firstName(t)}{routeFor(t) ? ` · ${routeFor(t)!.stops} booked` : " · no route"}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant={drawMode ? "default" : "outline"} onClick={() => setDrawMode((d) => !d)}>
+            <MapPin className="w-4 h-4 mr-1.5" />
+            {drawMode ? "Drag on the map to draw the circle…" : "Circle a clump"}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setSelected(new Set()); setConfirming(false); }}
+                  disabled={selected.size === 0}>
+            <X className="w-4 h-4 mr-1.5" /> Clear
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            {chosen.length} selected{spreadMi != null && <> · ~{spreadMi.toFixed(1)} mi across</>}
+            {" "}· indigo = eligible pool, amber = overdue, grey = already booked that day
+          </span>
+        </div>
+        <div className="h-[60vh] rounded-md overflow-hidden border relative">
+          {info && (
+            <div className="absolute top-2 left-2 z-10 max-w-sm rounded-lg border bg-background/95 shadow-lg p-3 text-xs space-y-1">
+              <div>
+                <span className="font-semibold text-sm">{info.customer}</span>
+                <span className="text-muted-foreground"> · {info.city}</span>
+              </div>
+              <div className="text-muted-foreground">{(info.services || []).join(", ")} · {info.frequency}</div>
+              <div>
+                due {shortDate(info.due_date)} · window {shortDate(info.window_start)}–{shortDate(info.window_end)}
+                {info.tech && <> · usually {firstName(info.tech)}</>}
+              </div>
+              {info.days_overdue > 0 && (
+                <div className="text-amber-700">{info.days_overdue} days overdue — sooner is better</div>
+              )}
+              {info.freq_inferred && (
+                <div className="text-amber-700">cadence inferred from history — confirm before booking</div>
+              )}
+              {info.special && <div className="text-amber-700">note: {info.special}</div>}
+              <div className="pt-1">
+                <Button size="sm" variant="ghost" className="h-6 text-xs px-2" onClick={() => setInfo(null)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+          {isLoaded ? (
+            <GoogleMap
+              mapContainerStyle={{ width: "100%", height: "100%" }}
+              onLoad={setMap}
+              options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
+            >
+              {bookedGeo.map((s) => (
+                <MarkerF
+                  key={`b-${s.appointment_id}`}
+                  position={{ lat: s.lat as number, lng: s.lng as number }}
+                  icon={dotIcon("#9ca3af", false, s.locked, String(techNo(s.tech) || ""))}
+                  opacity={0.6}
+                  zIndex={1}
+                  title={`${s.customer} · booked · ${firstName(s.tech)} ${s.start}${s.locked ? " (locked)" : ""}`}
+                />
+              ))}
+              {visible.map((s) => {
+                const isSel = selected.has(key(s));
+                const isQueued = queued.has(key(s));
+                return (
+                  <MarkerF
+                    key={key(s)}
+                    position={{ lat: s.lat as number, lng: s.lng as number }}
+                    icon={dotIcon(isQueued ? "#9ca3af" : s.days_overdue > 0 ? "#d97706" : "#4f46e5", isSel)}
+                    opacity={isQueued ? 0.5 : isSel ? 1 : 0.8}
+                    zIndex={isSel ? 4 : 3}
+                    onClick={() => toggle(s)}
+                    title={`${s.customer} · ${s.frequency} · due ${shortDate(s.due_date)}`
+                      + `${s.days_overdue > 0 ? ` (${s.days_overdue}d overdue)` : ""}${isQueued ? " (queued)" : ""}`}
+                  />
+                );
+              })}
+              {drawMode && (
+                <DrawingManagerF
+                  drawingMode={google.maps.drawing.OverlayType.CIRCLE}
+                  options={{
+                    drawingControl: false,
+                    circleOptions: {
+                      fillColor: "#4f46e5", fillOpacity: 0.1,
+                      strokeColor: "#4f46e5", strokeWeight: 2,
+                      clickable: false, editable: false, zIndex: 10,
+                    },
+                  }}
+                  onCircleComplete={onCircle}
+                />
+              )}
+            </GoogleMap>
+          ) : (
+            <div className="p-6 text-sm text-muted-foreground">Loading map…</div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium">Queue the clump:</span>
+          <select className="h-9 rounded-md border bg-background px-2 text-sm"
+                  value={tech} onChange={(e) => { setTech(e.target.value); setConfirming(false); }}>
+            <option value="">Pick tech…</option>
+            {routes.map((r) => (
+              <option key={r.tech} value={r.tech}>
+                {firstName(r.tech)} — {r.stops} booked
+              </option>
+            ))}
+          </select>
+          {!confirming ? (
+            <Button size="sm" disabled={queueing || chosen.length === 0 || !tech}
+                    onClick={() => setConfirming(true)}>
+              <Send className="w-4 h-4 mr-1.5" />
+              Queue {chosen.length} on {weekdayLabel(date)}
+            </Button>
+          ) : (
+            <Button size="sm" variant="destructive" disabled={queueing} onClick={queueClump}>
+              <Send className="w-4 h-4 mr-1.5" />
+              {queueing ? "Queueing…" : `Confirm — book ${chosen.length} with ${firstName(tech)}`}
+            </Button>
+          )}
+          {routes.length === 0 && (
+            <span className="text-xs text-destructive">
+              no FieldRoutes routes exist on {weekdayLabel(date)} — create one in FR first
+            </span>
+          )}
+          <Button size="sm" variant="ghost" onClick={onReload}>reload day</Button>
         </div>
       </CardContent>
     </Card>

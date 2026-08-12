@@ -160,6 +160,53 @@ serve(async (req) => {
       return json({ ok: true, result: lb });
     }
 
+    // ── Action: day-clump explorer — everything ELIGIBLE to be serviced on
+    // ONE day (window + note rules), plus that day's booked stops + routes.
+    // Read-only; the app circles a clump and queues it via the normal
+    // fieldroutes-appointment-submit flow. ──
+    if (String(body?.action ?? "") === "day_pool") {
+      const date = String(body?.date ?? "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        await logAttempt(false, "bad_dates");
+        return json({ ok: false, error: "bad_dates" });
+      }
+      let dpOverdue = 0;
+      if (Number.isFinite(body?.overdue_days)) {
+        dpOverdue = Math.min(365, Math.max(0, Math.trunc(Number(body.overdue_days))));
+      }
+      const dpUrl = Deno.env.get("SCHEDULING_API_URL");
+      const dpKey = Deno.env.get("SCHEDULING_API_KEY");
+      if (!dpUrl || !dpKey) { await logAttempt(false, "api_not_configured"); return json({ ok: false, error: "api_not_configured" }); }
+      // Same cross-run blindness guard as the fill path: subscriptions already
+      // queued/committed to FieldRoutes must not be offered again before the
+      // BigQuery sync catches up.
+      let dpPushed: Array<Record<string, unknown>> = [];
+      try {
+        const { data: rows } = await supabase
+          .from("fieldroutes_write_queue")
+          .select("payload, status")
+          .eq("entity", "appointment")
+          .in("status", ["auto", "processing", "committed"])
+          .limit(2000);
+        dpPushed = (rows ?? []).map((r: Record<string, unknown>) => {
+          const p = (r.payload ?? {}) as Record<string, unknown>;
+          return { date: p.date, customer_id: p.customer_id, subscription_id: p.subscription_id };
+        });
+      } catch (_e) { /* non-fatal */ }
+      const up = await fetch(`${dpUrl.replace(/\/+$/, "")}/api/day-pool`, {
+        method: "POST",
+        headers: { "X-API-Key": dpKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ date, overdue_days: dpOverdue, pending_pushes: dpPushed }),
+      });
+      const dp = await up.json().catch(() => ({}));
+      if (!up.ok) {
+        await logAttempt(false, `upstream_${up.status}`);
+        return json({ ok: false, error: "upstream_failed", status: up.status, detail: dp });
+      }
+      await logAttempt(true, null);
+      return json({ ok: true, result: dp });
+    }
+
     // ── Action: Reschedule Bot — propose moves of BOOKED appointments (never
     // locked / reminder-sent) to better days. Read-only upstream. ──
     if (String(body?.action ?? "") === "reschedule_bot") {
