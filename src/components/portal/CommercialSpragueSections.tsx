@@ -539,6 +539,15 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                       row={draft}
                       live
                       onChange={(next) => setDraftFor(currentSvc.id, next)}
+                      onPhotosAdded={async (next) => {
+                        // Auto-save: once the draft has its description and the
+                        // photo lands, persist immediately — a forgotten "Save
+                        // Condition" click must not lose the condition.
+                        if (!draftReady(next)) return;
+                        await save(currentSvc, [...currentAllRows, next]);
+                        setDraftFor(currentSvc.id, null);
+                        toast({ title: "Condition saved" });
+                      }}
                       onRemove={() => setDraftFor(currentSvc.id, null)}
                     />
                     <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
@@ -552,7 +561,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                       </Button>
                       {!draftReady(draft) && (
                         <p className="text-[11px] text-amber-900">
-                          Add a condition description and at least one photo to save.
+                          Add a condition description and at least one photo — it saves automatically when the photo is added.
                         </p>
                       )}
                     </div>
@@ -643,6 +652,13 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                           row={addDraft}
                           live
                           onChange={(next) => setDraftFor(addTarget.id, next)}
+                          onPhotosAdded={async (next) => {
+                            // Auto-save the completed draft on photo upload.
+                            if (!draftReady(next)) return;
+                            await save(addTarget, [...conditionsFor(addTarget), next]);
+                            setDraftFor(addTarget.id, null);
+                            toast({ title: "Condition saved" });
+                          }}
                           onRemove={() => setDraftFor(addTarget.id, null)}
                         />
                         <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
@@ -656,7 +672,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
                           </Button>
                           {!draftReady(addDraft) && (
                             <p className="text-[11px] text-amber-900">
-                              Add a condition description and at least one photo to save.
+                              Add a condition description and at least one photo — it saves automatically when the photo is added.
                             </p>
                           )}
                         </div>
@@ -700,7 +716,7 @@ export function ConditionsReportSection({ services, readOnly, onSaveServiceRepor
 }
 
 function ConditionRowEditor({
-  row, readOnly, onChange, onRemove, serviceDate, live, closingServiceId,
+  row, readOnly, onChange, onRemove, serviceDate, live, closingServiceId, onPhotosAdded,
 }: {
   row: ConditionRow; readOnly?: boolean;
   onChange: (next: ConditionRow) => void; onRemove: () => void;
@@ -712,6 +728,10 @@ function ConditionRowEditor({
   /** Service id to stamp on the row when it flips to Closed (defaults to the
    *  row's owning service). */
   closingServiceId?: string | null;
+  /** Fires after a photo upload lands (after onChange). Draft parents use it
+   *  to auto-save the condition once it's complete, so an uploaded photo is
+   *  never lost to a forgotten "Save Condition" click. */
+  onPhotosAdded?: (next: ConditionRow) => void;
 }) {
   const [local, setLocal] = useState<ConditionRow>(row);
   const [uploading, setUploading] = useState<"id" | "res" | null>(null);
@@ -753,6 +773,7 @@ function ConditionRowEditor({
       const merged = { ...local, [field]: next } as ConditionRow;
       setLocal(merged);
       onChange(merged);
+      if (next.length > (local[field]?.length || 0)) onPhotosAdded?.(merged);
     } finally {
       setUploading(null);
     }
@@ -1142,6 +1163,13 @@ export function ConditionUnitPills({
               row={draft}
               live
               onChange={setDraft}
+              onPhotosAdded={async (next) => {
+                // Auto-save the completed draft on photo upload.
+                if (!((next.photos?.length || 0) > 0 && next.condition.trim())) return;
+                await saveFor(service, [...rowsOf(service), next]);
+                setDraft(null);
+                toast({ title: "Condition saved" });
+              }}
               onRemove={() => setDraft(null)}
             />
             <div className="flex items-center gap-2 px-3 pb-3 flex-wrap">
@@ -1153,7 +1181,7 @@ export function ConditionUnitPills({
               </Button>
               {!draftReady && (
                 <p className="text-[11px] text-amber-900">
-                  Add a condition description and at least one photo to save.
+                  Add a condition description and at least one photo — it saves automatically when the photo is added.
                 </p>
               )}
             </div>
