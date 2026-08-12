@@ -2916,6 +2916,9 @@ type BookedStop = {
   // rules). Absent on a stale backend — the map degrades to no filtering.
   due_date?: string | null; window_start?: string | null; window_end?: string | null;
   eligible_dates?: string[];
+  // True when the cadence window already passed — the stop can move EARLIER
+  // (down to the 25-day floor / today) but never later than its booked day.
+  overdue?: boolean;
 };
 type BookedRoute = { tech: string; date: string; route_id: string; stops: number };
 type BookedResult = {
@@ -3263,6 +3266,11 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
                 </div>
               ) : (
                 <div className="text-muted-foreground">no legal-window data — reload after the backend updates</div>
+              )}
+              {info.overdue && (
+                <div className="text-amber-700">
+                  overdue — its due window already passed; move it earlier (sooner is better), never later
+                </div>
               )}
               {info.special && <div className="text-amber-700">note: {info.special}</div>}
               <div className="pt-1">
