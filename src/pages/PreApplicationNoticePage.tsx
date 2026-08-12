@@ -104,7 +104,7 @@ export default function PreApplicationNoticePage() {
 
   return (
     <div className="min-h-screen bg-muted py-6 print:bg-white print:py-0">
-      <div className="max-w-[8.5in] mx-auto mb-4 flex justify-end gap-2 px-2 print:hidden">
+      <div className="max-w-[8.5in] mx-auto mb-4 flex flex-wrap justify-end gap-2 px-2 print:hidden">
         <Button
           variant={editing ? "default" : "outline"}
           onClick={() => setEditing((v) => !v)}
@@ -132,14 +132,16 @@ export default function PreApplicationNoticePage() {
           </span>
         </div>
       )}
-      <div className="shadow-lg print:shadow-none">
-        <PreApplicationNotice
-          ref={printRef}
-          property={property}
-          noticeDate={property.customer_preferences?.notice_date}
-          editable={editing}
-          onChange={persist}
-        />
+      <div className="overflow-x-auto">
+        <div className="shadow-lg print:shadow-none">
+          <PreApplicationNotice
+            ref={printRef}
+            property={property}
+            noticeDate={property.customer_preferences?.notice_date}
+            editable={editing}
+            onChange={persist}
+          />
+        </div>
       </div>
     </div>
   );

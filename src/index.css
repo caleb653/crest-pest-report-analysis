@@ -79,6 +79,16 @@
       BlinkMacSystemFont,
       system-ui,
       sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* iPhone: never allow accidental sideways page scroll from a single
+     too-wide element; wide content must scroll inside its own container. */
+  @media screen and (max-width: 767px) {
+    html,
+    body {
+      overflow-x: hidden;
+    }
   }
 
   input,
@@ -92,12 +102,24 @@
 
   /* iPhone/iOS: Safari auto-zooms the whole page when focusing any input
      whose font-size is under 16px. Force 16px on phone-size screens so
-     forms stop zooming/jumping (slot finder, portals, everywhere). */
-  @media screen and (max-width: 767px) {
+     forms stop zooming/jumping (slot finder, portals, everywhere).
+     Extends to 1023px so landscape iPhones (844-932px wide) are covered. */
+  @media screen and (max-width: 1023px) {
     input,
     textarea,
-    select {
+    select,
+    [contenteditable="true"] {
       font-size: 16px !important;
+    }
+  }
+
+  /* iPhone: the forced 16px font clips inside the many h-5/h-6 (20-24px)
+     inputs used across the report editors — give every text input a
+     tappable minimum height on phones. Checkbox/radio/color stay natural. */
+  @media screen and (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+    select {
+      min-height: 2.25rem;
     }
   }
 

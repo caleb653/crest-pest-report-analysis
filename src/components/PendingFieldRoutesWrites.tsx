@@ -301,7 +301,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
   return (
     <>
     <Card>
-      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 gap-2">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 gap-2 max-md:flex-wrap">
         <CardTitle className="text-sm flex items-center gap-2">
           <Clock className="h-4 w-4" /> {title}{" "}
           <Badge variant="secondary">{rows.length}</Badge>
@@ -329,7 +329,7 @@ export default function PendingFieldRoutesWrites({ entityFilter, title = "Pendin
           const isApptDay = key.startsWith("appt:");
           return (
             <div key={key} className="space-y-2">
-              <div className="flex items-center justify-between gap-2 border-b pb-1">
+              <div className="flex items-center justify-between gap-2 border-b pb-1 max-md:flex-wrap">
                 <div className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                   {label} <Badge variant="outline">{list.length}</Badge>
                 </div>

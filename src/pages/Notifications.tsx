@@ -73,7 +73,7 @@ const Notifications = () => {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 max-sm:flex-wrap max-sm:gap-2">
           <div className="flex gap-2">
             <Button
               variant={filter === "all" ? "default" : "outline"}

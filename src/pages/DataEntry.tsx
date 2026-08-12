@@ -141,7 +141,7 @@ const DataEntry = () => {
                       <Button
                         size="icon"
                         variant="destructive"
-                        className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity rounded-full w-7 h-7"
+                        className="absolute -top-2 -right-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-full w-7 h-7 max-md:w-9 max-md:h-9"
                         onClick={() => removeScreenshot(index)}
                       >
                         <X className="w-4 h-4" />

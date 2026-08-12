@@ -528,14 +528,14 @@ const AppointmentReport = () => {
             </div>
           </div>
           <div className="flex gap-1.5">
-            <Button onClick={saveReport} disabled={isSaving} size="sm" className="h-7 px-2 text-xs">
+            <Button onClick={saveReport} disabled={isSaving} size="sm" className="h-7 max-md:h-9 px-2 text-xs">
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3 mr-1" />}Save
             </Button>
             <Button onClick={() => {
               // Store property ID so portal admin re-selects it
               if (initPropertyId) sessionStorage.setItem("portal-admin-selected-property", initPropertyId);
               navigate(returnTo || "/portal-admin");
-            }} variant="outline" size="sm" className="h-7 px-2 text-xs">
+            }} variant="outline" size="sm" className="h-7 max-md:h-9 px-2 text-xs">
               <ArrowLeft className="w-3 h-3 mr-1" />Back
             </Button>
           </div>
@@ -749,7 +749,7 @@ const AppointmentReport = () => {
             {!isCommercial && (
             <Card className="p-4 space-y-4">
               <Label className="font-semibold text-base">Property & Service Overview</Label>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div><span className="text-muted-foreground">Property Name:</span> <span className="font-medium">{propertyName || "—"}</span></div>
                 <div><span className="text-muted-foreground">Service Date:</span> <span className="font-medium">{serviceDate || "—"}</span></div>
                 <div><span className="text-muted-foreground">Property Address:</span> <span className="font-medium">{propertyAddress || "—"}</span></div>
@@ -1153,7 +1153,7 @@ const AppointmentReport = () => {
                   {propertyImages.map((img, i) => (
                     <div key={i} className="relative">
                       <img src={img.image} alt={img.caption || `Photo ${i + 1}`} className="w-full h-32 object-cover rounded cursor-pointer" onClick={() => setAnnotatingImageIndex(i)} />
-                      <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                      <button className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full w-5 h-5 max-md:w-9 max-md:h-9 flex items-center justify-center text-xs"
                         onClick={() => setPropertyImages(prev => prev.filter((_, j) => j !== i))}>×</button>
                       <Input placeholder="Caption..." value={img.caption || ""} onChange={e => setPropertyImages(prev => prev.map((p, j) => j === i ? { ...p, caption: e.target.value } : p))} className="mt-1 text-xs h-7" />
                     </div>

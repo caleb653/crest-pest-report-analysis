@@ -549,7 +549,7 @@ const SubmittedReports = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between max-md:flex-wrap max-md:gap-2">
           <div className="flex items-center gap-4">
             <img src={crestLogo} alt="Crest Pest Control logo" className="h-12" />
             <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
@@ -698,7 +698,7 @@ const SubmittedReports = () => {
                       onClick={() => viewReport(report)}
                     >
                       <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3 max-md:flex-col">
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-2 flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4 text-primary flex-shrink-0" />
@@ -727,7 +727,7 @@ const SubmittedReports = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 max-md:flex-wrap md:flex-shrink-0">
                             <Badge
                               variant="outline"
                               className={

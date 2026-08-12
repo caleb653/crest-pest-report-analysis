@@ -102,7 +102,7 @@ export function PrepSheetPicker({ selectedIds, onChange }: Props) {
               <button
                 type="button"
                 onClick={() => remove(s.id)}
-                className="hover:bg-muted-foreground/20 rounded-sm p-0.5"
+                className="hover:bg-muted-foreground/20 rounded-sm p-0.5 max-md:p-1.5"
                 aria-label={`Remove ${s.title}`}
               >
                 <X className="w-3 h-3" />

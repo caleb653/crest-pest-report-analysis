@@ -573,7 +573,7 @@ export default function CustomerReportView() {
   const hasMaterials = materials.length > 0;
 
   const renderHeader = (title: string) => (
-    <header className="flex items-center justify-between p-4 border-b border-border">
+    <header className="flex items-center justify-between max-md:flex-wrap max-md:gap-2 p-4 border-b border-border">
       <div className="flex items-center gap-3">
         <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
         <h1 className="text-lg font-bold">{title}</h1>
@@ -690,7 +690,7 @@ export default function CustomerReportView() {
         {renderHeader(`Property Map & Details — ${proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`}`)}
 
         <main className="p-4 space-y-4">
-          <div className="grid grid-cols-[2fr_3fr] gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
             <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted relative">
               {shouldRenderMapFromData ? (
                 <ReadOnlyMapCanvas mapUrl={proposalMapUrl!} mapData={proposalMapDataString} />
@@ -805,7 +805,7 @@ export default function CustomerReportView() {
                         <span className="text-xs font-bold uppercase">Scheduling & Communication</span>
                       </div>
                       <div className="p-4">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                           {preferredDay && (
                             <div>
                               <p className="text-muted-foreground text-xs">Preferred Service Day</p>
@@ -1003,7 +1003,7 @@ export default function CustomerReportView() {
         return (
           <>
             <div className="max-w-5xl mx-auto">
-              <header className="flex items-center justify-between p-4 border-b border-border">
+              <header className="flex items-center justify-between max-md:flex-wrap max-md:gap-2 p-4 border-b border-border">
                 <div className="flex items-center gap-3">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-10" />
                   <h1 className="text-lg font-bold">Rodent Exclusion Report</h1>
@@ -1012,7 +1012,7 @@ export default function CustomerReportView() {
               </header>
 
               <main className="p-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Card className="p-4">
                     <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Customer Details</h2>
                     <div className="space-y-1 text-sm">
@@ -1088,7 +1088,7 @@ export default function CustomerReportView() {
                                   {label}
                                 </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <div className="space-y-1">
                                   <span className="block text-[10px] font-semibold uppercase tracking-wide text-dark-sage">Before</span>
                                   <div className="aspect-[4/3] rounded-lg overflow-hidden border border-border bg-muted">
@@ -1176,7 +1176,7 @@ export default function CustomerReportView() {
         {renderHeader(report.report_title || "Pest Control Proposal")}
 
         <main className="p-4 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card className="p-4">
               <h2 className="text-xs font-bold uppercase text-muted-foreground mb-2">Customer Details</h2>
               <div className="space-y-1 text-sm">
@@ -1295,7 +1295,7 @@ export default function CustomerReportView() {
                 </Card>
               )}
 
-              <div className="grid grid-cols-[2fr_3fr] gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
                 <Card className="overflow-hidden">
                   <div className="bg-brand-black text-white px-4 py-2">
                     <span className="text-xs font-bold uppercase">Products</span>
@@ -1367,7 +1367,7 @@ export default function CustomerReportView() {
                 </Card>
               ))}
 
-              <div className="grid grid-cols-[2fr_3fr] gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
                 <div className="space-y-4">
                   {report.target_pests && report.target_pests.length > 0 && (
                     <Card className="overflow-hidden">
@@ -1412,7 +1412,7 @@ export default function CustomerReportView() {
 
               {/* Single signature for non-multi-proposal; multi-proposal has per-option signatures on map pages */}
               {!isMultiProposal && (
-                <div className="grid grid-cols-[2fr_3fr] gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
                   <Card className="overflow-hidden">
                     <div className="bg-brand-black text-white px-4 py-2">
                       <span className="text-xs font-bold uppercase">Customer Signature</span>
@@ -1487,7 +1487,7 @@ export default function CustomerReportView() {
 
           <main className="p-4 space-y-4">
             {(report.rendered_map_url || report.custom_map_url) ? (
-              <div className="grid grid-cols-[2fr_3fr] gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-4">
                 <div className="aspect-[3/4] rounded-lg overflow-hidden border border-border bg-muted">
                   {shouldRenderMainMapFromData ? (
                     <ReadOnlyMapCanvas mapUrl={report.custom_map_url!} mapData={mainMapDataString} />
@@ -1530,7 +1530,7 @@ export default function CustomerReportView() {
                         <span className="text-xs font-bold uppercase">Scheduling & Communication</span>
                       </div>
                       <div className="p-4">
-                        <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                           {preferredDay && (
                             <div>
                               <p className="text-muted-foreground text-xs">Preferred Service Day</p>
@@ -1607,14 +1607,14 @@ export default function CustomerReportView() {
                 )}
 
                 {(hasSchedulingData || hasMaterials) && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {hasSchedulingData && (
                       <Card className="overflow-hidden">
                         <div className="bg-brand-black text-white px-4 py-2">
                           <span className="text-xs font-bold uppercase">Scheduling & Communication</span>
                         </div>
                         <div className="p-4">
-                          <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                             {preferredDay && (
                               <div>
                                 <p className="text-muted-foreground text-xs">Preferred Service Day</p>

@@ -61,6 +61,11 @@ serve(async (req) => {
     // Property Point of Contact email — when set, gets CC'd on work order
     // notifications so the PM is always in the loop.
     let pmPocEmail: string | null = null;
+    // APARTMENT portals no longer ping Carmen for every unit added — she only
+    // receives the dedicated unit-overage billing email (notify-unit-overage).
+    // HOA/commercial submissions, general (no-unit) requests, and client
+    // messages still include her.
+    let skipCarmen = false;
 
     if (body.kind === "work_order") {
       if (!body.requestId) {
@@ -93,6 +98,15 @@ serve(async (req) => {
       if (pocEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail)) {
         pmPocEmail = pocEmail.trim();
       }
+
+      // Apartments are the default property type when none is set (mirrors
+      // getPropertyType in src/pages/PortalAdmin.tsx).
+      const propType = (prop as any)?.customer_preferences?.property_type;
+      const isApartment = propType !== "hoa" && propType !== "commercial";
+      const isGeneralReq =
+        !reqRow.unit_number ||
+        String(reqRow.request_type || "").toLowerCase().includes("general");
+      skipCarmen = isApartment && !isGeneralReq;
 
       subject = `New Work Order — ${propertyName}${reqRow.unit_number ? ` (Unit ${reqRow.unit_number})` : ""}`;
       plainSummary = `${reqRow.request_type} — ${reqRow.pest_type || "General"} • Unit ${reqRow.unit_number || "—"}`;
@@ -172,7 +186,7 @@ serve(async (req) => {
     const ownerStaff = findStaffByName(ownerTech);
     const carmenStaff = findStaffByName(CARMEN_FULL_NAME);
     const recipients = new Set<string>([OFFICE_EMAIL]);
-    if (carmenStaff?.email) recipients.add(carmenStaff.email);
+    if (carmenStaff?.email && !skipCarmen) recipients.add(carmenStaff.email);
     if (ownerStaff?.email) recipients.add(ownerStaff.email);
     // CC the property's Point of Contact (PM) on work order emails so the PM
     // always sees what tenants submit, alongside the office.
@@ -207,8 +221,9 @@ serve(async (req) => {
     const link = "/portal-admin";
     const notifType = body.kind;
 
-    // Always notify Carmen
-    if (carmenStaff) {
+    // Notify Carmen (except apartment unit work orders — she only gets the
+    // unit-overage billing email for those)
+    if (carmenStaff && !skipCarmen) {
       notifRows.push({
         recipient_username: carmenStaff.username,
         recipient_name: carmenStaff.fullName,

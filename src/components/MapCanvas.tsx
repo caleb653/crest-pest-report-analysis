@@ -173,7 +173,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     } else {
       canvas.isDrawingMode = false;
     }
-    
+
+    // Touch devices: let page scroll pass through the canvas while in select
+    // mode; lock it only while a drawing tool is active so gestures draw
+    // instead of scrolling. Fabric reads allowTouchScrolling per-event.
+    canvas.allowTouchScrolling = tool === 'select';
+    const touchAction = tool === 'select' ? 'manipulation' : 'none';
+    if (canvas.wrapperEl) canvas.wrapperEl.style.touchAction = touchAction;
+    if (canvas.upperCanvasEl) canvas.upperCanvasEl.style.touchAction = touchAction;
+
     canvas.renderAll();
   }, [tool, drawColor, drawBrushSize]);
 
@@ -193,6 +201,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       selectionColor: 'rgba(59, 130, 246, 0.2)',
       selectionBorderColor: '#3B82F6',
       selectionLineWidth: 2,
+      allowTouchScrolling: true,
     });
 
     // Set default selection styles for all objects via prototype defaults
@@ -1143,7 +1152,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     setShowIconPicker(false);
   };
 
-  const handleLegendMouseDown = (e: React.MouseEvent) => {
+  const handleLegendMouseDown = (e: React.PointerEvent) => {
     if (legendRef.current) {
       const rect = legendRef.current.getBoundingClientRect();
       setDragOffset({
@@ -1155,7 +1164,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
   };
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseMove = (e: PointerEvent) => {
       if (isDraggingLegend && legendRef.current) {
         const container = legendRef.current.parentElement;
         if (container) {
@@ -1181,13 +1190,15 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
     };
 
     if (isDraggingLegend) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('pointermove', handleMouseMove);
+      document.addEventListener('pointerup', handleMouseUp);
+      document.addEventListener('pointercancel', handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handleMouseMove);
+      document.removeEventListener('pointerup', handleMouseUp);
+      document.removeEventListener('pointercancel', handleMouseUp);
     };
   }, [isDraggingLegend, dragOffset]);
 
@@ -1231,13 +1242,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
       />
 
       {/* Drawing tools */}
-      {showToolbar && <div className="no-print fixed bottom-2 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row gap-1 border border-border z-50">
+      {showToolbar && <div className="no-print fixed bottom-[max(0.5rem,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-1 flex flex-row flex-wrap justify-center gap-1 max-w-[calc(100vw-0.5rem)] border border-border z-50">
         <Button
           size="icon"
           variant={tool === 'select' ? 'default' : 'outline'}
           onClick={() => setTool('select')}
           title="Select & Move"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
@@ -1248,7 +1259,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'rectangle' ? 'default' : 'outline'}
           onClick={() => { setTool('rectangle'); setShowIconPicker(false); }}
           title="Rectangle"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <Square className="w-3.5 h-3.5" />
         </Button>
@@ -1260,7 +1271,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                 type="color"
                 value={rectFillColor}
                 onChange={(e) => setRectFillColor(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer"
+                className="w-6 h-6 max-md:w-9 max-md:h-9 rounded cursor-pointer"
                 title="Fill Color"
                 disabled={rectFillTransparent}
               />
@@ -1271,7 +1282,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                 id="transparent-fill"
                 checked={rectFillTransparent}
                 onChange={(e) => setRectFillTransparent(e.target.checked)}
-                className="cursor-pointer w-3 h-3"
+                className="cursor-pointer w-3 h-3 max-md:w-5 max-md:h-5"
               />
               <label htmlFor="transparent-fill" className="text-[10px] cursor-pointer">
                 Trans
@@ -1283,7 +1294,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                 type="color"
                 value={rectBorderColor}
                 onChange={(e) => setRectBorderColor(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer"
+                className="w-6 h-6 max-md:w-9 max-md:h-9 rounded cursor-pointer"
                 title="Border Color"
               />
             </div>
@@ -1294,7 +1305,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'line' ? 'default' : 'outline'}
           onClick={() => { setTool('line'); setShowIconPicker(false); }}
           title="Draw Line"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <Minus className="w-3.5 h-3.5" />
         </Button>
@@ -1318,7 +1329,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                   if (active.length) canvas.renderAll();
                 }
               }}
-              className="w-6 h-6 rounded cursor-pointer"
+              className="w-6 h-6 max-md:w-9 max-md:h-9 rounded cursor-pointer"
               title="Line Color"
             />
             <select
@@ -1337,7 +1348,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                   if (active.length) canvas.renderAll();
                 }
               }}
-              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+              className="h-6 max-md:h-9 text-[10px] max-md:text-xs bg-background border border-border rounded px-1"
             >
               <option value={2}>Thin</option>
               <option value={5}>Medium</option>
@@ -1351,7 +1362,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'draw' ? 'default' : 'outline'}
           onClick={() => { setTool('draw'); setShowIconPicker(false); }}
           title="Freehand Draw"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <Pencil className="w-3.5 h-3.5" />
         </Button>
@@ -1361,13 +1372,13 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
               type="color"
               value={drawColor}
               onChange={(e) => setDrawColor(e.target.value)}
-              className="w-6 h-6 rounded cursor-pointer"
+              className="w-6 h-6 max-md:w-9 max-md:h-9 rounded cursor-pointer"
               title="Draw Color"
             />
             <select
               value={drawBrushSize}
               onChange={(e) => setDrawBrushSize(Number(e.target.value))}
-              className="h-6 text-[10px] bg-background border border-border rounded px-1"
+              className="h-6 max-md:h-9 text-[10px] max-md:text-xs bg-background border border-border rounded px-1"
             >
               <option value={2}>Thin</option>
               <option value={4}>Medium</option>
@@ -1380,7 +1391,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'icon' || showIconPicker ? 'default' : 'outline'}
           onClick={() => { setTool('icon'); setShowIconPicker((prev) => !prev); }}
           title="Add Icon"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <Bug className="w-3.5 h-3.5" />
         </Button>
@@ -1389,7 +1400,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'text' ? 'default' : 'outline'}
           onClick={() => setTool('text')}
           title="Add Text"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
         <Type className="w-3.5 h-3.5" />
         </Button>
@@ -1398,7 +1409,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant={tool === 'eraser' ? 'destructive' : 'outline'}
           onClick={() => { setTool('eraser'); setShowIconPicker(false); }}
           title="Eraser - Click to delete"
-          className="h-7 w-7"
+          className="h-7 w-7 max-md:h-10 max-md:w-10"
         >
           <Eraser className="w-3.5 h-3.5" />
         </Button>
@@ -1407,8 +1418,17 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           ref={deleteButtonRef}
           size="icon"
           variant={isDraggingOverDelete ? 'destructive' : 'outline'}
-          title="Drag items here to delete"
-          className={`h-7 w-7 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
+          title="Delete selected (or drag items here)"
+          onClick={() => {
+            const canvas = fabricCanvasRef.current;
+            if (!canvas) return;
+            const active = canvas.getActiveObjects();
+            if (!active.length) return;
+            active.forEach((obj) => { if (!(obj as any).isEditing) canvas.remove(obj); });
+            canvas.discardActiveObject();
+            canvas.renderAll();
+          }}
+          className={`h-7 w-7 max-md:h-10 max-md:w-10 transition-all ${isDraggingOverDelete ? 'scale-110 shadow-lg' : ''}`}
         >
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
@@ -1416,14 +1436,14 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
 
       {/* Icon Picker */}
       {showToolbar && showIconPicker && (
-        <div className="no-print fixed bottom-12 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border z-50">
+        <div className="no-print fixed bottom-12 max-md:bottom-[max(4rem,calc(env(safe-area-inset-bottom)+3.5rem))] left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-xl p-3 border border-border z-50 max-w-[calc(100vw-1rem)] max-h-[50dvh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-xs">Select Icon</h3>
             <Button
               size="icon"
               variant="ghost"
               onClick={() => setShowIconPicker(false)}
-              className="h-5 w-5"
+              className="h-5 w-5 max-md:h-9 max-md:w-9"
             >
               <X className="w-3 h-3" />
             </Button>
@@ -1440,7 +1460,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                   title={iconData.label}
                 >
                   <img src={iconData.svgPath} alt={iconData.label} className="w-8 h-8" />
-                  <span className="text-[9px] leading-tight text-muted-foreground text-center">{iconData.label}</span>
+                  <span className="text-[9px] max-md:text-[11px] leading-tight text-muted-foreground text-center">{iconData.label}</span>
                 </button>
               );
             })}
@@ -1456,9 +1476,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           style={{ 
             left: `${legendPosition.x}px`, 
             top: `${legendPosition.y}px`,
-            userSelect: 'none'
+            userSelect: 'none',
+            touchAction: 'none'
           }}
-          onMouseDown={handleLegendMouseDown}
+          onPointerDown={handleLegendMouseDown}
         >
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-xs">Legend</h3>
@@ -1469,7 +1490,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                 e.stopPropagation();
                 setShowLegend(false);
               }}
-              className="no-print h-5 w-5"
+              className="no-print h-5 w-5 max-md:h-9 max-md:w-9"
             >
               <X className="w-3 h-3" />
             </Button>
@@ -1483,9 +1504,10 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                   <Input
                     value={item.label}
                     onChange={(e) => updateLegendItem(index, 'label', e.target.value)}
-                    className="no-print flex-1 h-6 text-xs"
+                    className="no-print flex-1 h-6 max-md:h-9 text-xs"
                     onClick={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                   />
                   <span className="hidden print-legend-label text-[7px] leading-tight">{item.label}</span>
                   <Button
@@ -1495,7 +1517,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
                       e.stopPropagation();
                       removeLegendItem(index);
                     }}
-                    className="h-6 w-6"
+                    className="h-6 w-6 max-md:h-9 max-md:w-9"
                   >
                     <X className="w-2 h-2" />
                   </Button>
@@ -1511,7 +1533,7 @@ export const MapCanvas = ({ mapUrl, onSave, onExportImage, initialData, exportId
           variant="outline"
           size="sm"
           onClick={() => setShowLegend(true)}
-          className="no-print absolute bottom-12 left-2 bg-card/95 backdrop-blur-sm shadow-xl border-border text-[10px] h-6 px-2"
+          className="no-print absolute bottom-12 left-2 bg-card/95 backdrop-blur-sm shadow-xl border-border text-[10px] h-6 px-2 max-md:h-9 max-md:px-3 max-md:text-xs"
         >
           Legend ({legendItems.length})
         </Button>

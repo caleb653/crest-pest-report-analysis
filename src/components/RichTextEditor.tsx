@@ -40,6 +40,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalChange = useRef(false);
+  const isComposing = useRef(false);
   const [currentColor, setCurrentColor] = useState("#000000");
 
   // Convert plain text with • bullets to display format
@@ -49,8 +50,11 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     return text;
   };
 
-  // Initialize and sync content
+  // Initialize and sync content. Never rewrite the DOM mid-composition —
+  // iOS autocorrect/dictation fires composition events, and an innerHTML
+  // rewrite during one resets the caret to the start of the field.
   useEffect(() => {
+    if (isComposing.current) return;
     if (editorRef.current && !isInternalChange.current) {
       const currentContent = editorRef.current.innerHTML;
       const newContent = formatForDisplay(value);
@@ -85,8 +89,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [handleInput]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Handle Ctrl+B for bold
-    if (e.ctrlKey && e.key === "b") {
+    // Handle Ctrl+B / Cmd+B for bold
+    if ((e.ctrlKey || e.metaKey) && e.key === "b") {
       e.preventDefault();
       handleBold();
     }
@@ -126,7 +130,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               variant="outline"
               size="sm"
               onClick={() => onFontSizeChange(Math.max(8, fontSize - 1))}
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 max-md:h-9 max-md:w-9 p-0"
             >
               <Minus className="w-3 h-3" />
             </Button>
@@ -136,7 +140,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               variant="outline"
               size="sm"
               onClick={() => onFontSizeChange(Math.min(24, fontSize + 1))}
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 max-md:h-9 max-md:w-9 p-0"
             >
               <Plus className="w-3 h-3" />
             </Button>
@@ -146,7 +150,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
             variant="outline"
             size="sm"
             onClick={handleBold}
-            className="h-6 px-2"
+            className="h-6 px-2 max-md:h-9 max-md:px-3"
             title="Bold (Ctrl+B)"
           >
             <Bold className="w-3 h-3" />
@@ -157,7 +161,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-6 px-2"
+                className="h-6 px-2 max-md:h-9 max-md:px-3"
                 title="Text Color"
               >
                 <Palette className="w-3 h-3" />
@@ -174,7 +178,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     key={color.value}
                     type="button"
                     className={cn(
-                      "w-6 h-6 rounded border-2 transition-all",
+                      "w-6 h-6 max-md:w-9 max-md:h-9 rounded border-2 transition-all",
                       currentColor === color.value ? "border-primary scale-110" : "border-transparent hover:border-muted-foreground"
                     )}
                     style={{ backgroundColor: color.value }}
@@ -194,6 +198,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
+        onCompositionStart={() => { isComposing.current = true; }}
+        onCompositionEnd={() => { isComposing.current = false; handleInput(); }}
         className={cn(
           "flex-1 leading-relaxed border border-input rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-ring overflow-auto bg-background",
           className

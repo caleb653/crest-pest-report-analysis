@@ -66,11 +66,15 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
   const getPos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    if ("touches" in e) {
-      const touch = e.touches[0] || e.changedTouches[0];
-      return { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-    }
-    return { x: (e as React.MouseEvent).clientX - rect.left, y: (e as React.MouseEvent).clientY - rect.top };
+    // The canvas is CSS-stretched (w-full h-full) over a fixed buffer, so
+    // client coords must be scaled into buffer space or strokes drift.
+    const scaleX = rect.width ? canvas.width / rect.width : 1;
+    const scaleY = rect.height ? canvas.height / rect.height : 1;
+    const point = "touches" in e ? (e.touches[0] || e.changedTouches[0]) : (e as React.MouseEvent);
+    return {
+      x: (point.clientX - rect.left) * scaleX,
+      y: (point.clientY - rect.top) * scaleY,
+    };
   }, []);
 
   const startDraw = useCallback((e: React.MouseEvent | React.TouchEvent) => {
@@ -139,7 +143,7 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
           {COLORS.map((c) => (
             <button
               key={c}
-              className={`w-5 h-5 rounded-full border-2 ${color === c ? "border-white ring-1 ring-primary" : "border-transparent"}`}
+              className={`w-5 h-5 max-md:w-8 max-md:h-8 rounded-full border-2 ${color === c ? "border-white ring-1 ring-primary" : "border-transparent"}`}
               style={{ backgroundColor: c }}
               onClick={() => setColor(c)}
             />
@@ -149,21 +153,21 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
           {BRUSH_SIZES.map((b) => (
             <button
               key={b.size}
-              className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${brushSize === b.size ? "bg-primary text-primary-foreground" : "bg-white/20 text-white"}`}
+              className={`px-1.5 py-0.5 max-md:px-2.5 max-md:py-1.5 rounded text-[9px] max-md:text-xs font-medium ${brushSize === b.size ? "bg-primary text-primary-foreground" : "bg-white/20 text-white"}`}
               onClick={() => setBrushSize(b.size)}
             >
               {b.label}
             </button>
           ))}
         </div>
-        <Button variant="ghost" size="sm" onClick={undo} disabled={history.length <= 1} className="h-5 px-1 text-white hover:bg-white/20 text-[10px]">
+        <Button variant="ghost" size="sm" onClick={undo} disabled={history.length <= 1} className="h-5 max-md:h-9 px-1 max-md:px-2 text-white hover:bg-white/20 text-[10px]">
           <Undo2 className="w-3 h-3" />
         </Button>
         <div className="ml-auto flex gap-1">
-          <Button variant="ghost" size="sm" onClick={onCancel} className="h-5 px-1.5 text-white hover:bg-white/20 text-[10px]">
+          <Button variant="ghost" size="sm" onClick={onCancel} className="h-5 max-md:h-9 px-1.5 max-md:px-2.5 text-white hover:bg-white/20 text-[10px]">
             <X className="w-3 h-3" />
           </Button>
-          <Button size="sm" onClick={handleSave} className="h-5 px-1.5 text-[10px] bg-primary">
+          <Button size="sm" onClick={handleSave} className="h-5 max-md:h-9 px-1.5 max-md:px-2.5 text-[10px] max-md:text-xs bg-primary">
             <Check className="w-3 h-3 mr-0.5" /> Save
           </Button>
         </div>
@@ -181,6 +185,7 @@ const InlineImageAnnotator = ({ imageUrl, onSave, onCancel }: InlineImageAnnotat
           onTouchStart={startDraw}
           onTouchMove={draw}
           onTouchEnd={endDraw}
+          onTouchCancel={endDraw}
         />
       )}
     </div>

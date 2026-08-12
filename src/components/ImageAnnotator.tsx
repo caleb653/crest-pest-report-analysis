@@ -54,17 +54,14 @@ const ImageAnnotator = ({ imageUrl, open, onClose, onSave }: ImageAnnotatorProps
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
-    
-    if ("touches" in e) {
-      const touch = e.touches[0] || e.changedTouches[0];
-      return {
-        x: touch.clientX - rect.left,
-        y: touch.clientY - rect.top,
-      };
-    }
+    // Scale client coords into buffer space in case the canvas is ever
+    // CSS-constrained (dialog animations, small screens).
+    const scaleX = rect.width ? canvas.width / rect.width : 1;
+    const scaleY = rect.height ? canvas.height / rect.height : 1;
+    const point = "touches" in e ? (e.touches[0] || e.changedTouches[0]) : (e as React.MouseEvent);
     return {
-      x: (e as React.MouseEvent).clientX - rect.left,
-      y: (e as React.MouseEvent).clientY - rect.top,
+      x: (point.clientX - rect.left) * scaleX,
+      y: (point.clientY - rect.top) * scaleY,
     };
   };
 
@@ -186,7 +183,7 @@ const ImageAnnotator = ({ imageUrl, open, onClose, onSave }: ImageAnnotatorProps
           {/* Canvas */}
           <canvas
             ref={canvasRef}
-            className="border-2 border-border rounded-lg cursor-crosshair touch-none"
+            className="border-2 border-border rounded-lg cursor-crosshair touch-none max-w-full"
             onMouseDown={startDraw}
             onMouseMove={draw}
             onMouseUp={endDraw}
@@ -194,6 +191,7 @@ const ImageAnnotator = ({ imageUrl, open, onClose, onSave }: ImageAnnotatorProps
             onTouchStart={startDraw}
             onTouchMove={draw}
             onTouchEnd={endDraw}
+            onTouchCancel={endDraw}
           />
         </div>
         

@@ -178,7 +178,7 @@ export default function Competition() {
                                className="flex items-center gap-1 rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-tight text-muted-foreground">
                             <span className="flex-1 break-words text-left">{sale}</span>
                             {editing && (
-                              <button type="button" className="shrink-0 text-muted-foreground hover:text-destructive"
+                              <button type="button" className="shrink-0 text-muted-foreground hover:text-destructive max-md:p-2"
                                       onClick={() => removeSale(comp, person, i)}>
                                 <X className="w-3 h-3" />
                               </button>
@@ -194,9 +194,9 @@ export default function Competition() {
                                 if (e.key === "Enter") addSale(comp, person, newSaleDrafts[`${comp.id}|${person}`] ?? "");
                               }}
                               placeholder="Sale name"
-                              className="h-6 text-[10px] px-1"
+                              className="h-6 max-md:h-9 text-[10px] px-1"
                             />
-                            <Button type="button" size="icon" variant="outline" className="h-6 w-6 shrink-0"
+                            <Button type="button" size="icon" variant="outline" className="h-6 w-6 max-md:h-9 max-md:w-9 shrink-0"
                                     onClick={() => addSale(comp, person, newSaleDrafts[`${comp.id}|${person}`] ?? "")}>
                               <Plus className="w-3 h-3" />
                             </Button>
@@ -210,7 +210,7 @@ export default function Competition() {
                           min={0}
                           value={String(score)}
                           onChange={(e) => setScore(comp, person, parseInt(e.target.value, 10) || 0)}
-                          className="h-7 w-16 text-center text-xs"
+                          className="h-7 max-md:h-9 w-16 text-center text-xs"
                         />
                       )
                     )}

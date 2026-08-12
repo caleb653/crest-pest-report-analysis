@@ -193,7 +193,7 @@ const TeamDocs = () => {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-8 max-sm:flex-wrap">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -261,7 +261,7 @@ const TeamDocs = () => {
       return (
         <div className="min-h-screen bg-background p-6">
           <div className="max-w-2xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6 max-sm:flex-wrap">
               <Button variant="ghost" size="icon" onClick={() => setViewingDoc(null)}>
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -317,7 +317,7 @@ const TeamDocs = () => {
     return (
       <div className="min-h-screen bg-background p-6">
         <div className="max-w-2xl mx-auto">
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 max-sm:flex-wrap">
             <Button variant="ghost" size="icon" onClick={() => setActiveView("menu")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
@@ -360,7 +360,7 @@ const TeamDocs = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 max-sm:flex-wrap">
           <Button variant="ghost" size="icon" onClick={() => setActiveView("menu")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>

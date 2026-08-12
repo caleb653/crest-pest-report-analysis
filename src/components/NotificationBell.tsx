@@ -83,7 +83,7 @@ const NotificationBell = ({ className }: { className?: string }) => {
         <Button
           variant="ghost"
           size="icon"
-          className={cn("relative h-9 w-9", className)}
+          className={cn("relative h-9 w-9 max-md:h-11 max-md:w-11", className)}
           aria-label="Notifications"
         >
           <Bell className="w-5 h-5" />
@@ -97,20 +97,20 @@ const NotificationBell = ({ className }: { className?: string }) => {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-96 p-0">
+      <PopoverContent align="end" className="w-[min(24rem,calc(100vw-1rem))] p-0">
         <div className="flex items-center justify-between px-3 py-2 border-b">
           <p className="font-semibold text-sm">Notifications</p>
           <div className="flex items-center gap-2">
             <button
               onClick={markAllRead}
               disabled={unread === 0}
-              className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+              className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-40 max-md:py-2 max-md:px-1 max-md:-my-2"
             >
               Mark all read
             </button>
             <button
               onClick={() => { setOpen(false); navigate("/notifications"); }}
-              className="text-xs text-primary hover:underline"
+              className="text-xs text-primary hover:underline max-md:py-2 max-md:px-1 max-md:-my-2"
             >
               View all
             </button>
