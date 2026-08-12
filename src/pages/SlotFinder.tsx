@@ -885,6 +885,7 @@ function FindMode({
                 staffName={staff?.fullName ?? undefined}
                 linkedId={customer?.customer_id ?? null}
                 linkedLabel={customer?.name ?? customer?.company_name ?? null}
+                linkedLoginLink={customer?.loginLink ?? null}
                 onSelect={selectCustomer}
                 onClear={() => setCustomer(null)}
               />

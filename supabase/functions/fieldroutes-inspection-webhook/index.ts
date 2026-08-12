@@ -207,6 +207,21 @@ serve(async (req) => {
     // nothing and let the button hide rather than link to the generic page.
     const loginLink = clean(body.loginLink ?? body.login_link);
 
+    // Cache the FieldRoutes-generated portal link by customer BEFORE any of the
+    // guards below: even a payload that never creates a report (non-inspection
+    // service, unknown tech, duplicate) still teaches us this customer's portal
+    // link, so the app's customer lookups can pop it later. Best-effort — a
+    // cache failure must never block report creation.
+    if (customerId && loginLink && /^https?:\/\//i.test(loginLink)) {
+      const { error: llErr } = await supabase
+        .from("fieldroutes_login_links")
+        .upsert(
+          { customer_id: customerId, login_link: loginLink, source: "fieldroutes-webhook" },
+          { onConflict: "customer_id" },
+        );
+      if (llErr) console.error("fieldroutes-inspection-webhook login_link_cache_failed", llErr.message);
+    }
+
     const serviceDate = clean(body.serviceDate ?? body.service_date);
     // Tech assigned to the appointment in FieldRoutes. Different trigger templates
     // expose this under different placeholder names — accept all common variants,

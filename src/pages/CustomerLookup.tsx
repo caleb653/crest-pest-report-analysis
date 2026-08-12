@@ -11,9 +11,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Loader2, Phone, Search, User } from "lucide-react";
+import { ArrowLeft, Building2, ExternalLink, Loader2, Phone, Search, User } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { fetchLoginLinks } from "@/lib/frLoginLinks";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,6 +78,9 @@ export default function CustomerLookup() {
 
   const [q, setQ] = useState("");
   const [results, setResults] = useState<LookupResult[]>([]);
+  // customer_id -> FieldRoutes portal loginLink from the fieldroutes_login_links
+  // cache — shows an "Open Customer Portal" button on accounts that have one.
+  const [portalLinks, setPortalLinks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +115,17 @@ export default function CustomerLookup() {
     }, 350);
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [digits, searchable, staff?.fullName]);
+
+  // Look up cached portal links for the accounts found.
+  useEffect(() => {
+    const ids = results.map((c) => c.customer_id);
+    if (ids.length === 0) return;
+    let cancelled = false;
+    fetchLoginLinks(ids).then((map) => {
+      if (!cancelled) setPortalLinks((prev) => ({ ...prev, ...map }));
+    });
+    return () => { cancelled = true; };
+  }, [results]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -219,6 +234,14 @@ export default function CustomerLookup() {
                           </div>
                         )}
                       </div>
+
+                      {portalLinks[c.customer_id] && (
+                        <Button asChild size="sm" variant="outline" className="mt-3 h-8 gap-1.5">
+                          <a href={portalLinks[c.customer_id]} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3.5 w-3.5" /> Open Customer Portal
+                          </a>
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

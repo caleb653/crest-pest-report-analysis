@@ -55,6 +55,7 @@ import {
 } from "@/lib/rodentExclusionAutoCreate";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
+import { fetchLoginLink, saveLoginLink } from "@/lib/frLoginLinks";
 import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
@@ -927,30 +928,18 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   }, [reportId, customerSignature, fieldroutesCustomerId]);
 
   // Backfill FieldRoutes {loginlink} when the report is linked but no portal URL
-  // was captured at link time (older reports). Looks the customer up by email
-  // and surfaces the prominent "Customer Portal" button in the header.
+  // was captured at link time (older reports). The customer-search results can't
+  // carry the link (the FieldRoutes customer API never exposes it), so read the
+  // fieldroutes_login_links cache — fed by FR Trigger webhooks + manual pastes —
+  // and surface the prominent "Customer Portal" button in the header.
   useEffect(() => {
     if (!fieldroutesCustomerId || fieldroutesLoginLink) return;
-    const query = (customerEmail || "").trim();
-    if (query.length < 2) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("fieldroutes-customer-search", {
-          body: { q: query, staffName: currentStaff?.fullName, limit: 25 },
-        });
-        if (cancelled || !data?.ok) return;
-        const match = (data.results ?? []).find(
-          (r: { customer_id?: string; loginLink?: string | null }) =>
-            String(r.customer_id) === String(fieldroutesCustomerId),
-        );
-        if (match?.loginLink) setFieldroutesLoginLink(String(match.loginLink));
-      } catch {
-        /* silent */
-      }
-    })();
+    fetchLoginLink(fieldroutesCustomerId).then((link) => {
+      if (!cancelled && link) setFieldroutesLoginLink(link);
+    });
     return () => { cancelled = true; };
-  }, [fieldroutesCustomerId, fieldroutesLoginLink, customerEmail, currentStaff?.fullName]);
+  }, [fieldroutesCustomerId, fieldroutesLoginLink]);
 
   const expandWithAI = async (
     text: string,
@@ -2120,7 +2109,7 @@ Crest Pest Control`;
     <div className="min-h-screen bg-background">
       {/* Read-only banner for customer viewing */}
       {isReadOnly && (
-        <div className="bg-primary text-primary-foreground py-3 px-4 text-center no-print sticky top-0 z-30">
+        <div className="bg-primary text-primary-foreground py-3 px-4 text-center no-print sticky top-0 z-30 max-lg:static">
           <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2">
             <span className="font-semibold">
               {customerSignature ? "✓ Signed Proposal" : "Please review and sign below to accept this proposal"}
@@ -2135,10 +2124,10 @@ Crest Pest Control`;
       {/* Mobile Header is removed — always use the unified desktop/tablet header below */}
 
       {/* Unified Header — always shown */}
-      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
+      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static max-lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Top row: Logo + Title + Action buttons */}
-            <div className="flex items-center gap-3 mb-2 print:mb-1">
+            <div className="flex items-center gap-3 mb-2 print:mb-1 max-lg:flex-wrap">
               <div className="flex items-center gap-3 shrink-0">
                 <div className="flex flex-col items-center">
                   <img src={crestLogo} alt="Crest Pest Control" className="h-16 lg:h-24 w-auto object-contain" />
@@ -2206,6 +2195,7 @@ Crest Pest Control`;
                   staffName={currentStaff?.fullName}
                   linkedId={fieldroutesCustomerId}
                   linkedLabel={editableCustomer || null}
+                  linkedLoginLink={fieldroutesLoginLink}
                   onSelect={(c) => {
                     setFieldroutesCustomerId(c.customer_id);
                     setFieldroutesLoginLink(c.loginLink || null);
@@ -2225,6 +2215,7 @@ Crest Pest Control`;
                     <Input
                       value={fieldroutesLoginLink ?? ""}
                       onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                      onBlur={() => saveLoginLink(fieldroutesCustomerId, fieldroutesLoginLink, "manual-paste")}
                       placeholder="https://crestpest.pestportals.com/?loginHash=…"
                       className="text-xs font-mono"
                     />
@@ -2262,7 +2253,7 @@ Crest Pest Control`;
             )}
 
             {/* Info grid - 2 columns on screen, 3 columns for print to reduce vertical height */}
-            <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
               {/* Column 1: Customer Details */}
               <div>
                 <p className="font-semibold text-foreground text-sm mb-0.5 print:text-xs">Customer Details:</p>
@@ -2465,7 +2456,8 @@ Crest Pest Control`;
 
           {/* Services - Full Width at Top */}
           <Card className="print-section print-pricing-table p-2 print:p-0.5 print:py-1 col-span-2">
-            <div className="space-y-1 print:space-y-0">
+            <div className="overflow-x-auto">
+            <div className="min-w-[760px] md:min-w-0 space-y-1 print:space-y-0">
               {/* Header Row */}
               <div className="grid grid-cols-[minmax(150px,1fr)_80px_80px_180px_minmax(200px,2fr)_24px] print:grid-cols-[minmax(140px,1fr)_70px_70px_160px_minmax(200px,2fr)_24px] gap-2 print:gap-1 items-center text-xs print:text-[10px] font-bold uppercase border-b border-border pb-1 print:pb-0.5">
                 <span className="pl-1">Service Type</span>
@@ -2617,7 +2609,7 @@ Crest Pest Control`;
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 no-print"
+                        className="h-6 w-6 max-md:h-9 max-md:w-9 no-print"
                         onClick={() => removeService(index)}
                       >
                         <X className="w-3 h-3" />
@@ -2656,10 +2648,11 @@ Crest Pest Control`;
                 </Button>
               )}
             </div>
+            </div>
           </Card>
 
           {/* Left: Target Pests + Products, Right: Proposed Services */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:items-start">
+          <div className="col-span-2 grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:items-start">
             {/* Left Column - Target Pests and Products stacked */}
             <div className="space-y-1.5 print:space-y-0.5">
               {/* Target Pests */}
@@ -2683,12 +2676,14 @@ Crest Pest Control`;
                     <div
                       className="absolute z-50 w-full mt-0 bg-background border border-input rounded-b-md shadow-lg max-h-48 overflow-y-auto"
                       onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
                     >
                       {PEST_OPTIONS.map((pest) => (
                         <button
                           key={pest}
                           type="button"
                           onMouseDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -2764,7 +2759,7 @@ Crest Pest Control`;
                         <button
                           type="button"
                           onClick={() => setDisplayedProducts(prev => prev.filter((_, i) => i !== index))}
-                          className="no-print opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity"
+                          className="no-print md:opacity-0 md:group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -2886,7 +2881,7 @@ Crest Pest Control`;
           </div>
 
           {/* Bottom Row: Signature + Pesticide Notice - Same column widths as above */}
-          <div className="col-span-2 grid grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
+          <div className="col-span-2 grid grid-cols-1 md:grid-cols-[2fr_3fr] gap-1.5 print:gap-0.5 print:mt-0.5">
             {/* Signature Section - Left (same width as Target Pests + Products) - compact to match Pesticide Notice */}
             <div className={`p-0 overflow-hidden print:overflow-visible rounded-lg relative ${showSignature ? 'print-section bg-card border shadow-sm' : ''}`}>
               {showSignature ? (
@@ -3039,7 +3034,7 @@ Crest Pest Control`;
             {/* Map Section - fills column in print, fixed on screen */}
             <div className="flex flex-col min-h-0 print:mt-1">
               <div 
-                className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
+                className="w-full max-w-[400px] aspect-[3/4] h-auto lg:w-[400px] lg:h-[533px] lg:aspect-auto lg:max-w-none print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-lg overflow-hidden border-2 border-border print:max-h-none"
                 onPaste={handleMapPaste}
                 tabIndex={0}
               >
@@ -3287,7 +3282,7 @@ Crest Pest Control`;
               </Card>
 
               {/* Bottom row: Scheduling + Setup Materials side by side */}
-              <div className="grid grid-cols-2 gap-3 print:gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 print:gap-2">
                 {/* Scheduling & Customer Communication */}
                 <Card data-pdf-section="scheduling" className="print-section p-0 overflow-hidden print:overflow-visible rounded-lg" data-scheduling-empty={!preferredServiceDay && !preferredServiceTime && !mainPointOfContact && !contactPhone ? "true" : undefined}>
                   <div className="print-section-header py-1.5 px-2.5 rounded-t-lg">
@@ -3367,7 +3362,7 @@ Crest Pest Control`;
                               <button
                                 type="button"
                                 onClick={() => removeSetupMaterial(index)}
-                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                className="text-destructive md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -3502,7 +3497,7 @@ Crest Pest Control`;
 
           {/* Property Images Grid - larger images */}
           {propertyImages.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
               {propertyImages.map((item, index) => (
                 <div
                   key={index}
@@ -3537,7 +3532,7 @@ Crest Pest Control`;
                         <Button
                           size="icon"
                           variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                          className="absolute top-1 right-1 h-6 w-6 max-md:h-9 max-md:w-9 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
                           onClick={(e) => {
                             e.stopPropagation();
                             setPropertyImages((prev) => prev.filter((_, i) => i !== index));

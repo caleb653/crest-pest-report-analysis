@@ -43,6 +43,7 @@ import ImageAnnotator from "@/components/ImageAnnotator";
 import InlineImageAnnotator from "@/components/InlineImageAnnotator";
 import { buildInitialPestReportPDF } from "@/lib/initialPestPdf";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
+import { fetchLoginLink, saveLoginLink } from "@/lib/frLoginLinks";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SALES_REPORT_DISCLAIMER_HTML } from "@/lib/rodentGuarantee";
 
@@ -925,6 +926,19 @@ const Report = () => {
     }
   };
 
+  // Backfill the FieldRoutes {loginlink} when the report is linked but no portal
+  // URL was captured at link time: read the fieldroutes_login_links cache (fed
+  // by FR Trigger webhooks + manual pastes) so the "Open Customer Portal"
+  // button pops up whenever FieldRoutes has generated a link for this customer.
+  useEffect(() => {
+    if (!fieldroutesCustomerId || fieldroutesLoginLink) return;
+    let cancelled = false;
+    fetchLoginLink(fieldroutesCustomerId).then((link) => {
+      if (!cancelled && link) setFieldroutesLoginLink(link);
+    });
+    return () => { cancelled = true; };
+  }, [fieldroutesCustomerId, fieldroutesLoginLink]);
+
   // Auto-link to a FieldRoutes customer when not already linked, so a completed
   // report's PDF can later upload back to the right customer. High-confidence
   // only (unique exact email / address); the picker stays the manual override.
@@ -940,6 +954,7 @@ const Report = () => {
       if (match) {
         reportData.fieldroutes_customer_id = match.customerId;
         setFieldroutesCustomerId(match.customerId);
+        if (match.loginLink) setFieldroutesLoginLink(match.loginLink);
       }
     } catch (e) {
       console.warn("FieldRoutes auto-match skipped", e);
@@ -1965,6 +1980,7 @@ Crest Pest Control
                       staffName={currentStaff?.fullName}
                       linkedId={fieldroutesCustomerId}
                       linkedLabel={editableCustomer || null}
+                      linkedLoginLink={fieldroutesLoginLink}
                       onSelect={(c) => {
                         setFieldroutesCustomerId(c.customer_id);
                         setFieldroutesLoginLink(c.loginLink || null);
@@ -1985,6 +2001,7 @@ Crest Pest Control
                         <Input
                           value={fieldroutesLoginLink ?? ""}
                           onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                          onBlur={() => saveLoginLink(fieldroutesCustomerId, fieldroutesLoginLink, "manual-paste")}
                           placeholder="https://crestpest.pestportals.com/?loginHash=…"
                           className="text-xs font-mono"
                         />
@@ -3388,7 +3405,7 @@ Crest Pest Control
                         <Button
                           size="icon"
                           variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                          className="absolute top-1 right-1 h-6 w-6 max-md:h-9 max-md:w-9 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
                           onClick={() => {
                             setPropertyImages((prev) => prev.filter((_, i) => i !== index));
                             toast.info("Image removed");

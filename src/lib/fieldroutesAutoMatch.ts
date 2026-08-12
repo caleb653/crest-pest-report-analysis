@@ -13,6 +13,7 @@
 // Reuses the existing read-only fieldroutes-customer-search edge function.
 
 import { supabase } from "@/integrations/supabase/client";
+import { fetchLoginLink } from "@/lib/frLoginLinks";
 
 type AutoMatchInput = {
   email?: string | null;
@@ -39,6 +40,14 @@ async function search(q: string, staffName?: string | null): Promise<Array<Recor
   }
 }
 
+// The search results can't carry the portal loginLink (the FieldRoutes customer
+// API never exposes it) — fall back to the fieldroutes_login_links cache so an
+// auto-matched report still gets its "Open Customer Portal" button.
+async function withCachedLoginLink(res: NonNullable<AutoMatchResult>): Promise<AutoMatchResult> {
+  if (res.loginLink) return res;
+  return { ...res, loginLink: await fetchLoginLink(res.customerId) };
+}
+
 export async function autoMatchCustomerId(input: AutoMatchInput): Promise<AutoMatchResult> {
   // 1) Email — the strongest signal. Accept only a single exact-email match.
   const email = (input.email ?? "").trim();
@@ -46,11 +55,11 @@ export async function autoMatchCustomerId(input: AutoMatchInput): Promise<AutoMa
     const results = await search(email, input.staffName);
     const exact = results.filter((r) => norm(r.email) === norm(email) && r.customer_id);
     if (exact.length === 1) {
-      return {
+      return withCachedLoginLink({
         customerId: String(exact[0].customer_id),
         matchedOn: "email",
         loginLink: (exact[0].loginLink as string | null | undefined) ?? null,
-      };
+      });
     }
   }
 
@@ -66,11 +75,11 @@ export async function autoMatchCustomerId(input: AutoMatchInput): Promise<AutoMa
       return r.customer_id && ra.length > 0 && (ra === ns || ra.startsWith(ns));
     });
     if (exact.length === 1) {
-      return {
+      return withCachedLoginLink({
         customerId: String(exact[0].customer_id),
         matchedOn: "address",
         loginLink: (exact[0].loginLink as string | null | undefined) ?? null,
-      };
+      });
     }
   }
 

@@ -8,9 +8,10 @@
 // edge function. Safe to use on any PinGate page.
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Check, X, Loader2, Building2, User } from "lucide-react";
+import { Search, Check, X, Loader2, Building2, User, ExternalLink } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { fetchLoginLinks, saveLoginLink } from "@/lib/frLoginLinks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -35,6 +36,8 @@ type Props = {
   linkedId?: string | null;
   /** Display label for the linked customer (e.g. name). */
   linkedLabel?: string | null;
+  /** Portal loginLink for the linked customer — shows an "Open portal" button on the chip. */
+  linkedLoginLink?: string | null;
   onSelect: (c: FRCustomer) => void;
   onClear?: () => void;
 };
@@ -44,10 +47,14 @@ function cityLine(c: FRCustomer): string {
     .filter(Boolean).join(" · ");
 }
 
-export default function CustomerPicker({ staffName, linkedId, linkedLabel, onSelect, onClear }: Props) {
+export default function CustomerPicker({ staffName, linkedId, linkedLabel, linkedLoginLink, onSelect, onClear }: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [results, setResults] = useState<FRCustomer[]>([]);
+  // customer_id -> portal loginLink from the fieldroutes_login_links cache. The
+  // synced customer data carries no portal link, so this is the only way search
+  // results learn one — it drives the "Portal" badge and enriches the selection.
+  const [cachedLinks, setCachedLinks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,6 +82,23 @@ export default function CustomerPicker({ staffName, linkedId, linkedLabel, onSel
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [q, staffName]);
 
+  // Enrich results with cached portal links (FieldRoutes-generated loginLinks
+  // captured earlier via webhook or paste) so "has a portal" pops immediately.
+  useEffect(() => {
+    const missing = results.filter((c) => !c.loginLink).map((c) => c.customer_id);
+    if (missing.length === 0) return;
+    let cancelled = false;
+    fetchLoginLinks(missing).then((map) => {
+      if (!cancelled && Object.keys(map).length > 0) {
+        setCachedLinks((prev) => ({ ...prev, ...map }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [results]);
+
+  const portalLinkOf = (c: FRCustomer): string | null =>
+    c.loginLink ?? cachedLinks[c.customer_id] ?? null;
+
   // Linked state: compact confirmation chip with a "Change" button.
   if (linkedId && !open) {
     return (
@@ -84,6 +108,13 @@ export default function CustomerPicker({ staffName, linkedId, linkedLabel, onSel
           Linked to FieldRoutes customer <span className="font-medium">#{linkedId}</span>
           {linkedLabel ? ` — ${linkedLabel}` : ""}
         </span>
+        {linkedLoginLink && (
+          <Button asChild variant="outline" size="sm" className="h-7 px-2 gap-1 text-xs shrink-0">
+            <a href={linkedLoginLink} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-3.5 w-3.5" /> Portal
+            </a>
+          </Button>
+        )}
         <Button type="button" variant="ghost" size="sm" className="h-7 px-2"
           onClick={() => { setOpen(true); setQ(""); setResults([]); setSearched(false); }}>
           Change
@@ -118,7 +149,13 @@ export default function CustomerPicker({ staffName, linkedId, linkedLabel, onSel
             <button
               type="button"
               key={c.customer_id}
-              onClick={() => { onSelect(c); setOpen(false); setQ(""); setResults([]); }}
+              onClick={() => {
+                // Carry the portal link with the selection: upstream value if it
+                // ever appears, else the cached FieldRoutes-generated link.
+                if (c.loginLink) saveLoginLink(c.customer_id, c.loginLink, "customer-search");
+                onSelect({ ...c, loginLink: portalLinkOf(c) });
+                setOpen(false); setQ(""); setResults([]);
+              }}
               className="w-full text-left px-3 py-2 hover:bg-muted flex items-start gap-2"
             >
               {c.commercial ? <Building2 className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
@@ -127,6 +164,11 @@ export default function CustomerPicker({ staffName, linkedId, linkedLabel, onSel
                 <div className="font-medium truncate">
                   {c.name || c.company_name || "(no name)"}
                   <span className="text-xs text-muted-foreground font-normal"> · #{c.customer_id}</span>
+                  {portalLinkOf(c) && (
+                    <span className="ml-1.5 inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-1 py-px text-[10px] font-medium text-emerald-700 align-middle">
+                      Portal
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{cityLine(c)}</div>
                 {(c.email || c.phone) && (

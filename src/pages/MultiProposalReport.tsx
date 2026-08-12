@@ -35,6 +35,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import CustomerPicker from "@/components/CustomerPicker";
 import { PrepSheetPicker, buildPrepSheetAttachments } from "@/components/PrepSheetPicker";
 import { autoMatchCustomerId } from "@/lib/fieldroutesAutoMatch";
+import { fetchLoginLink, saveLoginLink } from "@/lib/frLoginLinks";
 import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBugBlack from "@/assets/crest-bug-black.png";
@@ -1172,31 +1173,18 @@ const Report = () => {
   }, [duplicateRenderedMapImages]);
 
   // Backfill the FieldRoutes {loginlink} when the report is already linked to a
-  // customer but no portal URL was captured at link time (older reports). Looks
-  // the customer up by email and copies the loginLink so the prominent
-  // "Customer Portal" button can appear at the top of the report.
+  // customer but no portal URL was captured at link time (older reports). The
+  // customer-search results can't carry the link (the FieldRoutes customer API
+  // never exposes it), so read the fieldroutes_login_links cache — fed by FR
+  // Trigger webhooks + manual pastes — and surface the "Customer Portal" button.
   useEffect(() => {
     if (!fieldroutesCustomerId || fieldroutesLoginLink) return;
-    const query = (customerEmail || editableCustomer || "").trim();
-    if (query.length < 2) return;
     let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("fieldroutes-customer-search", {
-          body: { q: query, staffName: currentStaff?.fullName, limit: 25 },
-        });
-        if (cancelled || !data?.ok) return;
-        const match = (data.results ?? []).find(
-          (r: { customer_id?: string; loginLink?: string | null }) =>
-            String(r.customer_id) === String(fieldroutesCustomerId),
-        );
-        if (match?.loginLink) setFieldroutesLoginLink(String(match.loginLink));
-      } catch {
-        /* silent */
-      }
-    })();
+    fetchLoginLink(fieldroutesCustomerId).then((link) => {
+      if (!cancelled && link) setFieldroutesLoginLink(link);
+    });
     return () => { cancelled = true; };
-  }, [fieldroutesCustomerId, fieldroutesLoginLink, customerEmail, editableCustomer, currentStaff?.fullName]);
+  }, [fieldroutesCustomerId, fieldroutesLoginLink]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -2375,7 +2363,7 @@ Crest Pest Control`;
       <div key={proposalIndex} className="print-pricing-wrapper">
         {/* Option name header — sits ABOVE the pricing card */}
         <div className="proposal-option-header flex items-center justify-between gap-2 mb-1">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2 max-lg:flex-wrap">
             <div className="proposal-name-shell min-w-[220px] flex-1 rounded-lg border border-border bg-muted/40 px-3 py-1.5">
               {isReadOnly ? (
                 <h3 className="proposal-name-text break-words text-base font-bold leading-tight text-foreground">{proposalLabel}</h3>
@@ -2403,7 +2391,7 @@ Crest Pest Control`;
             )}
           </div>
           {!isReadOnly && proposals.length > 1 && (
-            <Button variant="ghost" size="icon" className="h-6 w-6 no-print" onClick={() => removeProposal(proposalIndex)}>
+            <Button variant="ghost" size="icon" className="h-6 w-6 max-lg:h-9 max-lg:w-9 no-print" onClick={() => removeProposal(proposalIndex)}>
               <X className="w-3 h-3" />
             </Button>
           )}
@@ -2499,7 +2487,7 @@ Crest Pest Control`;
                   <label className="flex cursor-pointer select-none items-center gap-1 px-0.5 pb-1">
                     <input
                       type="checkbox"
-                      className="h-3 w-3 accent-secondary"
+                      className="h-3 w-3 max-md:h-5 max-md:w-5 accent-secondary"
                       checked={!!service.followUp30}
                       onChange={(e) => handleProposalServiceChange(proposalIndex, serviceIndex, "followUp30", e.target.checked)}
                     />
@@ -2728,7 +2716,7 @@ Crest Pest Control`;
               const hasMap = mapUrl || pageMapImage;
               return (
               <div 
-                className="w-[400px] h-[533px] print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-xl overflow-hidden border-2 border-border print:max-h-none"
+                className="w-full max-w-[400px] aspect-[3/4] h-auto lg:w-[400px] lg:h-[533px] lg:aspect-auto print:w-full print:h-auto print:aspect-[3/4] mx-auto relative rounded-xl overflow-hidden border-2 border-border print:max-h-none"
                 onPaste={(e) => handleMapPasteForPage(e, isDuplicate, dupeIndex)}
                 tabIndex={0}
               >
@@ -2855,8 +2843,8 @@ Crest Pest Control`;
                     Pricing — {proposalName}
                   </span>
                 </div>
-                <div className="p-2 print:p-1.5">
-                  <table className="w-full text-sm">
+                <div className="p-2 print:p-1.5 max-lg:overflow-x-auto">
+                  <table className="w-full text-sm max-lg:min-w-[440px]">
                     <thead>
                       <tr className="border-b border-border text-xs font-bold uppercase">
                         <th className="text-left px-2 py-1">Service</th>
@@ -2985,7 +2973,7 @@ Crest Pest Control`;
                                   setProposalTargetPestsEdited(prev => ({ ...prev, [proposalIndex]: true }));
                                   pendingAutoSaveRef.current = true;
                                 }}
-                                className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                                className="text-destructive max-md:p-1.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
                                 aria-label={`Remove ${pest}`}
                               >
                                 <X className="w-3 h-3" />
@@ -3089,7 +3077,7 @@ Crest Pest Control`;
                               <span className="text-foreground">{mat.name} <span className="font-semibold">×{mat.quantity}</span></span>
                               {!isReadOnly && (
                                 <button type="button" onClick={() => { removeSetupMaterial(proposalIndex, index); pendingAutoSaveRef.current = true; }}
-                                  className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity no-print">
+                                  className="text-destructive max-md:p-1.5 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print">
                                   <X className="w-3 h-3" />
                                 </button>
                               )}
@@ -3111,9 +3099,9 @@ Crest Pest Control`;
                             ))}
                           </div>
                           <div className="flex gap-1">
-                            <Input value={newMaterialName} onChange={(e) => setNewMaterialName(e.target.value)} placeholder="Custom item" className="h-5 text-[10px] flex-1" />
-                            <Input value={newMaterialQty} onChange={(e) => setNewMaterialQty(e.target.value)} placeholder="Qty" className="h-5 text-[10px] w-12" />
-                            <Button type="button" size="sm" variant="outline" className="h-5 px-1.5 text-[10px]"
+                            <Input value={newMaterialName} onChange={(e) => setNewMaterialName(e.target.value)} placeholder="Custom item" className="h-5 max-md:h-9 text-[10px] flex-1" />
+                            <Input value={newMaterialQty} onChange={(e) => setNewMaterialQty(e.target.value)} placeholder="Qty" className="h-5 max-md:h-9 text-[10px] w-12" />
+                            <Button type="button" size="sm" variant="outline" className="h-5 max-md:h-9 px-1.5 max-md:px-3 text-[10px]"
                               onClick={() => { addSetupMaterial(proposalIndex, newMaterialName, newMaterialQty); setNewMaterialName(""); setNewMaterialQty(""); pendingAutoSaveRef.current = true; }}>
                               <Plus className="w-3 h-3" />
                             </Button>
@@ -3235,7 +3223,7 @@ Crest Pest Control`;
                   <div className="p-3 print:p-2 flex items-center gap-2.5 print:gap-2">
                     <img src={crestBugBlack} alt="" className="h-10 print:h-12 w-auto shrink-0" />
                     <div className="flex-1 flex flex-col">
-                      <div className="h-[38px] print:h-[42px] relative">
+                      <div className="h-[38px] max-md:h-12 print:h-[42px] relative">
                         {sigData ? (
                           <div className="h-full flex items-center gap-2">
                             <div className="flex-1 flex items-center justify-center border rounded bg-muted/30 h-full">
@@ -3246,11 +3234,11 @@ Crest Pest Control`;
                                 <Button variant="outline" size="sm" onClick={() => {
                                   setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
                                   pendingAutoSaveRef.current = true;
-                                }} className="h-7 text-xs">Re-sign</Button>
+                                }} className="h-7 max-md:h-9 text-xs">Re-sign</Button>
                                 <Button variant="outline" size="sm" onClick={() => {
                                   setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
                                   pendingAutoSaveRef.current = true;
-                                }} className="h-7 text-xs text-destructive hover:text-destructive">
+                                }} className="h-7 max-md:h-9 text-xs text-destructive hover:text-destructive">
                                   <X className="w-3 h-3 mr-1" /> Delete
                                 </Button>
                               </div>
@@ -3261,7 +3249,7 @@ Crest Pest Control`;
                                   variant="outline"
                                   size="sm"
                                   onClick={() => requestClearSignature(proposalIndex)}
-                                  className="h-7 text-xs text-destructive hover:text-destructive"
+                                  className="h-7 max-md:h-9 text-xs text-destructive hover:text-destructive"
                                   title="Clear this signature (admin password required)"
                                 >
                                   <X className="w-3 h-3 mr-1" /> Clear
@@ -3345,6 +3333,7 @@ Crest Pest Control`;
             </div>
             <div className="max-w-3xl mx-auto relative group">
               <video
+                playsInline
                 id="property-video-1"
                 src={videoUrl}
                 controls
@@ -3364,10 +3353,10 @@ Crest Pest Control`;
       )}
 
       {/* Header */}
-      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5 sticky top-0 z-20 lg:static">
+      <div data-pdf-capture="0" className="print-header bg-card shadow-md border-b border-border px-3 sm:px-6 py-3 sm:py-4 print:py-2.5">
         <div className="max-w-[1800px] mx-auto">
           {/* Top row: Logo + Title + Action buttons */}
-          <div className="flex items-center gap-3 mb-2 print:mb-1">
+          <div className="flex items-center gap-3 mb-2 print:mb-1 max-lg:flex-wrap">
             <div className="flex items-center gap-3 shrink-0">
               <div className="flex flex-col items-center">
                 <img src={crestLogo} alt="Crest Pest Control" className="h-16 lg:h-24 w-auto object-contain" />
@@ -3472,6 +3461,7 @@ Crest Pest Control`;
                 staffName={currentStaff?.fullName}
                 linkedId={fieldroutesCustomerId}
                 linkedLabel={editableCustomer || null}
+                linkedLoginLink={fieldroutesLoginLink}
                 onSelect={(c) => {
                   setFieldroutesCustomerId(c.customer_id);
                   setFieldroutesLoginLink(c.loginLink || null);
@@ -3492,6 +3482,7 @@ Crest Pest Control`;
                   <Input
                     value={fieldroutesLoginLink ?? ""}
                     onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                    onBlur={() => saveLoginLink(fieldroutesCustomerId, fieldroutesLoginLink, "manual-paste")}
                     placeholder="https://crestpest.pestportals.com/?loginHash=…"
                     className="text-xs font-mono"
                   />
@@ -3525,7 +3516,7 @@ Crest Pest Control`;
           )}
 
           {/* Info grid */}
-          <div className="grid grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-3 gap-x-6 gap-y-1 print:gap-x-4 print:gap-y-0">
             {/* Column 1: Customer Details */}
             <div>
               <p className="font-semibold text-foreground text-base mb-0.5 print:text-sm">Customer Details:</p>
@@ -3838,17 +3829,17 @@ Crest Pest Control`;
                         {product.name}{product.chemical ? ` (${product.chemical})` : ""}
                       </p>
                       <button type="button" onClick={() => setDisplayedProducts(prev => prev.filter((_, i) => i !== index))}
-                        className="no-print opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity">
+                        className="no-print max-md:p-1.5 md:opacity-0 md:group-hover:opacity-100 text-destructive hover:text-destructive/80 transition-opacity">
                         <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
                 </div>
                 <div className="no-print mt-2 pt-2 border-t border-border space-y-1">
-                  <div className="flex gap-1">
-                    <Input value={customProductName} onChange={(e) => setCustomProductName(e.target.value)} placeholder="Product name" className="h-6 text-xs flex-1" />
-                    <Input value={customProductChemical} onChange={(e) => setCustomProductChemical(e.target.value)} placeholder="Chemical (optional)" className="h-6 text-xs flex-1" />
-                    <Button type="button" size="sm" variant="outline" className="h-6 px-2"
+                  <div className="flex gap-1 max-md:flex-wrap">
+                    <Input value={customProductName} onChange={(e) => setCustomProductName(e.target.value)} placeholder="Product name" className="h-6 max-md:h-9 text-xs flex-1" />
+                    <Input value={customProductChemical} onChange={(e) => setCustomProductChemical(e.target.value)} placeholder="Chemical (optional)" className="h-6 max-md:h-9 text-xs flex-1" />
+                    <Button type="button" size="sm" variant="outline" className="h-6 max-md:h-9 px-2 max-md:px-3"
                       onClick={() => {
                         if (customProductName.trim()) {
                           setDisplayedProducts(prev => [...prev, { name: customProductName.trim(), chemical: customProductChemical.trim() }]);
@@ -4005,11 +3996,11 @@ Crest Pest Control`;
 
           {/* Property Images Grid */}
           {propertyImages.length > 0 ? (
-            <div className="grid grid-cols-3 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print:gap-2 print:grid-cols-4">
               {propertyImages.map((item, index) => (
                 <div
                   key={index}
-                  className={`space-y-2 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? "opacity-50" : ""}`}
+                  className={`space-y-2 cursor-grab active:cursor-grabbing ${draggedImageIndex === index ? "opacity-50" : ""} ${annotatingImageIndex === index ? "max-md:col-span-full" : ""}`}
                   draggable
                   onDragStart={() => handleImageDragStart(index)}
                   onDragOver={(e) => handleImageDragOver(e, index)}
@@ -4034,7 +4025,7 @@ Crest Pest Control`;
                       <>
                         <img src={item.image} alt={`Property ${index + 1}`} className="w-full h-full object-cover pointer-events-none" />
                         <Button size="icon" variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity no-print"
+                          className="absolute top-1 right-1 h-6 w-6 max-md:h-9 max-md:w-9 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
                           onClick={(e) => {
                             e.stopPropagation();
                             setPropertyImages((prev) => prev.filter((_, i) => i !== index));
@@ -4043,10 +4034,35 @@ Crest Pest Control`;
                           <X className="w-3 h-3" />
                         </Button>
                         <Button size="sm" variant="secondary"
-                          className="absolute bottom-1 right-1 h-6 px-2 text-[10px] no-print"
+                          className="absolute bottom-1 right-1 h-6 max-md:h-9 px-2 max-md:px-3 text-[10px] max-md:text-xs no-print"
                           onClick={(e) => { e.stopPropagation(); setAnnotatingImageIndex(index); }}>
                           <Edit className="w-3 h-3 mr-1" /> Draw
                         </Button>
+                        {/* iOS has no HTML5 drag-and-drop; give phones arrow buttons to reorder */}
+                        <div className="absolute bottom-1 left-1 flex gap-1 md:hidden no-print">
+                          <Button size="icon" variant="secondary" className="h-9 w-9" disabled={index === 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPropertyImages((prev) => {
+                                const updated = [...prev];
+                                [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
+                                return updated;
+                              });
+                            }}>
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="secondary" className="h-9 w-9" disabled={index === propertyImages.length - 1}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPropertyImages((prev) => {
+                                const updated = [...prev];
+                                [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
+                                return updated;
+                              });
+                            }}>
+                            <ArrowRight className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </>
                     )}
                   </div>
@@ -4058,7 +4074,7 @@ Crest Pest Control`;
               ))}
             </div>
           ) : (
-            <div className="no-images-placeholder h-[400px] flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+            <div className="no-images-placeholder h-[400px] max-md:h-48 flex items-center justify-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
               <p className="text-lg text-center px-4">
                 No images uploaded yet.
                 <br />
@@ -4159,6 +4175,7 @@ Crest Pest Control`;
                 <h2 className="text-lg font-semibold text-foreground mb-3">Property Video</h2>
                 <div className="max-w-3xl mx-auto relative group">
                   <video
+                    playsInline
                     id="property-video-bottom"
                     src={videoUrl2}
                     controls
@@ -4179,6 +4196,7 @@ Crest Pest Control`;
               <div>
                 <div className="max-w-3xl mx-auto relative group">
                   <video
+                    playsInline
                     id="portal-walkthrough-video"
                     src="/videos/client-portal-video.mp4"
                     controls
@@ -4199,6 +4217,7 @@ Crest Pest Control`;
               <div>
                 <div className="max-w-3xl mx-auto relative group">
                   <video
+                    playsInline
                     id="hoa-portal-video"
                     src="/videos/hoa-portal-video.mp4"
                     controls
@@ -4231,7 +4250,7 @@ Crest Pest Control`;
             <p className="text-xs text-muted-foreground mb-2">
               Sign below. You can lift the pen between strokes — your signature won't be saved until you tap Done.
             </p>
-            <div className="border-2 rounded-md bg-white" style={{ height: "60vh", minHeight: 360 }}>
+            <div className="border-2 rounded-md bg-white h-[45dvh] min-h-[240px] sm:h-[60vh] sm:min-h-[360px]">
               <SignatureCanvas
                 ref={modalSignatureRef}
                 onSave={(data) => setModalSignatureDraft(data)}
