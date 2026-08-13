@@ -45,12 +45,17 @@ export const APPROVED_COMMERCIAL_MATERIALS: ApprovedMaterial[] = [
   { name: "Maxforce Quantum Ant Bait", activeIngredient: "Imidacloprid",                           epa: "432-1506",  sdsUrl: "/sds/Maxforce_Quantum_SDS.pdf" },
   { name: "Niban Granular Bait",       activeIngredient: "Orthoboric Acid",                         epa: "64405-2" },
   { name: "Nyguard IGR Concentrate",   activeIngredient: "Pyriproxyfen",                           epa: "1021-1603", sdsUrl: "/sds/Nyguard_IGR_SDS.pdf" },
+  { name: "Nibor-D Insecticide",       activeIngredient: "Disodium Octaborate",                    epa: "64405-8" },
+  { name: "Neogen SureKill SK100",     activeIngredient: "Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide", epa: "47000-155" },
   { name: "OneGuard Multi MoA",        activeIngredient: "Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide", epa: "1021-2807" },
   { name: "Onslaught FastCap",         activeIngredient: "Esfenvalerate, Prallethrin, PBO",        epa: "1021-2574", sdsUrl: "/sds/Onslaught_FC_SDS.pdf" },
   { name: "Optigard Flex Liquid",      activeIngredient: "Thiamethoxam",                           epa: "100-1306",  sdsUrl: "/sds/Optigard_Flex_SDS.pdf" },
   { name: "Phantom",                   activeIngredient: "Chlorfenapyr",                           epa: "241-392",   sdsUrl: "/sds/Phantom_SDS.pdf" },
   { name: "PT Alpine Flea & Bed Bug",  activeIngredient: "Dinotefuran, Pyriproxyfen, Prallethrin", epa: "499-540",   sdsUrl: "/sds/PT_Alpine_Flea_Bed_Bug_SDS.pdf" },
   { name: "PT Wasp Freeze II",         activeIngredient: "Prallethrin",                            epa: "499-550",   sdsUrl: "/sds/PT_Wasp_Freeze_SDS.pdf" },
+  { name: "ProFoam Platinum",          activeIngredient: "Foaming agent (no pesticide active ingredient)", epa: "Exempt" },
+  { name: "Invade Bio Cleaner",        activeIngredient: "Citrus oil, microbes, surfactants",      epa: "Exempt" },
+  { name: "Take Down II Soft Bait",    activeIngredient: "Bromethalin",                            epa: "7173-355" },
   { name: "Shockwave",                 activeIngredient: "Cypermethrin, Imiprothrin, PBO",         epa: "1021-1798", sdsUrl: "/sds/Shockwave_SDS.pdf" },
   { name: "Temprid FX",                activeIngredient: "Imidacloprid, Beta-Cyfluthrin",          epa: "432-1483",  sdsUrl: "/sds/Temprid_FX_SDS.pdf" },
   { name: "Termidor SC",               activeIngredient: "Fipronil",                               epa: "7969-210",  sdsUrl: "/sds/Termidor_SC_SDS.pdf" },
@@ -164,8 +169,8 @@ export default function CommercialApprovedMaterials({ highlightOnly, compact }: 
         </table>
       </div>
       <p className="text-[10.5px] text-muted-foreground italic leading-snug">
-        Only products with a current Safety Data Sheet on file are listed.
-        Each SDS link opens the manufacturer's PDF directly.
+        SDS links open the manufacturer's PDF directly. For newly added products
+        without a hosted PDF yet, the link opens a manufacturer SDS search.
       </p>
     </div>
   );
