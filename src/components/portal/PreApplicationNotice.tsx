@@ -71,6 +71,12 @@ const PRODUCTS: string[] = [
   "In2Care Mix (Pyriproxyfen, Beauveria bassiana Strain GHA)",
   "Termidor SC (Fipronil)",
   "Invade Hot Spot +",
+  "Invade Bio Cleaner (Citrus Oil, Microbes, Surfactants)",
+  "Nibor-D Insecticide (Disodium Octaborate)",
+  "Nibor-D Foam + IGR (Disodium Octaborate)",
+  "Neogen SureKill SK100 (Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide)",
+  "ProFoam Platinum (Foaming Agent)",
+  "Take Down II Soft Bait (Bromethalin)",
 ];
 
 function getCheckedPests(property: PreApplicationProperty): Set<string> {
