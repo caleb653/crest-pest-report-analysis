@@ -67,6 +67,12 @@ const PRODUCT_INFO: Record<string, { ai: string; sds?: string }> = {
   "Shockwave": { ai: "Cypermethrin, Imiprothrin, PBO", sds: "/sds/Shockwave_SDS.pdf" },
   "Temprid FX": { ai: "Imidacloprid, Beta-Cyfluthrin", sds: "/sds/Temprid_FX_SDS.pdf" },
   "Termidor SC": { ai: "Fipronil", sds: "/sds/Termidor_SC_SDS.pdf" },
+  "Nibor-D Insecticide": { ai: "Disodium Octaborate" },
+  "Nibor-D Foam + IGR": { ai: "Disodium Octaborate" },
+  "Neogen SureKill SK100": { ai: "Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide" },
+  "ProFoam Platinum": { ai: "Foaming Agent (no pesticide active ingredient)" },
+  "Invade Bio Cleaner": { ai: "Citrus Oil, Microbes, Surfactants" },
+  "Take Down II Soft Bait": { ai: "Bromethalin" },
 };
 
 // Loose name matcher: exact normalized hit, else longest key contained in the

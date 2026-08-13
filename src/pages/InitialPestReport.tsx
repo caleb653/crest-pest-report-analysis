@@ -227,6 +227,12 @@ const PRODUCT_OPTIONS = [
   "Advion Microflow",
   "Optigard",
   "Crossfire Bedbug Concentrate",
+  "Nibor-D Insecticide",
+  "Nibor-D Foam + IGR",
+  "Neogen SureKill SK100",
+  "ProFoam Platinum",
+  "Invade Bio Cleaner",
+  "Take Down II Soft Bait",
   "Other",
 ];
 

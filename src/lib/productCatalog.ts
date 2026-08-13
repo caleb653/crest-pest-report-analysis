@@ -84,6 +84,9 @@ const RAW_CATALOG: Array<[string, string, string, string, string?]> = [
   ["PT Alpine Flea & Bed Bug", "BASF", "fl oz", "fl oz", "499-540"],
   ["PT Alpine Fly Bait", "BASF", "fl oz", "fl oz", "499-568"],
   ["PT Wasp Freeze", "PT", "fl oz", "fl oz", "499-550"],
+  ["ProFoam Platinum", "Rockwell Labs", "fl oz", "gal", "None"],
+  ["Invade Bio Cleaner", "Rockwell Labs", "fl oz", "gal", "None"],
+  ["Take Down II Soft Bait", "Liphatech", "grams", "grams", "7173-355"],
 ];
 
 export const CATALOG_PRODUCTS: CatalogProduct[] = RAW_CATALOG.map(([name, manufacturer, conc, dil, epa]) => ({

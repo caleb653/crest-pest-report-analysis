@@ -204,6 +204,12 @@ const RightToTreat = () => {
                 <li>Advion Microflow (Indoxacarb)</li>
                 <li>Optigard (Thiamethoxam)</li>
                 <li>Crossfire Bedbug Concentrate (Clothianidin, Metofluthrin, Piperonyl Butoxide)</li>
+                <li>Nibor-D Insecticide (Disodium Octaborate)</li>
+                <li>Nibor-D Foam + IGR (Disodium Octaborate)</li>
+                <li>Neogen SureKill SK100 (Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide)</li>
+                <li>ProFoam Platinum (Foaming Agent)</li>
+                <li>Invade Bio Cleaner (Citrus Oil, Microbes, Surfactants)</li>
+                <li>Take Down II Soft Bait (Bromethalin)</li>
               </ul>
             </div>
 
