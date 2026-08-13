@@ -217,6 +217,12 @@ const PRODUCT_LIST = [
   { name: "Advion Microflow", chemical: "Indoxacarb" },
   { name: "Optigard", chemical: "Thiamethoxam" },
   { name: "Crossfire Bedbug Concentrate", chemical: "Clothianidin, Metofluthrin, Piperonyl Butoxide" },
+  { name: "Nibor-D Insecticide", chemical: "Disodium Octaborate" },
+  { name: "Nibor-D Foam + IGR", chemical: "Disodium Octaborate" },
+  { name: "Neogen SureKill SK100", chemical: "Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide" },
+  { name: "ProFoam Platinum", chemical: "Foaming Agent (no pesticide active ingredient)" },
+  { name: "Invade Bio Cleaner", chemical: "Citrus Oil, Microbes, Surfactants" },
+  { name: "Take Down II Soft Bait", chemical: "Bromethalin" },
 ];
 
 const formatFrequency = (freq: string | number): string => {
