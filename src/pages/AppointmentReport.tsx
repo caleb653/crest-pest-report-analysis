@@ -54,6 +54,8 @@ const PRODUCT_OPTIONS = [
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
   "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
   "Crossfire Bedbug Concentrate", "Other",
+  "Nibor-D Insecticide", "Nibor-D Foam + IGR", "Neogen SureKill SK100",
+  "ProFoam Platinum", "Invade Bio Cleaner", "Take Down II Soft Bait",
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
