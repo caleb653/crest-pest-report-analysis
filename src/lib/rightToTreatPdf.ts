@@ -42,6 +42,12 @@ const POSSIBLE_CHEMICALS = [
   "OneGuard (Lambda-cyhalothrin, Prallethrin, Pyriproxyfen, Piperonyl Butoxide)",
   "Advion Microflow (Indoxacarb)", "Optigard (Thiamethoxam)",
   "Crossfire Bedbug Concentrate (Clothianidin, Metofluthrin, Piperonyl Butoxide)",
+  "Nibor-D Insecticide (Disodium Octaborate)",
+  "Nibor-D Foam + IGR (Disodium Octaborate)",
+  "Neogen SureKill SK100 (Pyrethrins, Piperonyl Butoxide, N-Octyl Bicycloheptene Dicarboximide)",
+  "ProFoam Platinum (Foaming Agent)",
+  "Invade Bio Cleaner (Citrus Oil, Microbes, Surfactants)",
+  "Take Down II Soft Bait (Bromethalin)",
 ];
 
 export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
