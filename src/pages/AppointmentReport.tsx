@@ -53,9 +53,9 @@ const PRODUCT_OPTIONS = [
   "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
   "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
   "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
-  "Crossfire Bedbug Concentrate", "Other",
+  "Crossfire Bedbug Concentrate",
   "Nibor-D Insecticide", "Nibor-D Foam + IGR", "Neogen SureKill SK100",
-  "ProFoam Platinum", "Invade Bio Cleaner", "Take Down II Soft Bait",
+  "ProFoam Platinum", "Invade Bio Cleaner", "Take Down II Soft Bait", "Other",
 ];
 
 const EQUIPMENT_OPTIONS = ["Rodent Bait Stations", "Rodent Traps", "Mosquito Buckets", "Fly Light", "Pest Monitors"];
