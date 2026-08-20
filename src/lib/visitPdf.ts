@@ -356,6 +356,79 @@ export function buildApartmentVisitPdfData(opts: {
   };
 }
 
+/**
+ * Single-unit report for one visit — "what happened at this unit on this
+ * day". Used by the per-unit download buttons in the apartment portals
+ * (admin + PM), alongside the whole-visit PDF.
+ */
+export function buildApartmentUnitVisitPdfData(opts: {
+  service: any;
+  unitDetail: any;
+  propertyName?: string;
+  isHOA?: boolean;
+}): VisitPdfData {
+  const { service: s, unitDetail: u, propertyName, isHOA } = opts;
+  const kind = u?.kind === "inspection" ? "inspection" : "service";
+  const unitNumber = String(u?.unit_number || "—");
+
+  const productsText = Array.isArray(u?.products_used)
+    ? (u.products_used as any[]).map((p: any) => (typeof p === "string" ? p : p?.name)).filter(Boolean).join(", ")
+    : (u?.products_used ? String(u.products_used) : "");
+
+  const fields: [string, string][] = [];
+  if (u?.target_pest) fields.push(["Target Pest", String(u.target_pest)]);
+  if (u?.pest_activity && u.pest_activity !== "None") fields.push(["Activity Level", String(u.pest_activity)]);
+  if (productsText) fields.push(["Products", productsText]);
+  if (u?.notes) fields.push(["Notes", String(u.notes)]);
+
+  const badges = [kind === "inspection" ? "Inspection" : "Service"];
+  if (u?.sanitization_concern) badges.push("Sanitization Concern");
+
+  const sections: VisitSection[] = [{
+    type: "units",
+    title: isHOA ? "Area / Unit Report" : "Unit Report",
+    units: [{
+      title: unitNumber,
+      status: u?.status ? friendlyUnitStatus(u.status, kind as any) : undefined,
+      badges,
+      fields,
+      findings: u?.findings ? String(u.findings) : undefined,
+      followUp: u?.follow_up_needed === true,
+      photos: (Array.isArray(u?.photos) ? u.photos : [])
+        .map((p: any) => (typeof p === "string" ? p : p?.url))
+        .filter(Boolean),
+    }],
+  }];
+
+  const meta: [string, string][] = [
+    ["Unit", unitNumber],
+    ["Date", fmtVisitDate(s.service_date)],
+    ["Time", fmtVisitTime(s.service_time)],
+    ["Technician", s.technician || ""],
+    ["Service", s.service_type || ""],
+  ].filter(([, v]) => !!v) as [string, string][];
+
+  const flags: string[] = [];
+  if (u?.follow_up_needed === true) flags.push("Follow-up needed for this unit");
+
+  return {
+    title: kind === "inspection" ? "Unit Inspection Report" : "Unit Service Report",
+    subtitle: propertyName,
+    meta,
+    flags,
+    sections,
+    pesticideNotice: true,
+    apartmentDisclaimer: !isHOA,
+  };
+}
+
+/** Filename for a single-unit visit PDF, e.g. `unit-204-2026-08-12`. */
+export function unitVisitPdfFilename(unitNumber: unknown, serviceDate: unknown): string {
+  const unit = String(unitNumber || "unit").trim().replace(/[^A-Za-z0-9.-]+/g, "_") || "unit";
+  const date = String(serviceDate || "").slice(0, 10) || "visit";
+  return `unit-${unit}-${date}`;
+}
+
 // ─── Legal texts ────────────────────────────────────────────────────────
 
 const PESTICIDE_NOTICE_INTRO =

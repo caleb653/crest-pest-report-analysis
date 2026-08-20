@@ -25,7 +25,7 @@ import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
-import { buildApartmentVisitPdfData } from "@/lib/visitPdf";
+import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
@@ -2936,6 +2936,15 @@ const PropertyDashboard = ({
                         <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                       </Button>
                     )}
+                    <VisitPdfButton
+                      filename={unitVisitPdfFilename(unit.unit_number, s.service_date)}
+                      getData={() => buildApartmentUnitVisitPdfData({
+                        service: s,
+                        unitDetail: unit,
+                        propertyName: property.name,
+                        isHOA,
+                      })}
+                    />
                   </div>
                   <div className="p-3 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                     <div className="md:col-span-2 space-y-2">

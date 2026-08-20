@@ -44,7 +44,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
-import { buildApartmentVisitPdfData } from "@/lib/visitPdf";
+import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 
@@ -1326,6 +1326,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                           </Button>
                         )}
+                        <VisitPdfButton
+                          filename={unitVisitPdfFilename(u.unit_number, s.service_date)}
+                          getData={() => buildApartmentUnitVisitPdfData({
+                            service: s,
+                            unitDetail: u,
+                            propertyName: property?.name,
+                            isHOA,
+                          })}
+                        />
                         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />
                       </div>
                     </button>
@@ -2010,6 +2019,18 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       >
                                         <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                                       </Button>
+                                    )}
+                                    {unitDetail && (
+                                      <VisitPdfButton
+                                        className={isFreeAndClearStatus(unitDetail.status) ? undefined : "ml-auto"}
+                                        filename={unitVisitPdfFilename(unitDetail.unit_number, service.service_date)}
+                                        getData={() => buildApartmentUnitVisitPdfData({
+                                          service,
+                                          unitDetail,
+                                          propertyName: property?.name,
+                                          isHOA,
+                                        })}
+                                      />
                                     )}
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-0.5">{(() => {
