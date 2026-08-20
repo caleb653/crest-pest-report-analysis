@@ -114,6 +114,10 @@ type SlotCandidate = {
   feasible?: "feasible" | "tight" | "not_feasible";
   reasons?: string[];
   off_by_min?: number | null;
+  // Scheduling-note extras: the slot's ETA falls outside the clock band the
+  // customer's note asks for (day itself is legal — office picks the window).
+  note_time_conflict?: boolean;
+  note_time_rule?: string;
 };
 
 type DayGroup = { date: string; weekday: string; slots: SlotCandidate[] };
@@ -129,6 +133,13 @@ type FindResult = {
   stops_in_horizon: number;
   day_routes?: DayRoute[];
   error?: string;
+  // Special-scheduling note on the customer at this address (backend filters
+  // note-forbidden days out entirely; these fields exist so the office SEES why).
+  scheduling_note?: string | null;
+  note_rules?: string[];
+  note_manual?: boolean;
+  note_confirm?: boolean;
+  note_blocked_dates?: { date: string; reason: string }[];
 };
 
 type CheckResult = {
@@ -140,6 +151,10 @@ type CheckResult = {
   summary: string;
   options: SlotCandidate[];
   routes_considered: number;
+  scheduling_note?: string | null;
+  note_rules?: string[];
+  note_manual?: boolean;
+  note_confirm?: boolean;
 };
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
@@ -996,6 +1011,29 @@ function FindMode({
 
       {result && (
         <div className="mt-6 space-y-6">
+          {result.scheduling_note && (
+            <div className={`rounded-md border-2 p-3 ${result.note_manual ? "border-red-500 bg-red-500/10" : "border-amber-500 bg-amber-500/10"}`}>
+              <p className="text-sm font-semibold">
+                {result.note_manual
+                  ? "🛑 Call to schedule — this customer's note says not to auto-book"
+                  : "📌 Scheduling note on this customer — days it forbids are already hidden"}
+              </p>
+              <p className="text-sm mt-1 italic">“{result.scheduling_note}”</p>
+              {(result.note_rules?.length ?? 0) > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {result.note_rules!.map((r) => (
+                    <Badge key={r} variant="outline" className="border-amber-600 text-amber-700 dark:text-amber-400">{r}</Badge>
+                  ))}
+                </div>
+              )}
+              {(result.note_blocked_dates?.length ?? 0) > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Hidden by the note:{" "}
+                  {result.note_blocked_dates!.map((b) => `${b.date} — ${b.reason}`).join(" · ")}
+                </p>
+              )}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             Scored {result.routes_scored} route-openings across{" "}
             {result.stops_in_horizon} stops. Geocoded to{" "}
@@ -1212,6 +1250,11 @@ function SlotCard({
           {isBestFit && (
             <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide">
               ★ Best Fit
+            </Badge>
+          )}
+          {c.note_time_conflict && (
+            <Badge className="bg-amber-500 hover:bg-amber-500 text-white font-semibold">
+              ⚠ {c.note_time_rule ?? "outside the note's time window"}
             </Badge>
           )}
         </div>
@@ -1570,6 +1613,12 @@ function VerdictBanner({ result }: { result: CheckResult }) {
         <p className="mt-1 text-xs opacity-80">
           {result.address} · {result.date} · {result.requested_window} window
         </p>
+        {result.scheduling_note && (
+          <p className="mt-2 text-xs">
+            {result.note_manual ? "🛑" : "📌"} Scheduling note: <span className="italic">“{result.scheduling_note}”</span>
+            {(result.note_rules?.length ?? 0) > 0 && <> — {result.note_rules!.join(" · ")}</>}
+          </p>
+        )}
       </div>
     </div>
   );
