@@ -13,7 +13,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Lock, Pencil, Plus, Trophy, Unlock, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Lock, Pencil, Plus, RefreshCw, Sparkles, Trophy, Unlock, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { STAFF_NAMES } from "@/lib/staffRoster";
+import { useCurrentStaff } from "@/hooks/useCurrentStaff";
 
 // Everyone at the company (login roster is the source of truth).
 const PEOPLE = Array.from(new Set(STAFF_NAMES));
@@ -44,6 +45,170 @@ const entryOf = (c: Competition, person: string): Entry => {
 };
 
 const firstName = (full: string) => full.split(" ")[0];
+
+// ── Self-Generated Sales (auto-computed from FieldRoutes) ───────────────────
+// 1x route-manager upsell (bait boxes / mosquito on an existing recurring
+// customer), 2x self-generated net-new residential, 3x self-generated
+// commercial. Data comes from the contest-selfgen edge function (Cloud Run →
+// BigQuery); nothing here is hand-entered.
+
+type SelfGenEvent = {
+  event_type: "upsell" | "selfgen_residential" | "selfgen_commercial";
+  points: number;
+  event_date: string | null;
+  customer: string;
+  service_type: string | null;
+  credited_to: string | null;
+};
+type SelfGenResult = {
+  start_date: string;
+  end_date: string;
+  leaderboard: { name: string; points: number; upsells: number; selfgen_residential: number; selfgen_commercial: number }[];
+  events: SelfGenEvent[];
+  needs_attribution: SelfGenEvent[];
+};
+
+const EVENT_LABELS: Record<SelfGenEvent["event_type"], string> = {
+  upsell: "Upsell",
+  selfgen_residential: "Self-Gen Residential",
+  selfgen_commercial: "Self-Gen Commercial",
+};
+
+const shortDate = (iso: string | null) =>
+  iso ? `${parseInt(iso.slice(5, 7), 10)}/${parseInt(iso.slice(8, 10), 10)}` : "";
+
+function SelfGenSection() {
+  const staff = useCurrentStaff();
+  const [data, setData] = useState<SelfGenResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState("");
+
+  const load = async (start?: string) => {
+    if (!staff) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { data: res, error: fnError } = await supabase.functions.invoke("contest-selfgen", {
+        body: { staffName: staff.fullName, ...(start ? { start_date: start } : {}) },
+      });
+      if (fnError || !res?.ok) throw new Error(res?.error || fnError?.message || "load failed");
+      setData(res.result as SelfGenResult);
+    } catch (e) {
+      setError(String((e as Error).message || e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load once the PinGate identity is known.
+  useEffect(() => { void load(); }, [staff?.fullName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const board = data?.leaderboard ?? [];
+  const maxScore = Math.max(1, ...board.map((r) => r.points));
+  const BAR_MAX_PX = 180;
+  const eventsFor = (name: string) => (data?.events ?? []).filter((e) => e.credited_to === name);
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg flex-wrap">
+          <Sparkles className="w-5 h-5 text-amber-500" />
+          Self-Generated Sales
+          <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5">
+            auto from FieldRoutes
+          </span>
+          <span className="flex-1" />
+          <span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+            since
+            <Input
+              type="date"
+              value={startDate || data?.start_date || ""}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                if (e.target.value) void load(e.target.value);
+              }}
+              className="h-7 w-[140px] text-xs"
+            />
+            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" disabled={loading}
+                    onClick={() => void load(startDate || undefined)}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          1× upsell to an existing customer (bait boxes / mosquito, sold by a route manager) ·
+          2× self-generated net-new residential · 3× self-generated commercial.
+          Self-generated = customer source "Self-Generated" in FieldRoutes. Inspections don't count.
+        </p>
+      </CardHeader>
+      <CardContent>
+        {loading && !data ? (
+          <p className="text-center text-sm text-muted-foreground py-8">Crunching FieldRoutes data…</p>
+        ) : error ? (
+          <p className="text-center text-sm text-destructive py-8">Couldn't load: {error}</p>
+        ) : board.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-8">
+            No qualifying sales yet — set the customer's source to "Self-Generated" in FieldRoutes
+            and make sure Sold By is set to the rep who earned it.
+          </p>
+        ) : (
+          <div className="overflow-x-auto pb-1">
+            <div className="flex items-end gap-2 min-w-[480px]" style={{ minHeight: BAR_MAX_PX + 100 }}>
+              {board.map((row) => {
+                const h = row.points > 0 ? Math.max(8, Math.round((row.points / maxScore) * BAR_MAX_PX)) : 0;
+                return (
+                  <div key={row.name} className="flex-1 min-w-[96px] flex flex-col items-center justify-end gap-1">
+                    <span className="text-sm font-bold text-foreground tabular-nums">{row.points}</span>
+                    <div className="w-full flex justify-center" style={{ height: BAR_MAX_PX }}>
+                      <div className="flex items-end h-full">
+                        <div
+                          title={`${row.name}: ${row.points} pts`}
+                          className="w-9 rounded-t-[4px] bg-primary transition-[height] duration-300"
+                          style={{ height: h }}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full border-t border-border pt-1 text-center">
+                      <span className="text-xs font-medium text-foreground">{firstName(row.name)}</span>
+                    </div>
+                    <div className="w-full space-y-1">
+                      {eventsFor(row.name).map((e, i) => (
+                        <div key={i}
+                             className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-tight text-muted-foreground text-left">
+                          <span className="font-semibold text-foreground">{e.points}×</span>{" "}
+                          {EVENT_LABELS[e.event_type]} · {e.customer}
+                          <span className="text-muted-foreground/70"> ({shortDate(e.event_date)})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {(data?.needs_attribution?.length ?? 0) > 0 && (
+          <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 p-3">
+            <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Caught but not counting — fix "Sold By" in FieldRoutes to award credit
+            </p>
+            <ul className="mt-1 space-y-0.5 text-[11px] text-amber-900/90">
+              {data!.needs_attribution.map((e, i) => (
+                <li key={i}>
+                  {shortDate(e.event_date)} · {EVENT_LABELS[e.event_type]} · {e.customer}
+                  {e.service_type ? ` — ${e.service_type}` : ""} (Sold By: {e.credited_to || "none"})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Competition() {
   const navigate = useNavigate();
@@ -254,6 +419,8 @@ export default function Competition() {
             <Trophy className="w-6 h-6 text-amber-500" /> Crest Competitions
           </h1>
         </div>
+
+        <SelfGenSection />
 
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-10">Loading…</p>
