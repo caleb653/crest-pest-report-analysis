@@ -24,7 +24,7 @@ const corsHeaders = {
 // Mirrors src/lib/staffRoster.ts / the other scheduling functions.
 const KNOWN_STAFF = new Set([
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle",
+  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
 function json(body: unknown, status = 200) {

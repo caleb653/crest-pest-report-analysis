@@ -26,6 +26,7 @@ const STAFF: { username: string; fullName: string; email: string }[] = [
   { username: "nstovall", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
   { username: "ccarnival", fullName: "Cade Carnival",  email: "ccarnival@crestpestcontrol.com" },
   { username: "blyttle",   fullName: "Brock Lyttle",   email: "blyttle@crestpestcontrol.com" },
+  { username: "jibarbo",   fullName: "Joseph Ibarbo",  email: "jibarbo@crestpestco.com" },
 ];
 const findStaffByName = (n?: string | null) => STAFF.find(s => s.fullName === n) || null;
 

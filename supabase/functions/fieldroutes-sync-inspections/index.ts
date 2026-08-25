@@ -37,6 +37,7 @@ const KNOWN_STAFF = new Set([
   "Nick Stovall",
   "Cade Carnival",
   "Brock Lyttle",
+  "Joseph Ibarbo",
 ]);
 
 // Whitelist of FieldRoutes service_type IDs that are true inspection appointments.

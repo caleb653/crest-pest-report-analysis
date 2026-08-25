@@ -24,7 +24,7 @@ const corsHeaders = {
 
 const KNOWN_STAFF = new Set([
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle",
+  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;

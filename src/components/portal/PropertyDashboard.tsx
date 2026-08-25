@@ -180,6 +180,7 @@ const TECHNICIAN_OPTIONS = [
   "Michael Muniz",
   "Nick Stovall",
   "Brock Lyttle",
+  "Joseph Ibarbo",
 ];
 
 const PRODUCT_OPTIONS_LIST = [

@@ -59,7 +59,7 @@ const PRESET_NOTES = [
 const TECHNICIAN_NAMES = [
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
   "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall",
-  "Brock Lyttle",
+  "Brock Lyttle", "Joseph Ibarbo",
 ];
 import CommercialApprovedMaterials from "@/components/portal/CommercialApprovedMaterials";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";

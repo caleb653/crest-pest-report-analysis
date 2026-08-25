@@ -657,7 +657,7 @@ const SlotFinder = () => {
   const staff = useCurrentStaff();
   const navigate = useNavigate();
   useEffect(() => {
-    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham","Nick Stovall","Brock Lyttle"]);
+    const RESTRICTED = new Set(["Michael Muniz","Darrell Tanner","Dylan Gallegos","Jackson Latham","Nick Stovall","Brock Lyttle","Joseph Ibarbo"]);
     if (staff && RESTRICTED.has(staff.fullName)) navigate("/", { replace: true });
   }, [staff, navigate]);
   const days = useMemo(() => upcomingBusinessDays(21), []);
