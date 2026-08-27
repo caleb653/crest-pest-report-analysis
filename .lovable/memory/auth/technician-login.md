@@ -16,3 +16,4 @@ Passwords:
 - jlatham: crest25
 - ccarnival: Crest125!
 - blyttle: Crest250!
+- jibarbo: Crest1400!
