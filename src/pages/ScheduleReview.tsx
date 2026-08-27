@@ -1336,7 +1336,30 @@ type FillStop = {
   pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
   saved_to_fr?: boolean;         // amber — saved as a PENDING write to send later ("Writes awaiting approval")
   far_from_route_min?: number | null;  // >20-min hop from the rest of this route
+  /** EVERY subscription merged into this visit (a customer's same-frequency
+   *  services ride one stop). One FR appointment books PER entry. */
+  subscriptions?: { subscription_id: string; service_type_id?: string; service_type?: string }[];
 };
+
+// One FieldRoutes appointment per subscription on the stop. A merged visit
+// (Bi-Monthly Service + Rodent Bait Boxes on one stop — Christine Cyr) used to
+// push only its anchor subscription; the second service never got booked.
+// Backends without `subscriptions` fall back to the single anchor ids.
+function bookingsOf(s: FillStop): { subscription_id: number; service_type_id: number; service_type_label: string }[] {
+  const multi = (s.subscriptions ?? [])
+    .map((x) => ({
+      subscription_id: Number(x.subscription_id),
+      service_type_id: Number(x.service_type_id) || 0,
+      service_type_label: x.service_type || s.service_label,
+    }))
+    .filter((x) => Number.isFinite(x.subscription_id) && x.subscription_id > 0);
+  if (multi.length > 0) return multi;
+  return [{
+    subscription_id: Number(s.subscription_id),
+    service_type_id: Number(s.service_type_id) || 0,
+    service_type_label: s.service_label,
+  }];
+}
 type FillRouteSummary = {
   stop_count: number;
   onsite_min: number;
@@ -1628,22 +1651,25 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     if (!pending || !staff) return;
     setPendingPushAll(null);
     setBulkPushing(true);
-    const toRow = ({ stop: s, day: d }: { stop: FillStop; day: FillDay }) => ({
-      customer_id: Number(s.customer_id),
-      customer_label: s.customer,
-      service_type_id: Number(s.service_type_id) || 0,
-      service_type_label: s.service_label,
-      date: d.date,
-      start: s.start,
-      end: s.end,
-      duration: s.duration || 30,
-      subscription_id: Number(s.subscription_id),
-      route_id: s.route_id ? Number(s.route_id) : undefined,
-    });
+    // A merged stop expands to one row PER subscription (bookingsOf) — every
+    // service on the visit gets its own FieldRoutes appointment, same day.
+    const toRows = ({ stop: s, day: d }: { stop: FillStop; day: FillDay }) =>
+      bookingsOf(s).map((b) => ({
+        customer_id: Number(s.customer_id),
+        customer_label: s.customer,
+        service_type_id: b.service_type_id,
+        service_type_label: b.service_type_label,
+        date: d.date,
+        start: s.start,
+        end: s.end,
+        duration: s.duration || 30,
+        subscription_id: b.subscription_id,
+        route_id: s.route_id ? Number(s.route_id) : undefined,
+      }));
     let okIds: string[] = [];
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-        body: { staffName: staff.fullName, bulk: pending.items.map(toRow) },
+        body: { staffName: staff.fullName, bulk: pending.items.flatMap(toRows) },
       });
       if (!error && data?.ok && typeof data?.queued_count === "number") {
         okIds = pending.items.map((i) => i.stop.subscription_id);
@@ -1652,14 +1678,16 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     if (!okIds.length) {
       // Older backend without bulk mode: enqueue one at a time (still paced).
       for (const it of pending.items) {
-        try {
-          const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-            body: { staffName: staff.fullName, commit: true, paced: true, ...toRow(it) },
-          });
-          if (!error && data?.ok && (data?.pushed === true || data?.paced === true)) {
-            okIds.push(it.stop.subscription_id);
-          }
-        } catch { /* skip this one */ }
+        let allOk = true;
+        for (const row of toRows(it)) {
+          try {
+            const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+              body: { staffName: staff.fullName, commit: true, paced: true, ...row },
+            });
+            if (!(!error && data?.ok && (data?.pushed === true || data?.paced === true))) allOk = false;
+          } catch { allOk = false; }
+        }
+        if (allOk) okIds.push(it.stop.subscription_id);
       }
     }
     setBulkPushing(false);
@@ -1811,16 +1839,20 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       return;
     }
     try {
-      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-        body: {
-          staffName: staff.fullName, commit: true, paced: true,
-          customer_id: Number(s.customer_id), customer_label: s.customer,
-          service_type_id: Number(s.service_type_id) || 0, service_type_label: s.service_label,
-          date: dayInfo.date, start: s.start, end: s.end, duration: s.duration || 30,
-          subscription_id: Number(s.subscription_id), route_id: Number(rid),
-        },
-      });
-      if (!error && data?.ok === true && (data?.pushed === true || data?.paced === true)) {
+      let allOk = true;
+      for (const b of bookingsOf(s)) {
+        const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+          body: {
+            staffName: staff.fullName, commit: true, paced: true,
+            customer_id: Number(s.customer_id), customer_label: s.customer,
+            service_type_id: b.service_type_id, service_type_label: b.service_type_label,
+            date: dayInfo.date, start: s.start, end: s.end, duration: s.duration || 30,
+            subscription_id: b.subscription_id, route_id: Number(rid),
+          },
+        });
+        if (!(!error && data?.ok === true && (data?.pushed === true || data?.paced === true))) allOk = false;
+      }
+      if (allOk) {
         markPushed(s.subscription_id);
         supabase.functions.invoke("fieldroutes-queue-worker", { body: { kick: true } }).catch(() => {});
         toast.success(`Queued ${s.customer} — the bot writes it within seconds`);
@@ -1838,6 +1870,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     subscription_id: p.subscription_id,
     customer_id: p.customer_id,
     service_type_id: p.service_type_id,
+    subscriptions: (p as { subscriptions?: FillStop["subscriptions"] }).subscriptions,
     customer: p.customer,
     city: p.city,
     address: p.address,
@@ -3585,17 +3618,28 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
       const { data: resp, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
         body: {
           staffName: staff.fullName,
-          bulk: chosen.map((s) => ({
-            customer_id: Number(s.customer_id),
-            customer_label: s.customer,
-            service_type_id: Number(s.service_type_id) || 0,
-            service_type_label: (s.services || []).join(", "),
-            date,
-            start: "08:00", end: "20:00",
-            duration: s.duration || 30,
-            subscription_id: Number(s.subscription_id),
-            route_id: Number(route.route_id) || undefined,
-          })),
+          // One row PER subscription on the visit — merged stops (two services,
+          // one trip) book every service, not just the anchor sub.
+          bulk: chosen.flatMap((s) => {
+            const subs = ((s as { subscriptions?: { subscription_id: string; service_type_id?: string; service_type?: string }[] }).subscriptions ?? [])
+              .filter((x) => Number(x.subscription_id) > 0);
+            const rows = subs.length > 0
+              ? subs.map((x) => ({ sub: Number(x.subscription_id), svc: Number(x.service_type_id) || 0,
+                                   label: x.service_type || (s.services || []).join(", ") }))
+              : [{ sub: Number(s.subscription_id), svc: Number(s.service_type_id) || 0,
+                   label: (s.services || []).join(", ") }];
+            return rows.map((r) => ({
+              customer_id: Number(s.customer_id),
+              customer_label: s.customer,
+              service_type_id: r.svc,
+              service_type_label: r.label,
+              date,
+              start: "08:00", end: "20:00",
+              duration: s.duration || 30,
+              subscription_id: r.sub,
+              route_id: Number(route.route_id) || undefined,
+            }));
+          }),
         },
       });
       if (!error && resp?.ok && typeof resp?.queued_count === "number") {
@@ -4234,32 +4278,38 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   // firing back-to-back). Enqueueing is instant; the bot does the writing.
   const pushOne = async (s: FillStop): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-        body: {
-          staffName: staff!.fullName,
-          // BOTH flags on purpose: a backend that knows `paced` queues for the
-          // paced bot; an older backend falls back to `commit` and pushes
-          // instantly. Either way the write NEVER lands in the pending/approval
-          // flow — no admin sign-in needed.
-          commit: true,
-          paced: true,
-          customer_id: Number(s.customer_id),
-          customer_label: s.customer,
-          service_type_id: Number(s.service_type_id) || 0,
-          service_type_label: s.service_label,
-          date: day.date,
-          start: s.start,
-          end: s.end,
-          duration: s.duration || 30,
-          subscription_id: Number(s.subscription_id),
-          route_id: s.route_id ? Number(s.route_id) : undefined,
-        },
-      });
-      // Only count it when the backend CONFIRMED a real outcome: pushed
-      // (instant write landed) or paced (queued for the paced bot). A bare
-      // ok:true from a stale backend once meant "filed as pending approval" —
-      // that must never render as pushed again.
-      return !error && data?.ok === true && (data?.pushed === true || data?.paced === true);
+      // One appointment PER subscription on the stop (merged visits carry
+      // several — every service books, not just the anchor).
+      let allOk = true;
+      for (const b of bookingsOf(s)) {
+        const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+          body: {
+            staffName: staff!.fullName,
+            // BOTH flags on purpose: a backend that knows `paced` queues for the
+            // paced bot; an older backend falls back to `commit` and pushes
+            // instantly. Either way the write NEVER lands in the pending/approval
+            // flow — no admin sign-in needed.
+            commit: true,
+            paced: true,
+            customer_id: Number(s.customer_id),
+            customer_label: s.customer,
+            service_type_id: b.service_type_id,
+            service_type_label: b.service_type_label,
+            date: day.date,
+            start: s.start,
+            end: s.end,
+            duration: s.duration || 30,
+            subscription_id: b.subscription_id,
+            route_id: s.route_id ? Number(s.route_id) : undefined,
+          },
+        });
+        // Only count it when the backend CONFIRMED a real outcome: pushed
+        // (instant write landed) or paced (queued for the paced bot). A bare
+        // ok:true from a stale backend once meant "filed as pending approval" —
+        // that must never render as pushed again.
+        if (!(!error && data?.ok === true && (data?.pushed === true || data?.paced === true))) allOk = false;
+      }
+      return allOk;
     } catch {
       return false;
     }
@@ -4321,23 +4371,28 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   // up top — that's the send-later button. (Caleb 2026-08-27.)
   const saveOne = async (s: FillStop): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
-        body: {
-          staffName: staff!.fullName,
-          customer_id: Number(s.customer_id),
-          customer_label: s.customer,
-          service_type_id: Number(s.service_type_id) || 0,
-          service_type_label: s.service_label,
-          date: day.date,
-          start: s.start,
-          end: s.end,
-          duration: s.duration || 30,
-          subscription_id: Number(s.subscription_id),
-          route_id: s.route_id ? Number(s.route_id) : undefined,
-        },
-      });
-      // No-commit path answers { ok, queued: row } — anything else didn't save.
-      return !error && data?.ok === true && !!data?.queued;
+      // One pending row PER subscription (merged visits book every service).
+      let allOk = true;
+      for (const b of bookingsOf(s)) {
+        const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+          body: {
+            staffName: staff!.fullName,
+            customer_id: Number(s.customer_id),
+            customer_label: s.customer,
+            service_type_id: b.service_type_id,
+            service_type_label: b.service_type_label,
+            date: day.date,
+            start: s.start,
+            end: s.end,
+            duration: s.duration || 30,
+            subscription_id: b.subscription_id,
+            route_id: s.route_id ? Number(s.route_id) : undefined,
+          },
+        });
+        // No-commit path answers { ok, queued: row } — anything else didn't save.
+        if (!(!error && data?.ok === true && !!data?.queued)) allOk = false;
+      }
+      return allOk;
     } catch {
       return false;
     }
