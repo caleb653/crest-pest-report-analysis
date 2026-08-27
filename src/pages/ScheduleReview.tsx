@@ -509,7 +509,7 @@ const ScheduleReview = () => {
             <EfficiencyMode staff={staff} />
           </TabsContent>
           <TabsContent value="pending" className="mt-4 space-y-6">
-            <PendingFieldRoutesWrites title="Writes awaiting approval (Slot Finder bookings + strays)" />
+            <PendingFieldRoutesWrites title="Writes awaiting approval (saved fill days + Slot Finder bookings)" />
           </TabsContent>
           <TabsContent value="reschedule" className="mt-4 space-y-6">
             <RescheduleBotMode staff={staff} />
@@ -1334,6 +1334,7 @@ type FillStop = {
   flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
   moved?: boolean;               // dragged onto this day by the office
   pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
+  saved_to_fr?: boolean;         // amber — saved as a PENDING write to send later ("Writes awaiting approval")
   far_from_route_min?: number | null;  // >20-min hop from the rest of this route
 };
 type FillRouteSummary = {
@@ -1609,7 +1610,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // and surfaced by the per-day push instead of silently vanishing.
   const bookableOf = (d: FillDay) => d.stops.filter((s) =>
     s.subscription_id && !s.already_scheduled && !s.locked && !s.notification_sent
-    && !s.pushed_to_fr
+    && !s.pushed_to_fr && !s.saved_to_fr
     && (s.route_id || d.route_id)
     && !bulkQueued.has(s.subscription_id));
 
@@ -1776,6 +1777,20 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         ...d,
         stops: d.stops.map((s) => (s.subscription_id === subId && !s.already_scheduled
           ? { ...s, pushed_to_fr: true } : s)),
+      })),
+    }));
+  };
+
+  // Mark one subscription as SAVED-for-later everywhere (day cards + bulk
+  // buttons skip it so a later "Push ALL" can't double-book what's sitting in
+  // the approval queue).
+  const markSaved = (subId: string) => {
+    setResult((prev) => (!prev ? prev : {
+      ...prev,
+      proposed: prev.proposed.map((d) => ({
+        ...d,
+        stops: d.stops.map((s) => (s.subscription_id === subId && !s.already_scheduled
+          ? { ...s, saved_to_fr: true } : s)),
       })),
     }));
   };
@@ -2140,15 +2155,22 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       // a reload or a fresh run, before the FR data sync catches up.
       const res = data.result as FillResult;
       if (!Array.isArray(res?.proposed)) res.proposed = [];
-      const pushedKeys = new Set(
-        ((data.pushed ?? []) as Array<{ subscription_id?: unknown; date?: unknown }>)
-          .map((p) => `${p.subscription_id}|${p.date}`));
-      if (pushedKeys.size) {
+      const queueRows = (data.pushed ?? []) as Array<{ subscription_id?: unknown; date?: unknown; status?: unknown }>;
+      // status "pending" = a day SAVED for later (approval queue) — amber, still
+      // sendable from "Writes awaiting approval". Everything else (auto/
+      // processing/committed) is pushed — grey. Old backends never return
+      // pending rows, so this degrades to the previous behavior.
+      const savedKeys = new Set(queueRows.filter((p) => p.status === "pending")
+        .map((p) => `${p.subscription_id}|${p.date}`));
+      const pushedKeys = new Set(queueRows.filter((p) => p.status !== "pending")
+        .map((p) => `${p.subscription_id}|${p.date}`));
+      if (pushedKeys.size || savedKeys.size) {
         for (const d of res.proposed) {
           for (const s of d.stops) {
-            if (!s.already_scheduled && pushedKeys.has(`${s.subscription_id}|${d.date}`)) {
-              s.pushed_to_fr = true;
-            }
+            if (s.already_scheduled) continue;
+            const k = `${s.subscription_id}|${d.date}`;
+            if (pushedKeys.has(k)) s.pushed_to_fr = true;
+            else if (savedKeys.has(k)) s.saved_to_fr = true;
           }
         }
       }
@@ -2460,7 +2482,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                               <FillDayCard key={`${item.d.date}|${item.d.tech}`} day={item.d} staff={staff}
                                            onMoveStop={requestMove} externQueued={bulkQueued}
                                            reassignTechs={FILL_TECHS} onReassign={requestReassignDay}
-                                           onRemoveStop={removeStopFromDay} onDropPool={placePoolById} />
+                                           onRemoveStop={removeStopFromDay} onDropPool={placePoolById}
+                                           onSaved={markSaved} />
                             ) : (
                               <EmptyFillDayCard key={`empty-${item.date}-${tech}`} date={item.date} tech={tech}
                                                 onDropStop={requestMoveToDate} onDropPool={placePoolById} />
@@ -4159,9 +4182,12 @@ function EmptyFillDayCard({ date, tech, onDropStop, onDropPool }: {
 // REMOVE it from the day entirely (off the route + map; it parks in the Job
 // Pool below and can be re-placed).
 function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onReassign,
-                       onRemoveStop, onDropPool }: {
+                       onRemoveStop, onDropPool, onSaved }: {
   day: FillDay;
   staff: { fullName: string } | null;
+  /** A stop was SAVED to the approval queue — parent marks it saved_to_fr
+   *  everywhere so bulk pushes can't double-book it. */
+  onSaved?: (subId: string) => void;
   onMoveStop?: (fromKey: string, stopId: string, toKey: string) => void;
   /** Subscriptions queued by a BULK push (tech week / all routes) — shown as
    *  queued here too so the card and the bulk buttons stay in sync. */
@@ -4177,6 +4203,8 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
   const dayKey = `${day.date}|${day.tech}`;
   const [queueing, setQueueing] = useState(false);
   const [queued, setQueued] = useState<Set<string>>(new Set());
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<Set<string>>(new Set());
   const [stopPushing, setStopPushing] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
   const over = day.stop_count > day.capacity;
@@ -4188,11 +4216,17 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
     !s.already_scheduled &&
     !s.locked &&
     !s.notification_sent &&
-    !s.pushed_to_fr,
+    !s.pushed_to_fr &&
+    !s.saved_to_fr,
   );
   const remaining = bookable.filter((s) =>
-    !queued.has(s.subscription_id) && !externQueued?.has(s.subscription_id));
-  const allQueued = bookable.length > 0 && remaining.length === 0;
+    !queued.has(s.subscription_id) && !externQueued?.has(s.subscription_id)
+    && !saved.has(s.subscription_id));
+  // All gone because they were SAVED (pending approval), not pushed — the two
+  // end states label their buttons differently.
+  const allSavedNow = bookable.length > 0 && remaining.length === 0
+    && bookable.every((s) => saved.has(s.subscription_id));
+  const allQueued = bookable.length > 0 && remaining.length === 0 && !allSavedNow;
 
   // Enqueue one booking as a PACED write (Caleb 2026-07-30: FieldRoutes
   // tolerates ~50 writes/min, so writes are queued and the
@@ -4281,6 +4315,61 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
     } else toast.error("Failed to queue this day — see console.");
   };
 
+  // SAVE the day instead of pushing it: same enqueue but WITHOUT commit/paced,
+  // so the rows land status=pending in the approval queue. Nothing reaches
+  // FieldRoutes until "Approve day" in the "Writes awaiting approval" panel
+  // up top — that's the send-later button. (Caleb 2026-08-27.)
+  const saveOne = async (s: FillStop): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
+        body: {
+          staffName: staff!.fullName,
+          customer_id: Number(s.customer_id),
+          customer_label: s.customer,
+          service_type_id: Number(s.service_type_id) || 0,
+          service_type_label: s.service_label,
+          date: day.date,
+          start: s.start,
+          end: s.end,
+          duration: s.duration || 30,
+          subscription_id: Number(s.subscription_id),
+          route_id: s.route_id ? Number(s.route_id) : undefined,
+        },
+      });
+      // No-commit path answers { ok, queued: row } — anything else didn't save.
+      return !error && data?.ok === true && !!data?.queued;
+    } catch {
+      return false;
+    }
+  };
+
+  const saveDay = async () => {
+    if (!staff) return toast.error("Please sign in again.");
+    if (remaining.length === 0) return;
+    if (!day.route_id && remaining.some((s) => !s.route_id)) {
+      const n = remaining.filter((s) => !s.route_id).length;
+      toast.error(`${n} stop${n === 1 ? "" : "s"} skipped — no FieldRoutes route for ${day.tech} on `
+        + `${weekdayLabel(day.date)}. Create the route in FR first (a routeless appointment books unassigned).`);
+    }
+    setSaving(true);
+    const done = new Set(saved);
+    let ok = 0, fail = 0;
+    const savable = remaining.filter((s) => s.route_id || day.route_id);
+    for (const s of savable) {
+      if (await saveOne(s)) {
+        ok++; done.add(s.subscription_id);
+        setSaved(new Set(done));
+        onSaved?.(s.subscription_id);
+      } else fail++;
+    }
+    setSaving(false);
+    if (ok) {
+      toast.success(`Saved ${ok} stop${ok === 1 ? "" : "s"} for ${weekdayLabel(day.date)} — nothing sent yet. `
+        + `Send the day from "Writes awaiting approval" at the top whenever you're ready.`
+        + (fail ? ` · ${fail} failed to save` : ""));
+    } else toast.error("Failed to save this day — see console.");
+  };
+
   return (
     <Card
       className="border-l-4 border-l-indigo-500"
@@ -4350,6 +4439,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
         {day.stops.map((s) => {
           const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id)
             || !!s.pushed_to_fr;
+          const isSaved = !isQueued && (saved.has(s.subscription_id) || !!s.saved_to_fr);
           const key = stopKey(s);
           // Color rules (per user request):
           //  - locked OR notification already sent → black (and locked-in)
@@ -4364,11 +4454,12 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             isBlack ? "bg-foreground/90 text-background"
             : isGreen ? "bg-emerald-100 text-emerald-900 border border-emerald-300"
             : isPushed ? "bg-muted/70 text-muted-foreground border border-muted-foreground/20"
+            : isSaved ? "bg-amber-50 border border-amber-200"
             : "bg-indigo-50";
           // X removes the stop from the day for real — only planner proposals.
-          const canRemove = !!onRemoveStop && !isBlack && !isGreen && !isQueued;
+          const canRemove = !!onRemoveStop && !isBlack && !isGreen && !isQueued && !isSaved;
           // Proposed, un-pushed stops can be dragged onto another day card.
-          const canDrag = !!onMoveStop && !isBlack && !isGreen && !isQueued;
+          const canDrag = !!onMoveStop && !isBlack && !isGreen && !isQueued && !isSaved;
           return (
             <div
               key={key}
@@ -4390,6 +4481,11 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                       pushed to FR
                     </Badge>
                   )}
+                  {isSaved && (
+                    <Badge variant="outline" className="text-amber-700 border-amber-400 text-[10px] h-4">
+                      saved — send later
+                    </Badge>
+                  )}
                 </span>
                 <span className="inline-flex items-center gap-2">
                   <Badge
@@ -4405,14 +4501,14 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                   <span className={`font-mono ${isBlack ? "opacity-70" : "text-muted-foreground"}`}>
                     {s.days_off_target === 0 ? "on due date" : `${s.days_off_target > 0 ? "+" : ""}${s.days_off_target}d`}
                   </span>
-                  {!isQueued && !isBlack && !isGreen && s.subscription_id && (
+                  {!isQueued && !isSaved && !isBlack && !isGreen && s.subscription_id && (
                     <Button
                       type="button"
                       size="icon"
                       variant="ghost"
                       className="h-6 w-6"
                       title="Push this stop to FieldRoutes now"
-                      disabled={queueing || stopPushing !== null}
+                      disabled={queueing || saving || stopPushing !== null}
                       onClick={() => pushStop(s)}
                     >
                       {stopPushing === key
@@ -4482,8 +4578,15 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             </div>
           );
         })}
-        <div className="flex justify-end pt-1">
-          <Button size="sm" onClick={pushDay} disabled={queueing || allQueued || bookable.length === 0}>
+        <div className="flex justify-end gap-2 pt-1">
+          <Button size="sm" variant="outline" onClick={saveDay}
+                  disabled={saving || queueing || remaining.length === 0}
+                  title='Files the day as PENDING writes — nothing books until you hit "Approve day" in the "Writes awaiting approval" panel at the top'>
+            {allSavedNow ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Day saved — send from approvals up top</>
+              : <><Clock className="w-3 h-3 mr-1" /> {saving ? "Saving…" : `Save for later (${remaining.length})`}</>}
+          </Button>
+          <Button size="sm" onClick={pushDay}
+                  disabled={queueing || saving || allQueued || allSavedNow || bookable.length === 0}>
             {allQueued ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Route pushed to FR</>
               : <><Send className="w-3 h-3 mr-1" /> {queueing ? "Pushing…" : `Push route to FR (${remaining.length})`}</>}
           </Button>
@@ -4499,7 +4602,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
           </DialogHeader>
           <RouteMap
             stops={day.stops}
-            queuedIds={new Set([...queued, ...(externQueued ?? [])])}
+            queuedIds={new Set([...queued, ...saved, ...(externQueued ?? [])])}
             onPushStop={(ms) => {
               const s = day.stops.find((x) => x.order === ms.order);
               if (s) void pushStop(s);

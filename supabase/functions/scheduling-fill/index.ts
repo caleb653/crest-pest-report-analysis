@@ -186,7 +186,7 @@ serve(async (req) => {
           .from("fieldroutes_write_queue")
           .select("payload, status")
           .eq("entity", "appointment")
-          .in("status", ["auto", "processing", "committed"])
+          .in("status", ["pending", "auto", "processing", "committed"])
           .limit(2000);
         dpPushed = (rows ?? []).map((r: Record<string, unknown>) => {
           const p = (r.payload ?? {}) as Record<string, unknown>;
@@ -247,13 +247,16 @@ serve(async (req) => {
     // appointment sync lags the write queue by minutes-to-hours — and (b)
     // glue a customer's other services to the already-committed day instead
     // of booking a second trip (the Cano/Abi Najm splits, 2026-08-03).
+    // "pending" rides too (2026-08-27): a day SAVED for later ("Save for
+    // later" on a fill day card) must not be re-proposed by the next run —
+    // the app tells it apart by status and badges it amber, not grey.
     let pushed: Array<Record<string, unknown>> = [];
     try {
       const { data: rows } = await supabase
         .from("fieldroutes_write_queue")
         .select("payload, status")
         .eq("entity", "appointment")
-        .in("status", ["auto", "processing", "committed"])
+        .in("status", ["pending", "auto", "processing", "committed"])
         .gte("payload->>date", startDate)
         .lte("payload->>date", endDate)
         .limit(2000);
