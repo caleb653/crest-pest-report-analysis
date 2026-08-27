@@ -1339,6 +1339,9 @@ type FillStop = {
   /** EVERY subscription merged into this visit (a customer's same-frequency
    *  services ride one stop). One FR appointment books PER entry. */
   subscriptions?: { subscription_id: string; service_type_id?: string; service_type?: string }[];
+  /** Same-trip second service on a day the customer is already booked —
+   *  shows as a stop but consumes no day/window slot. */
+  ride_along?: boolean;
 };
 
 // One FieldRoutes appointment per subscription on the stop. A merged visit
@@ -4600,6 +4603,16 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                 </div>
               )}
               <div className="mt-1 flex flex-wrap gap-1">
+                {(s.subscriptions?.length ?? 0) > 1 && (
+                  <Badge variant="outline" className="text-indigo-700 border-indigo-300">
+                    {s.subscriptions!.length} services, one visit — each books its own FR appointment
+                  </Badge>
+                )}
+                {s.ride_along && (
+                  <Badge variant="outline" className="text-emerald-700 border-emerald-300">
+                    same trip — doesn't count toward the day's stops
+                  </Badge>
+                )}
                 {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
                 {s.moved && <Badge variant="outline" className="text-indigo-700 border-indigo-300">moved here manually</Badge>}
                 {typeof s.far_from_route_min === "number" && s.far_from_route_min > 0 && (
