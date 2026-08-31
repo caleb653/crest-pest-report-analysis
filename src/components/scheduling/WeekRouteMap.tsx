@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
 import { supabase } from "@/integrations/supabase/client";
-import { isActionableStop, type RouteMapStop } from "./RouteMap";
+import { isActionableStop, serviceDatesLine, type RouteMapStop } from "./RouteMap";
 
 // Week-overview map: EVERY proposed route overlaid on one map, one color per
 // weekday, so cross-day clustering is auditable at a glance — if two neighbors
@@ -534,6 +534,11 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
               )}
               {(active.stop.eta || active.stop.window) && (
                 <div>{active.stop.eta}{active.stop.eta && active.stop.window ? " · " : ""}{active.stop.window}</div>
+              )}
+              {serviceDatesLine(active.stop) && (
+                <div className="text-muted-foreground" title="Last completed visit — (I) = it was the initial — and the engine's due date with its ± flexibility">
+                  {serviceDatesLine(active.stop)}
+                </div>
               )}
               {active.stop.special_scheduling && (
                 <div className="text-amber-700 font-medium">note: {active.stop.special_scheduling}</div>

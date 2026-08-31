@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF, InfoWindowF, useJsApiLoader } from "@react-google-maps/api";
+import { lastServiceLabel, lastServiceDate } from "@/lib/lastService";
 import { supabase } from "@/integrations/supabase/client";
 import { GMAPS_LIBRARIES } from "./WeekRouteMap";
 
@@ -23,7 +24,26 @@ export type RouteMapStop = {
   subscription_id?: string;
   notification_sent?: boolean;
   pushed_to_fr?: boolean;
+  /** Cadence context for the info card (Caleb 2026-08-30: "show the last
+   *  date of service and expected due date"): last COMPLETED visit — (I) when
+   *  it was the initial — the engine's due date, and the ± flexibility. */
+  due_date?: string | null;
+  last_completed?: string | null;
+  last_is_initial?: boolean | null;
+  tolerance?: number | null;
+  frequency?: number | null;
 };
+
+/** "last svc 8/12/26 (I) · due 9/23/26 (±5d)" — null when neither date is known. */
+export function serviceDatesLine(s: RouteMapStop): string | null {
+  const parts: string[] = [];
+  const last = lastServiceLabel(s);
+  if (last) parts.push(last);
+  if (s.due_date) {
+    parts.push(`due ${lastServiceDate(s.due_date)}${typeof s.tolerance === "number" ? ` (±${s.tolerance}d)` : ""}`);
+  }
+  return parts.length ? parts.join(" · ") : null;
+}
 
 // A stop the office can still act on from the map (push / remove): a planner
 // proposal that isn't booked, locked, notified, or already queued.
@@ -213,6 +233,11 @@ function RouteMapInner({ stops, candidate, apiKey, onPushStop, onRemoveStop, que
               {active.service_label && <div className="text-muted-foreground">{active.service_label}</div>}
               {typeof active.drive_from_prev_min === "number" && active.order > 1 && (
                 <div className="text-muted-foreground">+{active.drive_from_prev_min} min drive from previous</div>
+              )}
+              {serviceDatesLine(active) && (
+                <div className="text-muted-foreground" title="Last completed visit — (I) = it was the initial — and the engine's due date with its ± flexibility">
+                  {serviceDatesLine(active)}
+                </div>
               )}
               {active.special_scheduling && (
                 <div className="text-amber-700 font-medium">note: {active.special_scheduling}</div>
