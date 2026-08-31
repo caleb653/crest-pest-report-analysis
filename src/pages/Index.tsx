@@ -157,7 +157,8 @@ const Index = () => {
     "Brock Lyttle",
     "Joseph Ibarbo",
   ]);
-  const RESTRICTED_CARDS = new Set(["slot-finder", "schedule-review"]);
+  // Slot Finder is open to the whole team; only Schedule Review stays limited.
+  const RESTRICTED_CARDS = new Set(["schedule-review"]);
   const isRestricted = RESTRICTED_USERS.has(currentUser);
   useEffect(() => {
     setIsAdmin(!!localStorage.getItem("admin_session"));
