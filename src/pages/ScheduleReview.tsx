@@ -1345,6 +1345,11 @@ type FillStop = {
   pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
   saved_to_fr?: boolean;         // amber — saved as a PENDING write to send later ("Writes awaiting approval")
   far_from_route_min?: number | null;  // >20-min hop from the rest of this route
+  /** Escalation-ladder provenance from the engine: placed OVER the day's cap
+   *  (kept with the preferred Route Manager on a pinned/full day), or switched
+   *  away from the preferred Route Manager (only when they aren't in the run). */
+  overflow?: boolean;
+  tech_switched_from?: string | null;
   /** EVERY subscription merged into this visit (a customer's same-frequency
    *  services ride one stop). One FR appointment books PER entry. */
   subscriptions?: { subscription_id: string; service_type_id?: string; service_type?: string }[];
@@ -4657,6 +4662,16 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                 {typeof s.far_from_route_min === "number" && s.far_from_route_min > 0 && (
                   <Badge variant="outline" className="text-amber-700 border-amber-300">
                     ~{s.far_from_route_min}m from the rest of this route — could this be another day?
+                  </Badge>
+                )}
+                {s.overflow && (
+                  <Badge variant="outline" className="text-red-700 border-red-300">
+                    over this day's cap — kept with their Route Manager; move or free a slot
+                  </Badge>
+                )}
+                {s.tech_switched_from && (
+                  <Badge variant="outline" className="text-red-700 border-red-300">
+                    switched from {s.tech_switched_from} (their usual Route Manager)
                   </Badge>
                 )}
                 {s.off_zone_day && <Badge variant="outline" className="text-muted-foreground">off usual zone-day</Badge>}
