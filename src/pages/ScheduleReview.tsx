@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { lastServiceLabel, lastServiceStamp, type LastServiceFields } from "@/lib/lastService";
 import {
   ArrowLeft, AlertTriangle, Clock, MapPin, ShuffleIcon, ClipboardList, CalendarCheck, Car,
   Wand2, Phone, Users, CalendarPlus, CheckCircle2, X, Lock, BellRing, TrendingUp, TrendingDown, Minus,
@@ -1331,7 +1332,15 @@ type FillStop = {
   production?: number;           // $ recurring charge this stop earns
   eta?: string;                  // projected arrival clock time, e.g. "9:25 AM"
   drive_from_prev_min?: number;  // estimated drive from the previous stop
-  flag?: string | null;          // e.g. "⚠ Overdue — last service 191d ago…"
+  flag?: string | null;          // e.g. "⚠ Overdue — was due 191d ago…; last service 2026-02-01 (I)"
+  /** Last COMPLETED visit + whether it was the initial → "last svc 8/12/26 (I)". */
+  last_completed?: string | null;
+  last_is_initial?: boolean | null;
+  /** This visit's REAL flexibility from the engine: keyed to the effective
+   *  cadence (a 30-day follow-up after an initial is ±5 even on a 60/90-day
+   *  subscription). Falls back to TOL_BY_FREQ[frequency] on a stale backend. */
+  tolerance?: number | null;
+  cadence_days?: number | null;
   moved?: boolean;               // dragged onto this day by the office
   pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
   saved_to_fr?: boolean;         // amber — saved as a PENDING write to send later ("Writes awaiting approval")
@@ -1424,7 +1433,7 @@ function groupRoutesByDay(routes: FillRouteRow[]) {
       onsite_min: list.reduce((s, r) => s + r.onsite_min, 0),
     }));
 }
-type FillUnscheduled = {
+type FillUnscheduled = LastServiceFields & {
   customer: string;
   city: string;
   service: string;
@@ -1440,7 +1449,7 @@ type FillDeferredBestDay = {
   in_window?: boolean;
   load?: number;
 };
-type FillDeferred = {
+type FillDeferred = LastServiceFields & {
   customer: string;
   city: string;
   service: string;
@@ -1466,6 +1475,9 @@ type FillPoolItem = FillUnscheduled & {
   duration: number;
   days_overdue: number;
   last_completed?: string | null;
+  last_is_initial?: boolean | null;
+  tolerance?: number | null;
+  cadence_days?: number | null;
   zone?: string;
   best_day?: FillDeferredBestDay | null;
   must_schedule?: boolean;
@@ -1704,6 +1716,17 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   };
 
   const TOL_BY_FREQ: Record<number, number> = { 30: 5, 60: 10, 90: 14 };
+  // A stop's real flexibility: the engine's `tolerance` (keyed to the visit's
+  // EFFECTIVE cadence — the 30-day follow-up after an initial slips ±5 even on
+  // a bi-monthly/quarterly subscription, Caleb 2026-08-30), else by frequency.
+  const tolOf = (stop: FillStop) =>
+    typeof stop.tolerance === "number" ? stop.tolerance : (TOL_BY_FREQ[stop.frequency] ?? 0);
+  const cadenceLabelOf = (stop: FillStop) => {
+    const eff = stop.cadence_days || stop.frequency;
+    const base = eff === 30 ? "monthly" : eff === 60 ? "bi-monthly" : eff === 90 ? "quarterly" : `${eff}-day`;
+    return stop.last_is_initial && eff !== stop.frequency
+      ? `${eff}-day follow-up after the initial (${base})` : base;
+  };
   const fillStopKey = (s: FillStop) => `${s.subscription_id || s.customer_id}-${s.order}`;
   const dayDiffFromDue = (targetIso: string, dueIso: string) =>
     Math.round((new Date(`${targetIso}T12:00:00`).getTime()
@@ -1890,7 +1913,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     confirm: false,
     off_zone_day: false,
     production: p.production,
-    flag: `Overdue — was due ${p.due_date} (${p.days_overdue}d before this window)`,
+    last_completed: p.last_completed, last_is_initial: p.last_is_initial,
+    tolerance: p.tolerance, cadence_days: p.cadence_days,
+    flag: `Overdue — was due ${p.due_date} (${p.days_overdue}d before this window)`
+      + (lastServiceStamp(p) ? `; last service ${lastServiceStamp(p)}` : ""),
   });
 
   const placePoolStop = (stop: FillStop, date: string, tech: string, onPlaced: () => void) => {
@@ -1960,10 +1986,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const moveReasons = (stop: FillStop, srcTech: string, dst: FillDay, extraLoad = 0): string[] => {
     const reasons: string[] = [];
     const diff = dayDiffFromDue(dst.date, stop.due_date);
-    const tol = TOL_BY_FREQ[stop.frequency] ?? 0;
+    const tol = tolOf(stop);
     if (Math.abs(diff) > tol) {
-      const cadence = stop.frequency === 30 ? "monthly" : stop.frequency === 60 ? "bi-monthly"
-        : stop.frequency === 90 ? "quarterly" : `${stop.frequency}-day`;
+      const cadence = cadenceLabelOf(stop);
       reasons.push(`Puts them ${Math.abs(diff)} days ${diff > 0 ? "past" : "before"} their ideal date `
         + `(due ${stop.due_date}) — ${cadence} flexibility is ±${tol} days.`);
     }
@@ -2139,10 +2164,9 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
     }
     const reasons: string[] = [];
     const diff = dayDiffFromDue(dst.date, stop.due_date);
-    const tol = TOL_BY_FREQ[stop.frequency] ?? 0;
+    const tol = tolOf(stop);
     if (Math.abs(diff) > tol) {
-      const cadence = stop.frequency === 30 ? "monthly" : stop.frequency === 60 ? "bi-monthly"
-        : stop.frequency === 90 ? "quarterly" : `${stop.frequency}-day`;
+      const cadence = cadenceLabelOf(stop);
       reasons.push(`Puts them ${Math.abs(diff)} days ${diff > 0 ? "past" : "before"} their ideal date `
         + `(due ${stop.due_date}) — ${cadence} flexibility is ±${tol} days.`);
     }
@@ -2744,6 +2768,7 @@ type RescheduleMove = {
   // Rule transparency: the legal window this move honors.
   due_date?: string | null; window_start?: string | null; window_end?: string | null;
   days_off_due_before?: number | null; days_off_due_after?: number | null;
+  last_completed?: string | null; last_is_initial?: boolean | null;
 };
 // Things the recommendations can't fix but the office should — duplicate
 // bookings on one subscription, split days it couldn't auto-combine, and
@@ -2762,6 +2787,7 @@ type RescheduleStop = {
   movable: boolean; locked: boolean; notified: boolean;
   due_date?: string | null; window_start?: string | null; window_end?: string | null;
   special_scheduling?: string | null;
+  last_completed?: string | null; last_is_initial?: boolean | null;
 };
 type RescheduleResult = {
   ok: boolean; start: string; end: string; appointments: number;
@@ -2785,6 +2811,7 @@ function moveWindowLine(m: RescheduleMove): string | null {
   const off = (n: number | null | undefined) =>
     n == null ? null : n === 0 ? "on the due date" : `${Math.abs(n)}d ${n < 0 ? "early" : "late"}`;
   const parts = [
+    lastServiceLabel(m),
     m.due_date ? `due ${shortDate(m.due_date)}` : null,
     `legal ${shortDate(m.window_start)}–${shortDate(m.window_end)}`,
     off(m.days_off_due_before) ? `now ${off(m.days_off_due_before)}` : null,
@@ -3051,6 +3078,7 @@ type BookedStop = {
   // True when the cadence window already passed — the stop can move EARLIER
   // (down to the 25-day floor / today) but never later than its booked day.
   overdue?: boolean;
+  last_completed?: string | null; last_is_initial?: boolean | null; tolerance?: number | null;
 };
 type BookedRoute = { tech: string; date: string; route_id: string; stops: number };
 type BookedResult = {
@@ -3402,6 +3430,7 @@ function ManualMoveMapInner({ staff, data, targetRoutes, targetStops, apiKey }: 
                   {techNo(info.tech)}
                 </span>
                 {info.due_date && <> · due {shortDate(info.due_date)}</>}
+                {lastServiceLabel(info) && <> · {lastServiceLabel(info)}</>}
               </div>
               {possibleSpan(info) ? (
                 <div>
@@ -3503,6 +3532,8 @@ type DayPoolStop = {
   frequency_days: number; frequency: string; tech: string;
   due_date: string; window_start: string; window_end: string;
   days_overdue: number; special: string; freq_inferred: boolean; production: number;
+  last_completed?: string | null; last_is_initial?: boolean | null;
+  tolerance?: number | null; cadence_days?: number | null;
 };
 type DayPoolResult = {
   ok: boolean; date: string; pool: DayPoolStop[]; pool_size: number;
@@ -3729,6 +3760,12 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
                 due {shortDate(info.due_date)} · window {shortDate(info.window_start)}–{shortDate(info.window_end)}
                 {info.tech && <> · usually {firstName(info.tech)}</>}
               </div>
+              {lastServiceLabel(info) && (
+                <div className="text-muted-foreground">
+                  {lastServiceLabel(info)}
+                  {info.last_is_initial && " — initial, so the follow-up slips ±5 like a monthly"}
+                </div>
+              )}
               {info.days_overdue > 0 && (
                 <div className="text-amber-700">{info.days_overdue} days overdue — sooner is better</div>
               )}
@@ -3776,6 +3813,7 @@ function DayClumpExplorerInner({ staff, date, data, onReload, apiKey }: {
                     zIndex={isSel ? 4 : 3}
                     onClick={() => toggle(s)}
                     title={`${s.customer} · ${s.frequency} · due ${shortDate(s.due_date)}`
+                      + `${lastServiceLabel(s) ? ` · ${lastServiceLabel(s)}` : ""}`
                       + `${s.days_overdue > 0 ? ` (${s.days_overdue}d overdue)` : ""}${isQueued ? " (queued)" : ""}`}
                   />
                 );
@@ -4595,6 +4633,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                   <>+{s.drive_from_prev_min}m drive · </>
                 )}
                 {s.city} · {s.service_label} · due {s.due_date}
+                {lastServiceLabel(s) && <> · <span title="Last completed visit. (I) = it was the initial → this visit slips ±5 like a monthly">{lastServiceLabel(s)}</span></>}
               </div>
               {s.flag && (
                 <div className="mt-1 text-red-700 font-medium">
@@ -4690,7 +4729,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
 // route — the overdue catch-up pool (placeable: drag onto a day card or pick
 // a day), stops the office X'd off a day (placeable the same way), plus the
 // couldn't-fit / call-to-schedule / held-for-later lists. ──
-type PoolRow = {
+type PoolRow = LastServiceFields & {
   id: string;
   kind: "overdue" | "removed" | "unplaced" | "manual" | "deferred";
   customer: string;
@@ -4735,28 +4774,33 @@ function JobPoolPanel({ overdue, removed, unplaced, manual, deferred, dayOptions
       service: p.service_label || p.service, due_date: p.due_date, tech: p.tech,
       reason: p.reason, address: p.address, days_overdue: p.days_overdue,
       best_day: p.best_day, special_scheduling: p.special_scheduling, placeable: true,
+      last_completed: p.last_completed, last_is_initial: p.last_is_initial,
     })),
     ...removed.map((r): PoolRow => ({
       id: poolIdOfRemoved(r), kind: "removed", customer: r.stop.customer, city: r.stop.city,
       service: r.stop.service_label, due_date: r.stop.due_date, tech: r.fromKey.split("|")[1] ?? null,
       reason: `Removed from ${r.fromKey.split("|")[0]} by you — place it wherever it fits.`,
       address: r.stop.address, special_scheduling: r.stop.special_scheduling, placeable: true,
+      last_completed: r.stop.last_completed, last_is_initial: r.stop.last_is_initial,
     })),
     ...unplaced.map((m, i): PoolRow => ({
       id: `up|${m.customer}|${m.due_date}|${i}`, kind: "unplaced", customer: m.customer,
       city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
       best_day: (m as FillUnscheduled & { best_day?: FillDeferredBestDay | null }).best_day,
       special_scheduling: m.special_scheduling, placeable: false,
+      last_completed: m.last_completed, last_is_initial: m.last_is_initial,
     })),
     ...manual.map((m, i): PoolRow => ({
       id: `mn|${m.customer}|${m.due_date}|${i}`, kind: "manual", customer: m.customer,
       city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
       special_scheduling: m.special_scheduling, placeable: false,
+      last_completed: m.last_completed, last_is_initial: m.last_is_initial,
     })),
     ...deferred.map((m, i): PoolRow => ({
       id: `df|${m.customer}|${m.due_date}|${i}`, kind: "deferred", customer: m.customer,
       city: m.city, service: m.service, due_date: m.due_date, tech: m.tech, reason: m.reason,
       best_day: m.best_day, placeable: false,
+      last_completed: m.last_completed, last_is_initial: m.last_is_initial,
     })),
   ];
   if (rows.length === 0) return null;
@@ -4822,7 +4866,10 @@ function JobPoolPanel({ overdue, removed, unplaced, manual, deferred, dayOptions
                 )}
               </span>
               <span className="inline-flex items-center gap-2">
-                <span className="text-muted-foreground">due {r.due_date}</span>
+                <span className="text-muted-foreground">
+                  due {r.due_date}
+                  {lastServiceLabel(r) && <> · <span title="Last completed visit. (I) = it was the initial → next visit slips ±5 like a monthly">{lastServiceLabel(r)}</span></>}
+                </span>
                 {r.placeable && dayOptions.length > 0 && (
                   <select
                     className="text-xs border rounded-md px-1.5 py-1 bg-background cursor-pointer"

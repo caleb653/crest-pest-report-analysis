@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Search, Check, X, Loader2, Building2, User, ExternalLink } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { lastServiceLabel } from "@/lib/lastService";
 import { fetchLoginLinks, saveLoginLink } from "@/lib/frLoginLinks";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,9 @@ export type FRCustomer = {
   commercial?: boolean | null;
   /** FieldRoutes customer-portal URL ({loginlink} merge tag). */
   loginLink?: string | null;
+  /** Last COMPLETED visit (ISO date) + whether it was the initial → "last svc 8/12/26 (I)". */
+  last_completed?: string | null;
+  last_is_initial?: boolean | null;
 };
 
 type Props = {
@@ -170,7 +174,14 @@ export default function CustomerPicker({ staffName, linkedId, linkedLabel, linke
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground truncate">{cityLine(c)}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {cityLine(c)}
+                  {lastServiceLabel(c) && (
+                    <span title="Last completed visit. (I) = it was the initial → next visit slips ±5 like a monthly">
+                      {cityLine(c) ? " · " : ""}{lastServiceLabel(c)}
+                    </span>
+                  )}
+                </div>
                 {(c.email || c.phone) && (
                   <div className="text-xs text-muted-foreground truncate">
                     {[c.email, c.phone].filter(Boolean).join(" · ")}

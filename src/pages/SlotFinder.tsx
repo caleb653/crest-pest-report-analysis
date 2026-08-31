@@ -35,6 +35,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import CustomerPicker, { type FRCustomer } from "@/components/CustomerPicker";
+import { lastServiceLabel } from "@/lib/lastService";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import RouteMap, { type RouteMapStop } from "@/components/scheduling/RouteMap";
 import { GMAPS_LIBRARIES } from "@/components/scheduling/WeekRouteMap";
@@ -899,7 +900,9 @@ function FindMode({
               <CustomerPicker
                 staffName={staff?.fullName ?? undefined}
                 linkedId={customer?.customer_id ?? null}
-                linkedLabel={customer?.name ?? customer?.company_name ?? null}
+                linkedLabel={customer
+                  ? [customer.name || customer.company_name || null, lastServiceLabel(customer)].filter(Boolean).join(" · ")
+                  : null}
                 linkedLoginLink={customer?.loginLink ?? null}
                 onSelect={selectCustomer}
                 onClear={() => setCustomer(null)}
@@ -1214,7 +1217,8 @@ function SlotCard({
     const useDate = date ?? c.route_date;
     if (!start || !end || !useDate) { toast.error("This slot is missing time data."); return; }
     const subLabel = scheduleContext.subscriptionId === -1 ? "standalone" : `subscription #${scheduleContext.subscriptionId}`;
-    if (!window.confirm(`Queue this appointment for office approval?\n\n${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}`)) return;
+    const lastSvc = lastServiceLabel(scheduleContext.customer, "Last service");
+    if (!window.confirm(`Queue this appointment for office approval?\n\n${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}${lastSvc ? `\n${lastSvc}${scheduleContext.customer.last_is_initial ? " — initial: 30-day follow-up, ±5 day flexibility" : ""}` : ""}`)) return;
     setBooking(true);
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
