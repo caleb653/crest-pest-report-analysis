@@ -297,12 +297,27 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
   };
 
   // A multi-week run stacks every week's routes over the same territory —
-  // even a perfect month reads as spaghetti. Week rows let you judge the plan
-  // the way it's driven: one week at a time.
-  const isolateWeek = (weekDates: string[], currentlyIsolated: boolean) =>
-    setHiddenDates(currentlyIsolated
-      ? new Set()
-      : new Set(dates.filter((d) => !weekDates.includes(d))));
+  // even a perfect month reads as spaghetti. Week chips are ADDITIVE (Caleb
+  // 2026-08-30: "view multiple weeks at once"): from the all-weeks view the
+  // first click isolates that week; clicking another week adds it; clicking a
+  // shown week hides it; hiding the last shown week brings every week back.
+  const allWeeksVisible = hiddenDates.size === 0;
+  const weekIsOn = (weekDates: string[]) => weekDates.some((d) => !hiddenDates.has(d));
+  const toggleWeek = (weekDates: string[]) => {
+    if (allWeeksVisible) {
+      setHiddenDates(new Set(dates.filter((d) => !weekDates.includes(d))));
+      return;
+    }
+    const next = new Set(hiddenDates);
+    if (weekIsOn(weekDates)) {
+      weekDates.forEach((d) => next.add(d));
+      if (dates.every((d) => next.has(d))) { setHiddenDates(new Set()); return; }
+    } else {
+      weekDates.forEach((d) => next.delete(d));
+    }
+    setHiddenDates(next);
+  };
+  const shownWeeks = weeks.filter(({ weekDates }) => weekIsOn(weekDates)).length;
 
   const totalMapped = routes.reduce((s, r) => s + r.stops.length, 0);
   const chip = (selected: boolean) =>
@@ -324,8 +339,19 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
           </button>
         </div>
       )}
+      {weeks.length > 1 && !allWeeksVisible && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <button type="button" className={chip(false)} onClick={() => setHiddenDates(new Set())}
+                  title="Show every week again">
+            All weeks
+          </button>
+          <span className="text-xs text-muted-foreground">
+            {shownWeeks} of {weeks.length} weeks shown
+          </span>
+        </div>
+      )}
       {weeks.map(({ monday, weekDates }) => {
-        const isolated = dates.every((d) => weekDates.includes(d) !== hiddenDates.has(d));
+        const on = !allWeeksVisible && weekIsOn(weekDates);
         const weekLabel = new Date(`${monday}T12:00:00`).toLocaleDateString(undefined, {
           month: "numeric", day: "numeric",
         });
@@ -334,9 +360,11 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
             {weeks.length > 1 && (
               <button
                 type="button"
-                onClick={() => isolateWeek(weekDates, isolated)}
-                className={chip(isolated)}
-                title={isolated ? "Show all weeks" : "Show only this week"}
+                onClick={() => toggleWeek(weekDates)}
+                className={chip(on)}
+                title={allWeeksVisible ? "Show only this week"
+                  : on ? (shownWeeks === 1 ? "Show all weeks" : "Hide this week")
+                  : "Add this week to the view"}
               >
                 Wk {weekLabel}
               </button>
@@ -421,7 +449,7 @@ function WeekRouteMapInner({ days, apiKey, onMoveStops, onMergeDays, windowDates
         </div>
       ) : (
         <div className="text-xs text-muted-foreground">
-          {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone · " : ""}click a day to hide/show · click a dot for details
+          {totalMapped} stops · {weeks.length > 1 ? "click a week to view it alone, click more weeks to add them, click a shown week to hide it · " : ""}click a day to hide/show · click a dot for details
           {onMoveStops ? " or to select it for a move" : ""}{onMergeDays ? " · drag one day chip onto another to combine those days" : ""}
         </div>
       )}
