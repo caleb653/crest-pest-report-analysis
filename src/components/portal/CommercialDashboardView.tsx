@@ -177,6 +177,7 @@ const COMMERCIAL_SERVICE_TYPES = [
   "Rodent Exclusion",
   "Rodent Trapping & Exclusion",
   "Rodent Bait Boxes",
+  "Rodent Clean Up",
   "Dewebbing",
   "Drain Fly Treatment",
   "Fly Light Service",

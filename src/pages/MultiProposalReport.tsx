@@ -249,6 +249,14 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 100,
     defaultRecurring: 100,
   },
+  "Rodent Clean Up": {
+    frequency: 0,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Rodent Clean Up:</b><br>• Remove rodent droppings, nesting material, and contaminated debris from impacted and accessible areas<br>• Vacuum and spray disinfect impacted areas to eliminate health hazards<br><br><b>Additional Information:</b> We will remove all accessible rodent droppings and debris. Please note that some droppings may be embedded in the insulation and cannot be reasonably removed.`,
+    defaultInitial: 575,
+    defaultRecurring: 0,
+  },
   "Rodent Sanitation": {
     frequency: 0,
     targetPests: ["Rodents"],

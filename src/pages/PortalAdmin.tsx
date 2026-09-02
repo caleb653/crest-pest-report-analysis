@@ -71,6 +71,7 @@ const getPropertyType = (p: PortalProperty): PropertyType => {
 const SERVICE_TYPES = [
   "General Pest Control", "Commercial General Pest Control", "Rodent Trapping",
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
+  "Rodent Clean Up",
   "Mosquito Service", "Attic Services", "Dewebbing",
 ];
 

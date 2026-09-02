@@ -83,6 +83,7 @@ const PEST_TYPES = ["General Pests", "Ants", "Spiders", "American Roaches", "Ger
 const SERVICE_TYPES = [
   "Commercial General Pest Control", "General Pest Control", "Rodent Trapping",
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
+  "Rodent Clean Up",
   "Mosquito Service", "Attic Services", "Dewebbing",
 ];
 

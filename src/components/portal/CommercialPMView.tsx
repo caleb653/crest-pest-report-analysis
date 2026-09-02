@@ -110,6 +110,10 @@ const COMMERCIAL_SERVICE_DESCRIPTIONS: Record<string, string[]> = {
     "Seal gaps, vents, utility penetrations, and other vulnerabilities using industry-grade materials",
     "Customize every exclusion to the structure to prevent future rodent entry",
   ],
+  "Rodent Clean Up": [
+    "Remove rodent droppings, nesting material, and contaminated debris from accessible areas",
+    "Vacuum and disinfect impacted areas to eliminate health hazards",
+  ],
   "Mosquito Service": [
     "Set up mosquito buckets, which interrupt breeding cycles and neutralize future generations",
     "Target adult mosquitoes and larvae with long-lasting products",

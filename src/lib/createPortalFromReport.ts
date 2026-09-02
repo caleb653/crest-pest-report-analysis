@@ -18,6 +18,7 @@ const SERVICE_FREQUENCY: Record<string, number> = {
   "Attic Services (see details below)": 0,
   "De-webbing": 0,
   "Rodent Sanitation": 0,
+  "Rodent Clean Up": 0,
   "Bed Bug Treatment": 0,
   "Flea & Tick Treatment": 0,
   "German Cockroach Treatment": 0,
