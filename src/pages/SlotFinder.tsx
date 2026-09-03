@@ -361,6 +361,58 @@ function upcomingBusinessDays(count: number): { iso: string; label: string }[] {
   return out;
 }
 
+// ── Follow-up plans ──────────────────────────────────────────────────────────
+// "7 day follow up" / "14 day follow up": the office books Visit 1 in the next
+// few days, then a second visit whose date must land inside a tolerance band
+// counted from Visit 1 (7-day → 6–10 days later, 14-day → 12–16 days later).
+type FollowUpPlan = "none" | "7" | "14";
+const FOLLOW_UP_PLANS: Record<Exclude<FollowUpPlan, "none">, { lo: number; hi: number; label: string }> = {
+  "7":  { lo: 6,  hi: 10, label: "7 day follow up" },
+  "14": { lo: 12, hi: 16, label: "14 day follow up" },
+};
+
+function isoToDate(iso: string): Date {
+  const [y, m, d] = iso.split("-").map((x) => parseInt(x, 10));
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+function dateToIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function daysBetweenIso(a: string, b: string): number {
+  return Math.round((isoToDate(b).getTime() - isoToDate(a).getTime()) / 86_400_000);
+}
+// Business days (Mon–Fri) that fall lo..hi calendar days after `firstIso`.
+function followUpDates(firstIso: string, plan: FollowUpPlan): string[] {
+  if (plan === "none") return [];
+  const { lo, hi } = FOLLOW_UP_PLANS[plan];
+  const out: string[] = [];
+  for (let n = lo; n <= hi; n++) {
+    const d = isoToDate(firstIso);
+    d.setDate(d.getDate() + n);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) out.push(dateToIso(d));
+  }
+  return out;
+}
+
+// The date of the overall best-fit slot in a search result (same ranking the
+// "★ Best Fit" banner uses), or null when nothing was found.
+function bestFitDate(result: FindResult | null): string | null {
+  if (!result?.by_day) return null;
+  let best: { date: string; s: number; m: number; mi: number } | null = null;
+  for (const day of result.by_day) {
+    for (const c of day.slots) {
+      const s = c.score_sec ?? Infinity;
+      const m = detourMinutes(c);
+      const mi = parseFloat(detourMiles(c));
+      if (!best || s < best.s || (s === best.s && (m < best.m || (m === best.m && mi < best.mi)))) {
+        best = { date: day.date, s, m, mi };
+      }
+    }
+  }
+  return best?.date ?? null;
+}
+
 // ── Route maps (free: data rides along with the search / sentinel fetch;
 //    the map draws pins + straight lines only — no Directions calls) ─────────
 
@@ -770,6 +822,13 @@ function FindMode({
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FindResult | null>(null);
 
+  // Follow-up plan: when set, a second search runs for the follow-up band
+  // counted from the chosen Visit 1 date (defaults to the best-fit day).
+  const [plan, setPlan] = useState<FollowUpPlan>("none");
+  const [visit1Date, setVisit1Date] = useState<string | null>(null);
+  const [followUp, setFollowUp] = useState<FindResult | null>(null);
+  const [followUpLoading, setFollowUpLoading] = useState(false);
+
   // Default route maps: booked routes for the next 3 working days, fetched once
   // via the "@routes" sentinel — BigQuery-only on the backend (no geocoding,
   // no Distance Matrix), so this page-load fetch costs nothing.
@@ -837,6 +896,47 @@ function FindMode({
     if (full && !address.trim()) setAddress(full);
   };
 
+  // One find-slot search over an explicit list of days. Returns null (after
+  // toasting) on failure so callers can bail without try/catch boilerplate.
+  const searchDates = async (dates: string[]): Promise<FindResult | null> => {
+    if (!staff) { toast.error("Please sign in again."); return null; }
+    try {
+      const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
+        body: {
+          staffName: staff.fullName,
+          address: address.trim(),
+          window: window === "none" ? null : window,
+          use_google: true,
+          dates,
+          slots_per_day: 2,
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) { toast.error(data?.detail?.detail || data?.error || "Failed to find slots."); return null; }
+      return data.result as FindResult;
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || "Unexpected error.");
+      return null;
+    }
+  };
+
+  // Search the follow-up band for a given Visit 1 date.
+  const runFollowUp = async (firstIso: string, forPlan: FollowUpPlan) => {
+    if (forPlan === "none") return;
+    const dates = followUpDates(firstIso, forPlan);
+    setVisit1Date(firstIso);
+    setFollowUp(null);
+    if (dates.length === 0) return;
+    setFollowUpLoading(true);
+    try {
+      const r = await searchDates(dates);
+      if (r) setFollowUp(r);
+    } finally {
+      setFollowUpLoading(false);
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!staff) return toast.error("Please sign in again.");
@@ -845,29 +945,24 @@ function FindMode({
 
     setLoading(true);
     setResult(null);
+    setFollowUp(null);
+    setVisit1Date(null);
+    let first: FindResult | null = null;
     try {
-      const { data, error } = await supabase.functions.invoke("scheduling-find-slot", {
-        body: {
-          staffName: staff.fullName,
-          address: address.trim(),
-          window: window === "none" ? null : window,
-          use_google: true,
-          dates: selectedDates,
-          slots_per_day: 2,
-        },
-      });
-      if (error) throw error;
-      if (!data?.ok) return toast.error(data?.detail?.detail || data?.error || "Failed to find slots.");
-      setResult(data.result as FindResult);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err?.message || "Unexpected error.");
+      first = await searchDates(selectedDates);
+      if (first) setResult(first);
     } finally {
       setLoading(false);
     }
+    // Follow-up: anchor on the best-fit Visit 1 day (the office can re-anchor
+    // from any other day's card afterwards).
+    if (first && plan !== "none") {
+      const anchor = bestFitDate(first);
+      if (anchor) await runFollowUp(anchor, plan);
+    }
   };
 
-  const byDay = result?.by_day ?? [];
+  const planInfo = plan === "none" ? null : FOLLOW_UP_PLANS[plan];
 
   const canSchedule = !!customer && !!serviceType
     && (isStandalone || (subscriptionId.trim().length > 0 && subscriptionId.trim() !== "-1"));
@@ -878,6 +973,7 @@ function FindMode({
     subscriptionId: isStandalone ? -1 : Number(subscriptionId.trim()),
     staffName: staff?.fullName ?? null,
   } : null;
+  const scheduleHint = `Pick a customer${!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.`;
 
   return (
     <>
@@ -895,6 +991,53 @@ function FindMode({
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
+            {/* ── Visit plan boxes: single visit vs. 7 / 14 day follow-up ── */}
+            <div className="space-y-2">
+              <Label>Visit plan</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: "none" as FollowUpPlan, title: "Single visit", sub: "Just find one opening" },
+                  { key: "7" as FollowUpPlan, title: "7 day follow up", sub: "2nd visit 6–10 days after" },
+                  { key: "14" as FollowUpPlan, title: "14 day follow up", sub: "2nd visit 12–16 days after" },
+                ]).map((opt) => {
+                  const on = plan === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        setPlan(opt.key);
+                        // Re-plan the follow-up against the existing Visit 1 result
+                        // (no need to re-run the first search).
+                        if (result) {
+                          if (opt.key === "none") { setFollowUp(null); setVisit1Date(null); }
+                          else {
+                            const anchor = visit1Date ?? bestFitDate(result);
+                            if (anchor) void runFollowUp(anchor, opt.key);
+                          }
+                        }
+                      }}
+                      className={`rounded-md border-2 px-3 py-2.5 text-left transition-colors ${
+                        on
+                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          : "border-border bg-background hover:bg-muted"
+                      }`}
+                    >
+                      <div className="text-sm font-bold leading-tight">{opt.title}</div>
+                      <div className={`text-[11px] leading-tight mt-0.5 ${on ? "opacity-90" : "text-muted-foreground"}`}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              {planInfo && (
+                <p className="text-xs text-muted-foreground">
+                  Finds the best opening for Visit 1 in the days you pick below, then the best
+                  opening for the follow-up {planInfo.lo}–{planInfo.hi} days after it.
+                </p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label>Customer (FieldRoutes)</Label>
               <CustomerPicker
@@ -961,7 +1104,7 @@ function FindMode({
             </div>
 
             <div className="space-y-2">
-              <Label>Days to search</Label>
+              <Label>{planInfo ? "Days to search for Visit 1" : "Days to search"}</Label>
               <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
               <p className="text-xs text-muted-foreground">Next 3 working days are selected by default.</p>
             </div>
@@ -995,13 +1138,74 @@ function FindMode({
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full md:w-auto">
-              {loading ? "Searching…" : "Find slots"}
+            <Button type="submit" disabled={loading || followUpLoading} className="w-full md:w-auto">
+              {loading ? "Searching…" : planInfo ? "Find Visit 1 + follow-up slots" : "Find slots"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
+      {result && (
+        <div className="mt-6 space-y-6">
+          {planInfo && (
+            <div className="rounded-md border-2 border-primary/60 bg-primary/5 p-3 flex flex-wrap items-center gap-2">
+              <Badge className="bg-primary text-primary-foreground font-bold uppercase tracking-wide">Visit 1</Badge>
+              <span className="text-sm font-semibold">
+                {visit1Date ? `${isoDayLabel(visit1Date)} · ` : ""}best opening in the next few days
+              </span>
+              <span className="text-xs text-muted-foreground">
+                — follow-up must land {planInfo.lo}–{planInfo.hi} days later. Use “Plan follow-up from this day” on any day below to re-anchor.
+              </span>
+            </div>
+          )}
+          <FindResultsView
+            result={result}
+            windowWidth={Number(windowWidth)}
+            scheduleContext={scheduleContext}
+            scheduleHint={!canSchedule ? scheduleHint : null}
+            visitLabel={planInfo ? "Visit 1" : undefined}
+            dayAction={planInfo ? {
+              activeDate: visit1Date,
+              label: "Plan follow-up from this day",
+              activeLabel: "Follow-up planned from this day",
+              onPick: (iso) => { void runFollowUp(iso, plan); },
+            } : undefined}
+          />
+        </div>
+      )}
+
+      {planInfo && result && (followUpLoading || followUp || visit1Date) && (
+        <div className="mt-6 space-y-6">
+          <div className="rounded-md border-2 border-violet-500/60 bg-violet-500/5 p-3 flex flex-wrap items-center gap-2">
+            <Badge className="bg-violet-600 hover:bg-violet-600 text-white font-bold uppercase tracking-wide">
+              {planInfo.label}
+            </Badge>
+            <span className="text-sm font-semibold">
+              {visit1Date
+                ? `${planInfo.lo}–${planInfo.hi} days after ${isoDayLabel(visit1Date)}`
+                : `${planInfo.lo}–${planInfo.hi} days after Visit 1`}
+            </span>
+            {visit1Date && (
+              <span className="text-xs text-muted-foreground">
+                — searching {followUpDates(visit1Date, plan).map(isoDayLabel).join(", ") || "no working days in range"}
+              </span>
+            )}
+          </div>
+          {followUpLoading && <p className="text-sm text-muted-foreground">Searching follow-up days…</p>}
+          {!followUpLoading && followUp && (
+            <FindResultsView
+              result={followUp}
+              windowWidth={Number(windowWidth)}
+              scheduleContext={scheduleContext}
+              scheduleHint={!canSchedule ? scheduleHint : null}
+              visitLabel={planInfo.label}
+              dayBadge={(iso) => visit1Date ? `+${daysBetweenIso(visit1Date, iso)} days` : null}
+            />
+          )}
+        </div>
+      )}
+      {/* Upcoming routes map — always BELOW the proposed slots so the
+          recommendations are the first thing the office sees after a search. */}
       <div className="mt-6">
         <RoutesOverviewCard
           dayRoutes={[...(defaultRoutes ?? []), ...extraRoutes]}
@@ -1011,173 +1215,212 @@ function FindMode({
           onLookupDay={lookupDay}
         />
       </div>
+    </>
+  );
+}
 
-      {result && (
-        <div className="mt-6 space-y-6">
-          {result.scheduling_note && (
-            <div className={`rounded-md border-2 p-3 ${result.note_manual ? "border-red-500 bg-red-500/10" : "border-amber-500 bg-amber-500/10"}`}>
-              <p className="text-sm font-semibold">
-                {result.note_manual
-                  ? "🛑 Call to schedule — this customer's note says not to auto-book"
-                  : "📌 Scheduling note on this customer — days it forbids are already hidden"}
-              </p>
-              <p className="text-sm mt-1 italic">“{result.scheduling_note}”</p>
-              {(result.note_rules?.length ?? 0) > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {result.note_rules!.map((r) => (
-                    <Badge key={r} variant="outline" className="border-amber-600 text-amber-700 dark:text-amber-400">{r}</Badge>
-                  ))}
-                </div>
-              )}
-              {(result.note_blocked_dates?.length ?? 0) > 0 && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Hidden by the note:{" "}
-                  {result.note_blocked_dates!.map((b) => `${b.date} — ${b.reason}`).join(" · ")}
-                </p>
-              )}
+// Renders one find-slot result: the scheduling-note banner, the ★ Best Fit /
+// 2nd Best summary, then a card per day with its SlotCards. Used once for a
+// single-visit search and twice (Visit 1 + follow-up) for a follow-up plan.
+function FindResultsView({
+  result, windowWidth, scheduleContext, scheduleHint, visitLabel, dayAction, dayBadge,
+}: {
+  result: FindResult;
+  windowWidth: number;
+  scheduleContext: ScheduleContext | null;
+  /** Shown when click-to-schedule is disabled (missing customer / type / sub id). */
+  scheduleHint?: string | null;
+  /** Prefix for the Schedule confirm ("Visit 1", "7 day follow up"). */
+  visitLabel?: string;
+  /** Optional per-day action button (used to re-anchor the follow-up). */
+  dayAction?: { activeDate: string | null; label: string; activeLabel: string; onPick: (iso: string) => void };
+  /** Optional per-day badge text (e.g. "+8 days" on follow-up cards). */
+  dayBadge?: (iso: string) => string | null;
+}) {
+  const byDay = result.by_day ?? [];
+  return (
+    <div className="space-y-6">
+      {result.scheduling_note && (
+        <div className={`rounded-md border-2 p-3 ${result.note_manual ? "border-red-500 bg-red-500/10" : "border-amber-500 bg-amber-500/10"}`}>
+          <p className="text-sm font-semibold">
+            {result.note_manual
+              ? "🛑 Call to schedule — this customer's note says not to auto-book"
+              : "📌 Scheduling note on this customer — days it forbids are already hidden"}
+          </p>
+          <p className="text-sm mt-1 italic">“{result.scheduling_note}”</p>
+          {(result.note_rules?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {result.note_rules!.map((r) => (
+                <Badge key={r} variant="outline" className="border-amber-600 text-amber-700 dark:text-amber-400">{r}</Badge>
+              ))}
             </div>
           )}
-          <p className="text-xs text-muted-foreground">
-            Scored {result.routes_scored} route-openings across{" "}
-            {result.stops_in_horizon} stops. Geocoded to{" "}
-            <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
-          </p>
-          {(() => {
-            // Rank every slot across every day by smallest detour minutes,
-            // then fewest extra miles, and surface the top 2 at the top.
-            type Ranked = { date: string; weekday: string; idx: number; c: SlotCandidate };
-            const all: Ranked[] = [];
-            byDay.forEach((day) => {
-              day.slots.forEach((c, idx) => {
-                all.push({ date: day.date, weekday: day.weekday, idx, c });
-              });
-            });
-            all.sort((a, b) => {
-              // score_sec is the backend's quality-adjusted rank (detour +
-              // crowded-window + late-finish penalties) — trust it first.
-              const as = a.c.score_sec ?? Infinity;
-              const bs = b.c.score_sec ?? Infinity;
-              if (as !== bs) return as - bs;
-              const am = detourMinutes(a.c);
-              const bm = detourMinutes(b.c);
-              if (am !== bm) return am - bm;
-              return parseFloat(detourMiles(a.c)) - parseFloat(detourMiles(b.c));
-            });
-            const top = all.slice(0, 2);
-            if (top.length === 0) return null;
-            const DAILY_MAX_STOPS = 13;
-            return (
-              <div className="space-y-2">
-                {top.map((r, i) => {
-                  const recKey = (r.c.after_insert?.new_stop_window as string | null) ?? null;
-                  const recLabel = bookWindowLabel(r.c, Number(windowWidth));
-                  const snap = r.c.route_snapshot;
-                  const after = r.c.after_insert;
-                  const beforeCount = recKey && snap?.stops_by_window
-                    ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
-                    : 0;
-                  const isCrowded = beforeCount >= 4;
-                  const afterTotal = after?.stops_excluding_tasks ?? 0;
-                  const isDayFull = afterTotal >= DAILY_MAX_STOPS;
-                  const isPrimary = i === 0;
-                  return (
-                    <div key={`${r.date}#${r.idx}`} className={`rounded-md p-3 border-2 ${tierBorder(r.c)} flex flex-wrap items-center gap-3`}>
-                      <Badge className={`${isPrimary ? "bg-emerald-600 hover:bg-emerald-600" : "bg-emerald-500/80 hover:bg-emerald-500/80"} text-white font-bold uppercase tracking-wide`}>
-                        {isPrimary ? "★ Best Fit" : "★ 2nd Best"}
-                      </Badge>
-                      <span className="text-sm">
-                        <span className="font-semibold">{r.c.tech_name}</span>
-                        {" · "}
-                        <span className="font-semibold">{r.weekday}, {r.date}</span>
-                        {" · "}
-                        <span className="font-semibold">{recLabel}</span>
-                        {r.c.est_min != null && (
-                          <span className="text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
-                        )}
-                      </span>
-                      {isCrowded && (
-                        <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Risk — already {beforeCount} stops in this window
-                        </Badge>
-                      )}
-                      {isDayFull && (
-                        <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
-                        </Badge>
-                      )}
-                      <span className="ml-auto"><DetourBadge c={r.c} /></span>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-          {!canSchedule && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-              Pick a customer{!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.
+          {(result.note_blocked_dates?.length ?? 0) > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Hidden by the note:{" "}
+              {result.note_blocked_dates!.map((b) => `${b.date} — ${b.reason}`).join(" · ")}
             </p>
           )}
-          {byDay.length === 0 && (
-            <p className="text-sm italic text-muted-foreground">
-              No field-tech routes on the selected day(s).
-            </p>
-          )}
-          {(() => {
-            // Recompute the same best-fit key so we can flag the matching SlotCard.
-            let bestKey: string | null = null;
-            let bestScore = Infinity;
-            let bestMin = Infinity;
-            let bestMiles = Infinity;
-            byDay.forEach((day) => {
-              day.slots.forEach((c, idx) => {
-                const s = c.score_sec ?? Infinity;
-                const m = detourMinutes(c);
-                const mi = parseFloat(detourMiles(c));
-                if (
-                  s < bestScore ||
-                  (s === bestScore && (m < bestMin || (m === bestMin && mi < bestMiles)))
-                ) {
-                  bestScore = s;
-                  bestMin = m;
-                  bestMiles = mi;
-                  bestKey = `${day.date}#${idx}`;
-                }
-              });
-            });
-            return byDay.map((day) => (
-            <Card key={day.date}>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">
-                  {day.weekday} · {day.date}
-                </CardTitle>
-                <CardDescription>{day.slots.length} best opening(s)</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {day.slots.length === 0 && (
-                  <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
-                )}
-                {day.slots.map((c, i) => (
-                  <SlotCard
-                    key={i}
-                    c={c}
-                    rank={i + 1}
-                    date={day.date}
-                    scheduleContext={scheduleContext}
-                    isBestFit={bestKey === `${day.date}#${i}`}
-                    widthHours={Number(windowWidth)}
-                    route={result.day_routes?.find((r) => r.date === day.date && r.route_id === c.route_id) ?? null}
-                    target={result.geocoded}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-            ));
-          })()}
         </div>
       )}
-    </>
+      <p className="text-xs text-muted-foreground">
+        Scored {result.routes_scored} route-openings across{" "}
+        {result.stops_in_horizon} stops. Geocoded to{" "}
+        <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
+      </p>
+      {(() => {
+        // Rank every slot across every day by smallest detour minutes,
+        // then fewest extra miles, and surface the top 2 at the top.
+        type Ranked = { date: string; weekday: string; idx: number; c: SlotCandidate };
+        const all: Ranked[] = [];
+        byDay.forEach((day) => {
+          day.slots.forEach((c, idx) => {
+            all.push({ date: day.date, weekday: day.weekday, idx, c });
+          });
+        });
+        all.sort((a, b) => {
+          // score_sec is the backend's quality-adjusted rank (detour +
+          // crowded-window + late-finish penalties) — trust it first.
+          const as = a.c.score_sec ?? Infinity;
+          const bs = b.c.score_sec ?? Infinity;
+          if (as !== bs) return as - bs;
+          const am = detourMinutes(a.c);
+          const bm = detourMinutes(b.c);
+          if (am !== bm) return am - bm;
+          return parseFloat(detourMiles(a.c)) - parseFloat(detourMiles(b.c));
+        });
+        const top = all.slice(0, 2);
+        if (top.length === 0) return null;
+        const DAILY_MAX_STOPS = 13;
+        return (
+          <div className="space-y-2">
+            {top.map((r, i) => {
+              const recKey = (r.c.after_insert?.new_stop_window as string | null) ?? null;
+              const recLabel = bookWindowLabel(r.c, windowWidth);
+              const snap = r.c.route_snapshot;
+              const after = r.c.after_insert;
+              const beforeCount = recKey && snap?.stops_by_window
+                ? (snap.stops_by_window[recKey as keyof WindowCounts] ?? 0)
+                : 0;
+              const isCrowded = beforeCount >= 4;
+              const afterTotal = after?.stops_excluding_tasks ?? 0;
+              const isDayFull = afterTotal >= DAILY_MAX_STOPS;
+              const isPrimary = i === 0;
+              return (
+                <div key={`${r.date}#${r.idx}`} className={`rounded-md p-3 border-2 ${tierBorder(r.c)} flex flex-wrap items-center gap-3`}>
+                  <Badge className={`${isPrimary ? "bg-emerald-600 hover:bg-emerald-600" : "bg-emerald-500/80 hover:bg-emerald-500/80"} text-white font-bold uppercase tracking-wide`}>
+                    {isPrimary ? "★ Best Fit" : "★ 2nd Best"}
+                  </Badge>
+                  <span className="text-sm">
+                    <span className="font-semibold">{r.c.tech_name}</span>
+                    {" · "}
+                    <span className="font-semibold">{r.weekday}, {r.date}</span>
+                    {" · "}
+                    <span className="font-semibold">{recLabel}</span>
+                    {r.c.est_min != null && (
+                      <span className="text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
+                    )}
+                  </span>
+                  {isCrowded && (
+                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Risk — already {beforeCount} stops in this window
+                    </Badge>
+                  )}
+                  {isDayFull && (
+                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
+                      <AlertTriangle className="w-3 h-3 mr-1" />
+                      Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
+                    </Badge>
+                  )}
+                  <span className="ml-auto"><DetourBadge c={r.c} /></span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+      {scheduleHint && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+          {scheduleHint}
+        </p>
+      )}
+      {byDay.length === 0 && (
+        <p className="text-sm italic text-muted-foreground">
+          No field-tech routes on the selected day(s).
+        </p>
+      )}
+      {(() => {
+        // Recompute the same best-fit key so we can flag the matching SlotCard.
+        let bestKey: string | null = null;
+        let bestScore = Infinity;
+        let bestMin = Infinity;
+        let bestMiles = Infinity;
+        byDay.forEach((day) => {
+          day.slots.forEach((c, idx) => {
+            const s = c.score_sec ?? Infinity;
+            const m = detourMinutes(c);
+            const mi = parseFloat(detourMiles(c));
+            if (
+              s < bestScore ||
+              (s === bestScore && (m < bestMin || (m === bestMin && mi < bestMiles)))
+            ) {
+              bestScore = s;
+              bestMin = m;
+              bestMiles = mi;
+              bestKey = `${day.date}#${idx}`;
+            }
+          });
+        });
+        return byDay.map((day) => (
+        <Card key={day.date}>
+          <CardHeader className="pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                {day.weekday} · {day.date}
+                {dayBadge?.(day.date) && (
+                  <Badge variant="outline" className="border-violet-500 text-violet-700 dark:text-violet-300 font-semibold">
+                    {dayBadge(day.date)}
+                  </Badge>
+                )}
+              </CardTitle>
+              {dayAction && day.slots.length > 0 && (
+                dayAction.activeDate === day.date ? (
+                  <Badge className="bg-primary text-primary-foreground font-semibold">
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> {dayAction.activeLabel}
+                  </Badge>
+                ) : (
+                  <Button type="button" size="sm" variant="outline" onClick={() => dayAction.onPick(day.date)}>
+                    <CalendarClock className="w-3.5 h-3.5 mr-1" /> {dayAction.label}
+                  </Button>
+                )
+              )}
+            </div>
+            <CardDescription>{day.slots.length} best opening(s)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {day.slots.length === 0 && (
+              <p className="text-sm italic text-muted-foreground">No workable openings this day.</p>
+            )}
+            {day.slots.map((c, i) => (
+              <SlotCard
+                key={i}
+                c={c}
+                rank={i + 1}
+                date={day.date}
+                scheduleContext={scheduleContext}
+                isBestFit={bestKey === `${day.date}#${i}`}
+                widthHours={windowWidth}
+                visitLabel={visitLabel}
+                route={result.day_routes?.find((r) => r.date === day.date && r.route_id === c.route_id) ?? null}
+                target={result.geocoded}
+              />
+            ))}
+          </CardContent>
+        </Card>
+        ));
+      })()}
+    </div>
   );
 }
 
@@ -1189,7 +1432,7 @@ type ScheduleContext = {
 };
 
 function SlotCard({
-  c, rank, date, scheduleContext, isBestFit, widthHours = 4, route, target,
+  c, rank, date, scheduleContext, isBestFit, widthHours = 4, route, target, visitLabel,
 }: {
   c: SlotCandidate;
   rank: number;
@@ -1197,6 +1440,8 @@ function SlotCard({
   scheduleContext?: ScheduleContext | null;
   isBestFit?: boolean;
   widthHours?: number;
+  /** Which visit of a follow-up plan this slot books ("Visit 1", "7 day follow up"). */
+  visitLabel?: string;
   /** The tech-day's booked route (from day_routes) — enables the Map view. */
   route?: DayRoute | null;
   /** Geocoded location of the searched address — the "new stop" pin. */
@@ -1218,7 +1463,7 @@ function SlotCard({
     if (!start || !end || !useDate) { toast.error("This slot is missing time data."); return; }
     const subLabel = scheduleContext.subscriptionId === -1 ? "standalone" : `subscription #${scheduleContext.subscriptionId}`;
     const lastSvc = lastServiceLabel(scheduleContext.customer, "Last service");
-    if (!window.confirm(`Queue this appointment for office approval?\n\n${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}${lastSvc ? `\n${lastSvc}${scheduleContext.customer.last_is_initial ? " — initial: 30-day follow-up, ±5 day flexibility" : ""}` : ""}`)) return;
+    if (!window.confirm(`Queue this appointment for office approval?\n\n${visitLabel ? `${visitLabel}: ` : ""}${scheduleContext.serviceType.label} for ${scheduleContext.customer.name || scheduleContext.customer.company_name}\n${useDate} ${start}–${end}\n${subLabel}${lastSvc ? `\n${lastSvc}${scheduleContext.customer.last_is_initial ? " — initial: 30-day follow-up, ±5 day flexibility" : ""}` : ""}`)) return;
     setBooking(true);
     try {
       const { data, error } = await supabase.functions.invoke("fieldroutes-appointment-submit", {
