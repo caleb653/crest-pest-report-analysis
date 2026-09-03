@@ -212,16 +212,12 @@ function ReviewsSection({ period, onData }: { period: Period; onData: (rows: { n
                     <div className="w-full border-t border-border pt-1 text-center">
                       <span className="text-xs font-medium text-foreground">{firstName(row.name)}</span>
                     </div>
-                    <div className="w-full space-y-1">
-                      {row.reviews.map((r, i) => (
-                        <div key={i} className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-tight text-muted-foreground text-left">
-                          <span className="font-semibold text-foreground">{r.platform === "google" ? "G" : "Y"}</span>{" "}
-                          {r.reviewer || "Anonymous"}
-                          {typeof r.stars === "number" ? ` · ${r.stars}★` : ""}
-                          <span className="text-muted-foreground/70"> ({shortDate(r.review_date)})</span>
-                        </div>
-                      ))}
-                    </div>
+                    <span
+                      className="text-[10px] text-muted-foreground tabular-nums"
+                      title={row.reviews.map((r) => `${r.platform === "google" ? "G" : "Y"} ${r.reviewer || "Anonymous"} (${shortDate(r.review_date)})`).join("\n")}
+                    >
+                      G {row.google} · Y {row.yelp}
+                    </span>
                   </div>
                 );
               })}
@@ -353,16 +349,16 @@ function SelfGenSection({ period, onData }: { period: Period; onData: (rows: { n
                     <div className="w-full border-t border-border pt-1 text-center">
                       <span className="text-xs font-medium text-foreground">{firstName(row.name)}</span>
                     </div>
-                    <div className="w-full space-y-1">
-                      {eventsFor(row.name).map((e, i) => (
-                        <div key={i}
-                             className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-tight text-muted-foreground text-left">
-                          <span className="font-semibold text-foreground">{e.points}×</span>{" "}
-                          {EVENT_LABELS[e.event_type]} · {e.customer}
-                          <span className="text-muted-foreground/70"> ({shortDate(e.event_date)})</span>
-                        </div>
-                      ))}
-                    </div>
+                    <span
+                      className="text-[10px] text-muted-foreground tabular-nums text-center"
+                      title={eventsFor(row.name).map((e) => `${e.points}× ${EVENT_LABELS[e.event_type]} · ${e.customer} (${shortDate(e.event_date)})`).join("\n")}
+                    >
+                      {[
+                        row.upsells ? `${row.upsells} upsell${row.upsells === 1 ? "" : "s"}` : null,
+                        row.selfgen_residential ? `${row.selfgen_residential} res` : null,
+                        row.selfgen_commercial ? `${row.selfgen_commercial} comm` : null,
+                      ].filter(Boolean).join(" · ")}
+                    </span>
                   </div>
                 );
               })}
