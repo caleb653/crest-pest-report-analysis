@@ -76,6 +76,9 @@ import {
   type NonChemEquipmentEntry,
 } from "@/components/portal/CommercialReportExtras";
 import { supabase as supa } from "@/integrations/supabase/client";
+import AppointmentReminderControls from "@/components/portal/AppointmentReminderControls";
+import { Clock as ClockIcon } from "lucide-react";
+import { readScheduledWindow, formatArrivalWindow } from "@/lib/appointmentReminder";
 
 interface PropertyData {
   id: string;
@@ -1735,6 +1738,31 @@ export default function CommercialDashboardView({
                             );
                           })()}
                         </div>
+                      )}
+                      {/* Arrival window + PM appointment reminder. Customers
+                          (readOnly mirror) just see the window as text. */}
+                      {readOnly ? (
+                        (() => {
+                          const win = formatArrivalWindow(readScheduledWindow(s));
+                          return win ? (
+                            <div className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-2.5 py-2 text-sm">
+                              <ClockIcon className="w-4 h-4 text-primary shrink-0" />
+                              <span className="font-semibold">Arrival window:</span>
+                              <span>{win}</span>
+                            </div>
+                          ) : null;
+                        })()
+                      ) : (
+                        <AppointmentReminderControls
+                          service={{ ...s, service_date: edits[s.id]?.service_date || s.service_date || todayISO() } as any}
+                          property={property as any}
+                          clientId={(property as any).client_id || null}
+                          clientName={clientName}
+                          links={links as any}
+                          propertyType="commercial"
+                          unitNumbers={[]}
+                          onSaved={onRefresh}
+                        />
                       )}
                       <div className="grid grid-cols-2 gap-2">
                         <div className="col-span-2">

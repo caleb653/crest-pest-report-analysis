@@ -36,6 +36,7 @@ import {
 } from "@/components/portal/CommercialSpragueSections";
 import crestLogo from "@/assets/crest-logo.png";
 import { AlertTriangle, FlaskConical as FlaskIcon, ShieldCheck, HelpCircle } from "lucide-react";
+import { readScheduledWindow, formatArrivalWindow } from "@/lib/appointmentReminder";
 
 interface PropertyData {
   id: string;
@@ -517,6 +518,10 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
                                 <p className="font-bold text-sm truncate">{s.service_type}</p>
                                 <p className="text-sm font-semibold text-foreground">
                                   {fmtDate(todayISO())}
+                                  {(() => {
+                                    const win = formatArrivalWindow(readScheduledWindow(s));
+                                    return win ? <span> • Arriving {win}</span> : null;
+                                  })()}
                                   {s.service_time && <span className="text-muted-foreground font-normal"> • {fmtTime(s.service_time)}</span>}
                                   {s.technician && <span className="text-muted-foreground font-normal"> • {s.technician}</span>}
                                 </p>
