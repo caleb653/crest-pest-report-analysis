@@ -3438,6 +3438,54 @@ Crest Pest Control`;
                   </Button>
                 );
               })()}
+              <Button
+                onClick={async () => {
+                  if (!reportId) {
+                    toast.error("Save the sales report first, then add the initial report.");
+                    return;
+                  }
+                  try {
+                    // Pull the live canvas state so the initial report gets the map
+                    // exactly as it looks right now (unsaved strokes included).
+                    const fresh = await captureFreshMapState();
+                    const mod = await import("@/lib/initialReportAutoCreate");
+                    const res = await mod.ensureInitialReport({
+                      id: reportId,
+                      technician_name: editableTech,
+                      customer_name: editableCustomer,
+                      customer_email: customerEmail || null,
+                      customer_phone: customerPhone || null,
+                      address: editableAddress || extractedAddress || address,
+                      service_date: editableServiceDate,
+                      license_number: editableLicenseNumber,
+                      map_url: coordinates
+                        ? `https://www.openstreetmap.org/?mlat=${coordinates.lat}&mlon=${coordinates.lng}#map=17/${coordinates.lat}/${coordinates.lng}`
+                        : null,
+                      map_data: fresh?.mainMapPayload ?? (mapData ? JSON.parse(mapData) : null),
+                      custom_map_url: customMapImage,
+                      rendered_map_url: renderedMapImage,
+                      fieldroutes_customer_id: fieldroutesCustomerId,
+                      fieldroutes_login_link: fieldroutesLoginLink,
+                      target_pests: editableTargetPests,
+                      property_type: propertyType,
+                      company_name: companyName,
+                      property_images: propertyImages,
+                    });
+                    if (!res) { toast.error("Could not create the Initial Report"); return; }
+                    toast.success(res.created ? "Initial Report created" : "Opening existing Initial Report");
+                    navigate(mod.initialReportUrl(res.reportId));
+                  } catch (e) {
+                    console.error(e);
+                    toast.error("Failed to create the Initial Report");
+                  }
+                }}
+                variant="secondary"
+                size="sm"
+                title="Create an Initial Pest Report (site map + notes) from this sales report"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                <span className="hidden sm:inline">Add Initial Report</span>
+              </Button>
               <Button onClick={handleOpenCompose} variant="secondary" size="sm">
                 <Mail className="w-3 h-3 mr-1" />
                 <span className="hidden sm:inline">Email</span>

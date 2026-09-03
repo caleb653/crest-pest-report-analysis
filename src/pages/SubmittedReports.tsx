@@ -161,9 +161,13 @@ const SubmittedReports = () => {
         // Rodent Exclusion Reports are an initial-report variant — `report_format`
         // is exposed by `list_reports_summary` (from customer_preferences.reportFormat).
         const isRodentExclusion = r.report_format === "rodent-exclusion";
+        // Lean (site map + notes) initial reports have no next_steps — they are
+        // tagged customer_preferences.reportFormat = "general" on save instead.
+        const isLeanInitial = r.report_format === "general";
         const isInitial =
           isFieldRoutesInspection ||
           isRodentExclusion ||
+          isLeanInitial ||
           (Array.isArray(r.next_steps) && r.next_steps.length > 0);
         if (head.includes('"_reportFormat":"multi-proposal"')) isMultiProposal = true;
         // A rodent-exclusion record must never be misread as a multi-proposal sales report.
@@ -214,6 +218,18 @@ const SubmittedReports = () => {
       });
 
       if (error || !data?.ok) throw new Error(data?.error ?? error?.message ?? "sync_failed");
+
+      // Webhook-created inspection reports start as "Unassigned" (FieldRoutes
+      // assigns the tech after scheduling). Fill in names that have since been
+      // assigned. Best-effort: never block the list on it.
+      try {
+        const { data: bf } = await supabase.functions.invoke("fieldroutes-backfill-techs", {
+          body: { sessionToken },
+        });
+        if (bf?.updated > 0) await loadReports();
+      } catch (e) {
+        console.warn("fieldroutes-backfill-techs failed", e);
+      }
 
       if (data.created > 0) {
         toast.success(`FieldRoutes synced: ${data.created} new sales report${data.created === 1 ? "" : "s"}.`);

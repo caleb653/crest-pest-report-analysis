@@ -244,6 +244,9 @@ interface AnalysisData {
   nextSteps: string[];
 }
 
+/** Standard Initial Pest Report = internal site-map + notes tool (see isLean). */
+const LEAN_INITIAL_REPORT = true;
+
 const Report = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -272,6 +275,13 @@ const Report = () => {
   const [isRodentExclusion, setIsRodentExclusion] = useState<boolean>(
     variant === "rodent-exclusion",
   );
+  // LEAN initial report (Caleb, Sept 2026): the standard Initial Pest Report is
+  // now an INTERNAL tool — header info, the site map, target pests and a Notes
+  // box. The customer-facing sections (Key Areas, Preferences, Services
+  // Completed, Recommendations, What to Expect, Property Images, Guarantee)
+  // are gated behind this flag so flipping it restores the full layout.
+  // The Rodent Exclusion variant is untouched (still the full customer report).
+  const isLean = LEAN_INITIAL_REPORT && !isRodentExclusion;
 
   const [extractedAddress, setExtractedAddress] = useState<string>("");
   const [editableAddress, setEditableAddress] = useState<string>(address || "");
@@ -1027,7 +1037,7 @@ const Report = () => {
           notes: customerPreferenceNotes,
           propertyType,
           companyName: companyName || undefined,
-          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : { reportFormat: "general" }),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
@@ -1099,7 +1109,7 @@ const Report = () => {
           notes: customerPreferenceNotes,
           propertyType,
           companyName: companyName || undefined,
-          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : { reportFormat: "general" }),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
@@ -1181,6 +1191,7 @@ const Report = () => {
       expectations: editableExpectations[0] || "",
       mapImage: mapOverride || renderedMapImage || customMapImage,
       isRodentExclusion,
+      lean: isLean,
       beforePhotos,
       afterPhotos: propertyImages,
       pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)),
@@ -1357,7 +1368,7 @@ Crest Pest Control
           notes: customerPreferenceNotes,
           propertyType,
           companyName: companyName || undefined,
-          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : {}),
+          ...(isRodentExclusion ? { reportFormat: "rodent-exclusion" } : { reportFormat: "general" }),
           ...(fieldroutesLoginLink ? { fieldroutes_login_link: fieldroutesLoginLink } : {}),
           ...(beforePhotos.length > 0 || propertyImages.length > 0 ? { beforeAfter: { before: beforePhotos, pairLabels: normalizeRodentPairLabels(pairLabels, Math.max(beforePhotos.length, propertyImages.length)) } } : {}),
         },
@@ -2173,10 +2184,12 @@ Crest Pest Control
               </div>
             </div>
 
-            {/* Purpose Text - condensed */}
+            {/* Purpose Text - condensed (customer-facing copy; hidden for the internal lean report) */}
+            {!isLean && (
             <p className="mt-1 text-[10px] text-foreground leading-tight opacity-80">
               We appreciate you entrusting Crest with your pest control needs. We've created this educational report to help you get one step closer to living a pest-free life. Call <span className="font-semibold">949-424-5000</span> with any questions.
             </p>
+            )}
           </div>
         </div>
       )}
@@ -2622,8 +2635,29 @@ Crest Pest Control
               </Card>
             )}
 
+            {/* LEAN initial report (internal): one Notes card replaces every
+                customer-facing section below. Saved to reports.notes. */}
+            {isLean && (
+              <Card className="print-section p-3 md:p-4">
+                <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Notes</h2>
+                <Textarea
+                  value={todaysFindings}
+                  onChange={(e) => setTodaysFindings(e.target.value)}
+                  placeholder="Anything the Route Manager needs for this job — access / gate codes, problem areas, what was found, what to do on the next visit…"
+                  className="text-sm resize-y min-h-[260px] leading-relaxed no-print"
+                  rows={10}
+                />
+                <div
+                  className="hidden print-content-formatted"
+                  dangerouslySetInnerHTML={{
+                    __html: (todaysFindings || "").replace(/\n/g, "<br/>"),
+                  }}
+                />
+              </Card>
+            )}
+
             {/* Customer Key Areas */}
-            {!isRodentExclusion && (
+            {!isRodentExclusion && !isLean && (
             <>
             <Card className="print-section p-3 md:p-4">
               <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Customer Key Areas</h2>
@@ -3343,8 +3377,8 @@ Crest Pest Control
       </div>
       )}
 
-      {/* Second Page - Property Images (non-rodent variant) */}
-      {!isRodentExclusion && (
+      {/* Second Page - Property Images (non-rodent variant; hidden for the lean internal report) */}
+      {!isRodentExclusion && !isLean && (
       <div 
         data-pdf-page="2"
         data-pdf-capture="2"
@@ -3457,7 +3491,8 @@ Crest Pest Control
       </div>
       )}
 
-      {/* Crest Guarantee */}
+      {/* Crest Guarantee (customer-facing; hidden for the lean internal report) */}
+      {!isLean && (
       <div className="bg-background">
         <div className={isMobile ? "p-4" : "p-6 max-w-[1800px] mx-auto"}>
           <div className="border-2 border-border rounded-lg p-4 text-center bg-muted/30">
@@ -3476,6 +3511,7 @@ Crest Pest Control
           )}
         </div>
       </div>
+      )}
 
 
 

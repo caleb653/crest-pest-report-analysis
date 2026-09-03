@@ -21,6 +21,8 @@ export type InitialPestPdfOptions = {
   expectations?: string;
   mapImage?: string | null;
   isRodentExclusion?: boolean;
+  /** Internal site-map + notes layout: big map, target pests, notes — nothing else. */
+  lean?: boolean;
   beforePhotos?: ReportPhoto[];
   afterPhotos?: ReportPhoto[];
   pairLabels?: string[];
@@ -453,6 +455,38 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
   ];
   const detailsH = drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 10);
   cursor.y -= detailsH + 8;
+
+  if (opts.lean) {
+    // ── Lean / internal layout: as much map as fits, target pests + notes beside it. ──
+    const leanTop = cursor.y;
+    const leanMapH = Math.min(leanTop - MARGIN, 430);
+    const leanMapW = Math.round(leanMapH * 0.75);
+    cursor.page.drawRectangle({ x: MARGIN, y: leanTop - leanMapH, width: leanMapW, height: leanMapH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.8 });
+    cursor.page.drawRectangle({ x: MARGIN, y: leanTop - 20, width: leanMapW, height: 20, color: BRAND_BLACK });
+    cursor.page.drawText("SITE MAP", { x: MARGIN + 9, y: leanTop - 14, size: 11, font: fonts.bold, color: WHITE });
+    if (map) {
+      drawImageCover(cursor.page, map, MARGIN + 6, leanTop - 26, leanMapW - 12, leanMapH - 32);
+    } else {
+      cursor.page.drawText("No map image added", { x: MARGIN + 30, y: leanTop - leanMapH / 2, size: 12, font: fonts.bold, color: BRAND_BLACK });
+    }
+    const leanRightX = MARGIN + leanMapW + 12;
+    const leanRightW = PAGE_W - leanRightX - MARGIN;
+    let leanRightY = leanTop;
+    if (opts.targetPests?.length) {
+      leanRightY -= drawChipSectionOnPage(cursor.page, "Target Pests", opts.targetPests, leanRightX, leanRightY, leanRightW, fonts) + 8;
+    }
+    const noteLines = toLines(opts.todaysFindings);
+    const noteAvail = leanRightY - MARGIN;
+    const noteCapacity = noteAvail >= 60 ? Math.max(1, Math.floor((noteAvail - 50) / 17)) : 0;
+    const firstNotes = noteCapacity > 0 ? noteLines.slice(0, noteCapacity) : [];
+    if (firstNotes.length || noteLines.length === 0) {
+      leanRightY -= drawSectionOnPage(cursor.page, "Notes", firstNotes.length ? firstNotes : ["-"], leanRightX, leanRightY, leanRightW, fonts, 11);
+    }
+    cursor.y = Math.min(leanTop - leanMapH, leanRightY) - 8;
+    const restNotes = noteLines.slice(firstNotes.length);
+    if (restNotes.length) addFlowSection(doc, cursor, fonts, opts, firstNotes.length ? "Notes Continued" : "Notes", restNotes, logo, 11);
+    return doc.save();
+  }
 
   const mapW = 200;
   const mapH = 264;
