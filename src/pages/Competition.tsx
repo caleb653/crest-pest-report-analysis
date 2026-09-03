@@ -10,10 +10,10 @@
 // thin marks with rounded tops anchored to the baseline, 2px gaps, values
 // direct-labeled (a scoreboard's whole point), text in text tokens.
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Lock, Pencil, Plus, RefreshCw, Sparkles, Trophy, Unlock, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Crown, Lock, Pencil, Plus, RefreshCw, Sparkles, Star, Trophy, Unlock, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,193 @@ const entryOf = (c: Competition, person: string): Entry => {
 
 const firstName = (full: string) => full.split(" ")[0];
 
+// ── Competition period ───────────────────────────────────────────────────────
+// Both auto boards (reviews + self-gen sales) and the leaders banner use ONE
+// window. Default = the current competition (Aug 5 – Sep 30 2026). Editable
+// while unlocked; the override is persisted on the slot-1 competitions row
+// under the reserved `_period` key (no schema change needed).
+const DEFAULT_PERIOD = { start: "2026-08-05", end: "2026-09-30" };
+type Period = { start: string; end: string };
+const PERIOD_KEY = "_period";
+
+const PERIOD_LS_KEY = "competition_period";
+const okDate = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const asPeriod = (raw: any): Period | null =>
+  raw && okDate(raw.start) && okDate(raw.end) ? { start: raw.start, end: raw.end } : null;
+
+const readPeriod = (comps: Competition[]): Period => {
+  const row = comps.find((c) => c.slot === 1) ?? comps[0];
+  const shared = asPeriod((row?.entries as any)?.[PERIOD_KEY]);
+  if (shared) return shared;
+  // No competitions row (table missing / never seeded): fall back to a
+  // per-browser override so the period can still be changed.
+  try {
+    const local = asPeriod(JSON.parse(localStorage.getItem(PERIOD_LS_KEY) || "null"));
+    if (local) return local;
+  } catch { /* ignore */ }
+  return DEFAULT_PERIOD;
+};
+
+const longDate = (iso: string) => {
+  const d = new Date(`${iso}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+const periodLabel = (p: Period) => `${longDate(p.start)} – ${longDate(p.end)}, ${p.end.slice(0, 4)}`;
+
+// ── Leaders banner ───────────────────────────────────────────────────────────
+type Leader = { name: string; value: number } | null;
+const topTwo = (rows: { name: string; value: number }[]): [Leader, Leader] => {
+  const sorted = [...rows].filter((r) => r.value > 0).sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+  return [sorted[0] ?? null, sorted[1] ?? null];
+};
+
+function LeaderTile({ icon, title, unit, rows, loading }: {
+  icon: ReactNode; title: string; unit: string; rows: { name: string; value: number }[]; loading: boolean;
+}) {
+  const [first, second] = topTwo(rows);
+  const tied = first && second && first.value === second.value;
+  return (
+    <div className="flex-1 min-w-[220px] rounded-xl border-2 border-amber-300/70 bg-gradient-to-br from-amber-50 to-background dark:from-amber-950/30 p-4">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+        {icon} {title}
+      </p>
+      {loading && rows.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">Loading…</p>
+      ) : !first ? (
+        <p className="mt-2 text-sm text-muted-foreground">Nothing yet this period.</p>
+      ) : (
+        <>
+          <p className="mt-1.5 flex items-baseline gap-2">
+            <Crown className="w-5 h-5 text-amber-500 self-center" />
+            <span className="text-2xl font-bold text-foreground leading-none">{first.name}</span>
+          </p>
+          <p className="mt-1 text-sm text-foreground">
+            <span className="font-bold tabular-nums">{first.value}</span> {unit}
+            {tied && <span className="text-muted-foreground"> · tied with {firstName(second!.name)}</span>}
+          </p>
+          {second && !tied && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Next: {firstName(second.name)} with {second.value} · {first.value - second.value} behind
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Reviews (auto from Google + Yelp name mentions) ──────────────────────────
+type ReviewMention = { review_date: string | null; platform: string; location: string | null; reviewer: string | null; stars: number | null; recommended: boolean | null };
+type ReviewsResult = {
+  start_date: string;
+  end_date: string;
+  leaderboard: { name: string; mentions: number; google: number; yelp: number; reviews: ReviewMention[] }[];
+  reviews_with_mentions: { google: number; yelp: number };
+};
+
+function ReviewsSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean) => void }) {
+  const staff = useCurrentStaff();
+  const [data, setData] = useState<ReviewsResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async () => {
+    if (!staff) return;
+    setLoading(true);
+    onData(data?.leaderboard.map((r) => ({ name: r.name, value: r.mentions })) ?? [], true);
+    setError(null);
+    try {
+      const { data: res, error: fnError } = await supabase.functions.invoke("contest-selfgen", {
+        body: { staffName: staff.fullName, kind: "reviews", start_date: period.start, end_date: period.end },
+      });
+      if (fnError || !res?.ok) throw new Error(res?.error || fnError?.message || "load failed");
+      const result = res.result as ReviewsResult;
+      setData(result);
+      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.mentions })), false);
+    } catch (e) {
+      setError(String((e as Error).message || e));
+      onData([], false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { void load(); }, [staff?.fullName, period.start, period.end]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const board = data?.leaderboard ?? [];
+  const maxScore = Math.max(1, ...board.map((r) => r.mentions));
+  const BAR_MAX_PX = 180;
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg flex-wrap">
+          <Star className="w-5 h-5 text-amber-500" />
+          Reviews
+          <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5">
+            auto from Google + Yelp
+          </span>
+          <span className="flex-1" />
+          <span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+            {periodLabel(period)}
+            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" disabled={loading} onClick={() => void load()}>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          One point per review that names you (Google + Yelp, incl. Yelp "not recommended"). A review naming two people counts for both.
+          {data && ` ${data.reviews_with_mentions.google + data.reviews_with_mentions.yelp} reviews named someone this period.`}
+        </p>
+      </CardHeader>
+      <CardContent>
+        {loading && !data ? (
+          <p className="text-center text-sm text-muted-foreground py-8">Counting reviews…</p>
+        ) : error ? (
+          <p className="text-center text-sm text-destructive py-8">Couldn't load: {error}</p>
+        ) : board.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-8">No reviews naming anyone in this period yet.</p>
+        ) : (
+          <div className="overflow-x-auto pb-1">
+            <div className="flex items-end gap-2 min-w-[480px]" style={{ minHeight: BAR_MAX_PX + 100 }}>
+              {board.map((row) => {
+                const h = row.mentions > 0 ? Math.max(8, Math.round((row.mentions / maxScore) * BAR_MAX_PX)) : 0;
+                return (
+                  <div key={row.name} className="flex-1 min-w-[96px] flex flex-col items-center justify-end gap-1">
+                    <span className="text-sm font-bold text-foreground tabular-nums">{row.mentions}</span>
+                    <div className="w-full flex justify-center" style={{ height: BAR_MAX_PX }}>
+                      <div className="flex items-end h-full">
+                        <div
+                          title={`${row.name}: ${row.mentions} (Google ${row.google} · Yelp ${row.yelp})`}
+                          className="w-9 rounded-t-[4px] bg-primary transition-[height] duration-300"
+                          style={{ height: h }}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full border-t border-border pt-1 text-center">
+                      <span className="text-xs font-medium text-foreground">{firstName(row.name)}</span>
+                    </div>
+                    <div className="w-full space-y-1">
+                      {row.reviews.map((r, i) => (
+                        <div key={i} className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] leading-tight text-muted-foreground text-left">
+                          <span className="font-semibold text-foreground">{r.platform === "google" ? "G" : "Y"}</span>{" "}
+                          {r.reviewer || "Anonymous"}
+                          {typeof r.stars === "number" ? ` · ${r.stars}★` : ""}
+                          <span className="text-muted-foreground/70"> ({shortDate(r.review_date)})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Self-Generated Sales (auto-computed from FieldRoutes) ───────────────────
 // 1x route-manager upsell (bait boxes / mosquito on an existing recurring
 // customer), 2x self-generated net-new residential, 3x self-generated
@@ -77,32 +264,35 @@ const EVENT_LABELS: Record<SelfGenEvent["event_type"], string> = {
 const shortDate = (iso: string | null) =>
   iso ? `${parseInt(iso.slice(5, 7), 10)}/${parseInt(iso.slice(8, 10), 10)}` : "";
 
-function SelfGenSection() {
+function SelfGenSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean) => void }) {
   const staff = useCurrentStaff();
   const [data, setData] = useState<SelfGenResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [startDate, setStartDate] = useState("");
 
-  const load = async (start?: string) => {
+  const load = async () => {
     if (!staff) return;
     setLoading(true);
+    onData(data?.leaderboard.map((r) => ({ name: r.name, value: r.points })) ?? [], true);
     setError(null);
     try {
       const { data: res, error: fnError } = await supabase.functions.invoke("contest-selfgen", {
-        body: { staffName: staff.fullName, ...(start ? { start_date: start } : {}) },
+        body: { staffName: staff.fullName, start_date: period.start, end_date: period.end },
       });
       if (fnError || !res?.ok) throw new Error(res?.error || fnError?.message || "load failed");
-      setData(res.result as SelfGenResult);
+      const result = res.result as SelfGenResult;
+      setData(result);
+      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.points })), false);
     } catch (e) {
       setError(String((e as Error).message || e));
+      onData([], false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load once the PinGate identity is known.
-  useEffect(() => { void load(); }, [staff?.fullName]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Load once the PinGate identity is known; reload when the period changes.
+  useEffect(() => { void load(); }, [staff?.fullName, period.start, period.end]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const board = data?.leaderboard ?? [];
   const maxScore = Math.max(1, ...board.map((r) => r.points));
@@ -120,18 +310,9 @@ function SelfGenSection() {
           </span>
           <span className="flex-1" />
           <span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
-            since
-            <Input
-              type="date"
-              value={startDate || data?.start_date || ""}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                if (e.target.value) void load(e.target.value);
-              }}
-              className="h-7 w-[140px] text-xs"
-            />
+            {periodLabel(period)}
             <Button type="button" size="icon" variant="ghost" className="h-7 w-7" disabled={loading}
-                    onClick={() => void load(startDate || undefined)}>
+                    onClick={() => void load()}>
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </span>
@@ -220,14 +401,26 @@ export default function Competition() {
   const [passwordTry, setPasswordTry] = useState("");
   const [editing, setEditing] = useState(false);
   const [newSaleDrafts, setNewSaleDrafts] = useState<Record<string, string>>({});
+  // Leader data reported up by the two auto boards.
+  const [reviewRows, setReviewRows] = useState<{ name: string; value: number }[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [selfGenRows, setSelfGenRows] = useState<{ name: string; value: number }[]>([]);
+  const [selfGenLoading, setSelfGenLoading] = useState(true);
+  const [compsUnavailable, setCompsUnavailable] = useState(false);
+  const [localPeriodTick, setLocalPeriodTick] = useState(0); // re-read after a localStorage save
+  const period = useMemo(() => readPeriod(comps), [comps, localPeriodTick]);
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await (supabase as any)
       .from("competitions").select("*").order("slot");
     if (error) {
-      toast.error("Could not load competitions — has the database migration run?");
+      // Table missing (migration never applied) or RLS: the auto boards above
+      // still work; only the manual scoreboards need the table.
+      setCompsUnavailable(true);
+      setComps([]);
     } else {
+      setCompsUnavailable(false);
       setComps((data ?? []) as Competition[]);
     }
     setLoading(false);
@@ -261,6 +454,19 @@ export default function Competition() {
       if (changed) void persist(changed);
       return next;
     });
+  };
+
+  const setPeriod = (patch: Partial<Period>) => {
+    const next = { ...period, ...patch };
+    if (next.end < next.start) return;
+    const row = comps.find((c) => c.slot === 1) ?? comps[0];
+    if (row) {
+      patchComp(row.id, (c) => ({ ...c, entries: { ...c.entries, [PERIOD_KEY]: next as any } }));
+      return;
+    }
+    // No shared row to persist on — keep it in this browser.
+    try { localStorage.setItem(PERIOD_LS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setLocalPeriodTick((t) => t + 1);
   };
 
   const setScore = (comp: Competition, person: string, score: number) =>
@@ -396,7 +602,32 @@ export default function Competition() {
           <Button variant="ghost" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to home
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {/* Competition period — drives the leaders banner + both auto boards.
+                Editing it is password-gated like everything else (18444). */}
+            <div className="flex items-center gap-1.5 rounded-md border border-border bg-card px-2.5 py-1.5 text-xs">
+              <span className="text-muted-foreground">Period</span>
+              {editing ? (
+                <>
+                  <Input type="date" value={period.start} onChange={(e) => e.target.value && setPeriod({ start: e.target.value })} className="h-7 w-[138px] text-xs" />
+                  <span className="text-muted-foreground">to</span>
+                  <Input type="date" value={period.end} onChange={(e) => e.target.value && setPeriod({ end: e.target.value })} className="h-7 w-[138px] text-xs" />
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">{periodLabel(period)}</span>
+                  <button
+                    type="button"
+                    aria-label="Edit competition period"
+                    title="Edit competition period (password)"
+                    className="text-muted-foreground hover:text-foreground max-md:p-2"
+                    onClick={() => (unlocked ? setEditing(true) : setPasswordOpen(true))}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </>
+              )}
+            </div>
             {editing ? (
               <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
                 Done editing
@@ -420,10 +651,29 @@ export default function Competition() {
           </h1>
         </div>
 
-        <SelfGenSection />
+        {/* Who's winning — always visible, both auto boards, one competition period. */}
+        <Card className="border-amber-300/60">
+          <CardContent className="pt-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Leaders · {periodLabel(period)}
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <LeaderTile icon={<Star className="w-3.5 h-3.5" />} title="Most reviews" unit="reviews naming them" rows={reviewRows} loading={reviewsLoading} />
+              <LeaderTile icon={<Sparkles className="w-3.5 h-3.5" />} title="Most self-gen sales" unit="points" rows={selfGenRows} loading={selfGenLoading} />
+            </div>
+          </CardContent>
+        </Card>
+
+        <ReviewsSection period={period} onData={(rows, l) => { setReviewRows(rows); setReviewsLoading(l); }} />
+        <SelfGenSection period={period} onData={(rows, l) => { setSelfGenRows(rows); setSelfGenLoading(l); }} />
 
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-10">Loading…</p>
+        ) : compsUnavailable ? (
+          <p className="text-center text-xs text-muted-foreground py-6">
+            Manual scoreboards unavailable — the competitions table hasn't been created in this environment yet.
+            Period changes are saved on this device only until it is.
+          </p>
         ) : (
           comps.map(renderCompetition)
         )}

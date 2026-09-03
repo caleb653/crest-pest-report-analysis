@@ -1,5 +1,7 @@
 // supabase/functions/contest-selfgen
-// Proxies to the Crest Scheduling API's /api/contest/self-gen (Cloud Run).
+// Proxies to the Crest Scheduling API's contest endpoints (Cloud Run):
+//   kind "self-gen" (default) → /api/contest/self-gen
+//   kind "reviews"            → /api/contest/reviews  (Google + Yelp name mentions)
 //
 // "Self-Generated Sales" contest: 1x route-manager upsell (bait boxes /
 // mosquito added to an existing recurring customer), 2x self-generated
@@ -50,6 +52,7 @@ serve(async (req) => {
     const sessionToken = String(body?.sessionToken ?? "").trim();
     const startDate = DATE_RE.test(String(body?.start_date ?? "")) ? String(body.start_date) : null;
     const endDate = DATE_RE.test(String(body?.end_date ?? "")) ? String(body.end_date) : null;
+    const kind = body?.kind === "reviews" ? "reviews" : "self-gen";
 
     // Auth: known staff name OR valid admin session.
     if (sessionToken) {
@@ -68,7 +71,7 @@ serve(async (req) => {
     const apiKey = Deno.env.get("SCHEDULING_API_KEY");
     if (!apiUrl || !apiKey) return json({ ok: false, error: "api_not_configured" });
 
-    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/contest/self-gen`, {
+    const upstream = await fetch(`${apiUrl.replace(/\/+$/, "")}/api/contest/${kind}`, {
       method: "POST",
       headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ start_date: startDate, end_date: endDate }),
