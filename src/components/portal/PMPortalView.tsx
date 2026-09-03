@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { stableJson } from "@/lib/stableJson";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { ProductUsageSummary } from "@/components/portal/ProductUsageSummary";
 import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
+import { readScheduledWindow, formatArrivalWindow } from "@/lib/appointmentReminder";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
@@ -166,6 +168,10 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [pocPhone, setPocPhone] = useState<string>("");
   // Editable extra customer preference notes (PM-managed)
   const [pmPrefDraft, setPmPrefDraft] = useState<string>("");
+  // Last customer_preferences content we hydrated the drafts from (or saved).
+  // Lets the realtime reload skip re-hydrating when the row that comes back is
+  // just our own debounced save echoing — re-hydrating then wiped in-flight typing.
+  const lastSeenPrefsRef = useRef<string>("");
 
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
@@ -292,6 +298,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       if (error) {
         toast({ title: "Failed to save point of contact", variant: "destructive" });
       } else {
+        lastSeenPrefsRef.current = stableJson(updated);
         setProperty({ ...property, customer_preferences: updated } as PropertyData);
       }
     }, 700);
@@ -313,6 +320,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
       if (error) {
         toast({ title: "Failed to save preferences", variant: "destructive" });
       } else {
+        lastSeenPrefsRef.current = stableJson(updated);
         setProperty({ ...property, customer_preferences: updated } as PropertyData);
       }
     }, 700);
@@ -377,12 +385,19 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
     if (prop) {
       setProperty(prop as PropertyData);
-      // Hydrate editable POC + customer-pref-notes drafts from the latest property row
-      const poc = (prop as any).customer_preferences?.point_of_contact || {};
-      setPocName(poc.name || "");
-      setPocEmail(poc.email || "");
-      setPocPhone(poc.phone || "");
-      setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+      // Hydrate editable POC + customer-pref-notes drafts from the latest property
+      // row — but only when the prefs content actually changed. Reloads triggered
+      // by our own save echoing back through realtime (or by unrelated service /
+      // request changes) must not snap the boxes back mid-typing.
+      const incomingPrefs = stableJson((prop as any).customer_preferences || {});
+      if (incomingPrefs !== lastSeenPrefsRef.current) {
+        lastSeenPrefsRef.current = incomingPrefs;
+        const poc = (prop as any).customer_preferences?.point_of_contact || {};
+        setPocName(poc.name || "");
+        setPocEmail(poc.email || "");
+        setPocPhone(poc.phone || "");
+        setPmPrefDraft((prop as any).customer_preferences?.notes || "");
+      }
     }
 
     if (Array.isArray(svcs)) {
@@ -2777,6 +2792,14 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                 ? formatWeekOfMonth(s.service_date)
                                 : formatDate(s.service_date)}
                             </span>
+                            {(() => {
+                              const win = formatArrivalWindow(readScheduledWindow(s));
+                              return win ? (
+                                <span className="inline-flex items-center gap-1 font-semibold text-foreground">
+                                  <Clock className="w-4 h-4" /> Arriving {win}
+                                </span>
+                              ) : null;
+                            })()}
                             {s.technician && <span>• {s.technician}</span>}
                             {unitsPlanned.length > 0 && <span>• {unitsPlanned.length} unit{unitsPlanned.length === 1 ? "" : "s"}</span>}
                           </p>

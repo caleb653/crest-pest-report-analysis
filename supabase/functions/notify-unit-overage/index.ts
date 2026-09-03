@@ -18,6 +18,13 @@ const CARMEN = {
 };
 
 interface Body {
+  /**
+   * Omitted = normal "units over the cap" alert.
+   * "waived"   = admin waived the charge for this visit → tell Carmen NOT to bill it.
+   * "unwaived" = admin undid the waiver → charge is back on.
+   * Both only email when a prior overage alert was sent for the service.
+   */
+  action?: "waived" | "unwaived";
   propertyId?: string;
   serviceId?: string;
   serviceDate?: string | null;
@@ -55,12 +62,68 @@ serve(async (req) => {
     const body = (await req.json().catch(() => ({}))) as Body;
     const propertyId = body.propertyId;
     const serviceId = body.serviceId;
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // ─── Waiver notice: admin waived / reinstated the charge for one visit ───
+    if (body.action === "waived" || body.action === "unwaived") {
+      if (!propertyId || !serviceId) return json(400, { ok: false, error: "missing_or_invalid_fields" });
+      const [{ data: wProp }, { data: wSvc }] = await Promise.all([
+        supabase.from("portal_properties").select("id, name, address").eq("id", propertyId).maybeSingle(),
+        supabase.from("portal_services").select("id, property_id, service_date, report_data").eq("id", serviceId).maybeSingle(),
+      ]);
+      if (!wProp || !wSvc || wSvc.property_id !== propertyId) return json(404, { ok: false, error: "service_not_found" });
+      const alert = (wSvc as any)?.report_data?.overage_alert;
+      // Carmen was never told to charge for this visit → nothing to retract.
+      if (!alert) return json(200, { ok: true, sent: false, reason: "no_prior_alert" });
+
+      const waived = body.action === "waived";
+      const name = wProp.name || "Unknown property";
+      const visitDate = prettyDate((wSvc.service_date as string | null) || alert.service_date || null);
+      const over = Number(alert.units_over) || 0;
+      const cost = Number(alert.overage_cost) || 0;
+      const unitsText = `${over} extra unit${over === 1 ? "" : "s"}`;
+      const subject = waived
+        ? `Overage WAIVED — ${name} — do NOT charge for ${unitsText}`
+        : `Overage reinstated — ${name} — charge for ${unitsText}`;
+      const lead = waived
+        ? `The unit overage for ${name}'s visit on ${visitDate} has been waived in the Crest App. Please do <strong>not</strong> charge the ${unitsText}${cost > 0 ? ` (${money(cost)})` : ""} from the earlier alert.`
+        : `The waiver on ${name}'s visit on ${visitDate} was undone. Please charge the ${unitsText}${cost > 0 ? ` (${money(cost)})` : ""} as in the original alert.`;
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;">
+          <h2 style="color:#2A2A2A;margin:0 0 12px;">${waived ? "Unit Overage Waived" : "Unit Overage Reinstated"}</h2>
+          <p style="font-size:14px;margin:0 0 12px;">${lead}</p>
+          <p style="font-size:14px;margin:0 0 4px;"><strong>Property:</strong> ${escapeHtml(name)}${wProp.address ? ` — ${escapeHtml(wProp.address)}` : ""}</p>
+          <p style="font-size:14px;margin:0 0 4px;"><strong>Visit date:</strong> ${escapeHtml(visitDate)}</p>
+          <p style="margin-top:14px;font-size:12px;color:#888;">Changed in the Crest App → Portal Admin.</p>
+        </div>`;
+      let emailSent = false;
+      if (RESEND_API_KEY) {
+        try {
+          const r = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+            body: JSON.stringify({ from: "Crest Pest Control <reports@crestpestco.com>", to: [CARMEN.email], subject, html }),
+          });
+          if (r.ok) emailSent = true; else console.error("notify-unit-overage waiver email error:", await r.text());
+        } catch (e) { console.error("notify-unit-overage waiver email throw:", e); }
+      }
+      await supabase.from("notifications").insert({
+        recipient_username: CARMEN.username,
+        recipient_name: CARMEN.fullName,
+        title: subject,
+        body: waived ? `Do not charge the ${unitsText} for ${visitDate}.` : `Charge the ${unitsText} for ${visitDate} after all.`,
+        link: "/portal-admin",
+        notification_type: "unit_overage",
+        related_property_id: propertyId,
+      });
+      return json(200, { ok: true, sent: emailSent, action: body.action });
+    }
+
     const totalUnits = Math.floor(Number(body.totalUnits));
     if (!propertyId || !serviceId || !Number.isFinite(totalUnits) || totalUnits <= 0) {
       return json(400, { ok: false, error: "missing_or_invalid_fields" });
     }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     const { data: prop, error: propErr } = await supabase
       .from("portal_properties")
@@ -100,6 +163,10 @@ serve(async (req) => {
       .maybeSingle();
     if (svcErr || !svc || svc.property_id !== propertyId) {
       return json(404, { ok: false, error: "service_not_found" });
+    }
+    // Admin waived the charge for this visit — don't tell Carmen to bill it.
+    if ((svc as any)?.report_data?.overage_waived === true) {
+      return json(200, { ok: true, sent: false, reason: "waived" });
     }
     const prevAlert = (svc as any)?.report_data?.overage_alert;
     if (prevAlert && Number(prevAlert.total_units) >= totalUnits) {

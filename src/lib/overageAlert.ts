@@ -14,7 +14,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { computeUpcomingUnits, buildMergedMostRecentPast } from "./upcomingUnits";
-import { readUnitPlanConfig } from "./unitOverage";
+import { readUnitPlanConfig, isOverageWaived } from "./unitOverage";
 
 const isAdHocService = (s: any): boolean => !!(s?.report_data && s.report_data.is_ad_hoc === true);
 
@@ -57,6 +57,8 @@ export async function maybeNotifyUnitOverage(args: {
     .filter((s: any) => s.status !== "completed" && !isAdHocService(s))
     .sort((a: any, b: any) => (a.service_date || "").localeCompare(b.service_date || ""))[0];
   if (!firstUpcoming?.id || String(firstUpcoming.id).startsWith("projected")) return;
+  // Admin waived the charge for this visit — nothing for Carmen to bill.
+  if (isOverageWaived(firstUpcoming)) return;
 
   const merged = computeUpcomingUnits({
     service: firstUpcoming,

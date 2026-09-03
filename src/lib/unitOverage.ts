@@ -29,7 +29,15 @@ export interface OverageResult {
   unitsOver: number;
   pricePerUnit: number;
   overageCost: number;
+  /** Admin waived the charge for this visit (report_data.overage_waived). */
+  waived: boolean;
+  /** What to actually bill: overageCost, or 0 when waived. */
+  billableCost: number;
 }
+
+/** True when an admin waived the overage charge for this specific service row. */
+export const isOverageWaived = (service: any): boolean =>
+  !!(service?.report_data && service.report_data.overage_waived === true);
 
 /**
  * Read the property-level plan config from a `customer_preferences` JSON blob.
@@ -52,7 +60,9 @@ export function readUnitPlanConfig(customer_preferences: any): UnitPlanConfig {
  */
 export function computeOverage(
   totalUnits: number,
-  cfg: UnitPlanConfig
+  cfg: UnitPlanConfig,
+  /** Pass `isOverageWaived(service)` so billableCost reflects a per-visit waiver. */
+  waived: boolean = false
 ): OverageResult {
   const includedUnits = Number(cfg.included_units || 0);
   const pricePerUnit = Number(cfg.overage_price_per_unit || 0);
@@ -68,6 +78,8 @@ export function computeOverage(
     unitsOver,
     pricePerUnit,
     overageCost,
+    waived: !!waived,
+    billableCost: waived ? 0 : overageCost,
   };
 }
 

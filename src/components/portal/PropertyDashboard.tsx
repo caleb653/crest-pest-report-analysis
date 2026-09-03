@@ -45,7 +45,7 @@ import { ServiceComments, type ServiceComment } from "@/components/portal/Servic
 import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPreview";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
-import { readUnitPlanConfig, computeOverage, formatOverageMoney } from "@/lib/unitOverage";
+import { readUnitPlanConfig, computeOverage, formatOverageMoney, isOverageWaived } from "@/lib/unitOverage";
 import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -54,6 +54,8 @@ import { HOAServiceView, type HOAUnitItem } from "@/components/portal/HOAService
 import { PreApplicationNoticeCard } from "@/components/portal/PreApplicationNoticeCard";
 import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
+import { stableJson } from "@/lib/stableJson";
+import AppointmentReminderControls from "@/components/portal/AppointmentReminderControls";
 
 // ─── Types ───
 interface PortalProperty {
@@ -684,10 +686,25 @@ const PropertyDashboard = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planDraft]);
 
+  // ─── Prop→draft reset guard for every customer_preferences field below ───
+  // Each debounced save writes customer_preferences, and PortalAdmin's realtime
+  // subscription echoes that write back ~1.5s later as a brand-new `property`
+  // object. Without this guard, every echo re-ran the "re-hydrate draft from
+  // props" effects and snapped each text box back to the value that was saved,
+  // wiping whatever was typed in the meantime (felt like the box fighting you /
+  // phantom backspaces). Skip the re-hydrate when the incoming prefs are just
+  // our own last save (or an unrelated reload with unchanged prefs) coming back.
+  // Real external changes (different content) still re-hydrate.
+  const incomingPrefsJson = stableJson(property.customer_preferences || {});
+  const lastSeenPrefsRef = useRef<string>(incomingPrefsJson);
+  const isOwnPrefsEcho = lastSeenPrefsRef.current === incomingPrefsJson;
+  const rememberSavedPrefs = (updated: unknown) => { lastSeenPrefsRef.current = stableJson(updated || {}); };
+
   // Local Customer Preference state — same debounced pattern as Property Plan
   const initialPrefNotes = (property.customer_preferences as any)?.notes || "";
   const [prefDraft, setPrefDraft] = useState<string>(initialPrefNotes);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setPrefDraft((property.customer_preferences as any)?.notes || "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
@@ -702,6 +719,8 @@ const PropertyDashboard = ({
       if (error) {
         toast({ title: "Failed to save preferences", variant: "destructive" });
       } else {
+        (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
         toast({ title: "Customer preferences saved", duration: 1200 });
       }
     }, 800);
@@ -717,6 +736,7 @@ const PropertyDashboard = ({
   const [pocEmail, setPocEmail] = useState<string>(initialPocEmail);
   const [pocPhone, setPocPhone] = useState<string>(initialPocPhone);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setPocName((property.customer_preferences as any)?.point_of_contact?.name || "");
     setPocEmail((property.customer_preferences as any)?.point_of_contact?.email || "");
     setPocPhone((property.customer_preferences as any)?.point_of_contact?.phone || "");
@@ -739,6 +759,7 @@ const PropertyDashboard = ({
         toast({ title: "Failed to save point of contact", variant: "destructive" });
       } else {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
       }
     }, 600);
     return () => clearTimeout(t);
@@ -751,6 +772,7 @@ const PropertyDashboard = ({
   const initialRequiredTime = (property.customer_preferences as any)?.required_treatment_time || "";
   const [requiredTimeDraft, setRequiredTimeDraft] = useState<string>(initialRequiredTime);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setRequiredTimeDraft((property.customer_preferences as any)?.required_treatment_time || "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
@@ -764,6 +786,7 @@ const PropertyDashboard = ({
         .eq("id", property.id);
       if (!error) {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
       }
     }, 600);
     return () => clearTimeout(t);
@@ -776,6 +799,7 @@ const PropertyDashboard = ({
   const initialRedNotes = (property.customer_preferences as any)?.red_notes || "";
   const [redNotesDraft, setRedNotesDraft] = useState<string>(initialRedNotes);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setRedNotesDraft((property.customer_preferences as any)?.red_notes || "");
   }, [property.id, property.customer_preferences]);
   useEffect(() => {
@@ -789,6 +813,7 @@ const PropertyDashboard = ({
         .eq("id", property.id);
       if (!error) {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
       }
     }, 600);
     return () => clearTimeout(t);
@@ -826,6 +851,7 @@ const PropertyDashboard = ({
   const [crestEmail, setCrestEmail] = useState<string>(initialCrestEmail);
   const [crestPhone, setCrestPhone] = useState<string>(initialCrestPhone);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setCrestName((property.customer_preferences as any)?.crest_point_of_contact?.name || "");
     setCrestEmail((property.customer_preferences as any)?.crest_point_of_contact?.email || "");
     setCrestPhone((property.customer_preferences as any)?.crest_point_of_contact?.phone || "");
@@ -846,6 +872,7 @@ const PropertyDashboard = ({
         toast({ title: "Failed to save Crest contact", variant: "destructive" });
       } else {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
       }
     }, 600);
     return () => clearTimeout(t);
@@ -865,6 +892,7 @@ const PropertyDashboard = ({
     initialPlanCfg.base_service_price ? String(initialPlanCfg.base_service_price) : ""
   );
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     const cfg = readUnitPlanConfig(property.customer_preferences);
     setIncludedUnitsDraft(cfg.included_units ? String(cfg.included_units) : "");
     setOveragePriceDraft(cfg.overage_price_per_unit ? String(cfg.overage_price_per_unit) : "");
@@ -895,6 +923,7 @@ const PropertyDashboard = ({
         toast({ title: "Failed to save unit plan", variant: "destructive" });
       } else {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
         toast({ title: "Unit plan saved", duration: 1200 });
       }
     }, 700);
@@ -919,6 +948,7 @@ const PropertyDashboard = ({
     ((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {};
   const [cadencePlanDraft, setCadencePlanDraft] = useState<Record<string, string[]>>(initialCadencePlan);
   useEffect(() => {
+    if (isOwnPrefsEcho) return;
     setCadencePlanDraft(((property.customer_preferences as any)?.cadence_visit_plan as Record<string, string[]>) || {});
   }, [property.id, property.customer_preferences]);
 
@@ -950,11 +980,16 @@ const PropertyDashboard = ({
         toast({ title: "Failed to save cadence plan", variant: "destructive" });
       } else {
         (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
       }
     }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cadencePlanDraft]);
+
+  // Runs after every re-hydrate effect above (same commit, declaration order),
+  // so a genuine external change re-hydrates once and then counts as "seen".
+  useEffect(() => { lastSeenPrefsRef.current = incomingPrefsJson; }, [property.id, incomingPrefsJson]);
 
   // Load pending requests and prep sheets for this property
   useEffect(() => {
@@ -1354,7 +1389,7 @@ const PropertyDashboard = ({
       const totalUnits = isCompleted
         ? (Array.isArray(svc.unit_details) ? (svc.unit_details as any[]).length : 0)
         : (Array.isArray(svc.units_planned) ? (svc.units_planned as string[]).length : 0);
-      const ov = computeOverage(totalUnits, planCfg);
+      const ov = computeOverage(totalUnits, planCfg, isOverageWaived(svc));
       const stored = (svc as any).report_data?.overage || null;
       const snapshot = {
         included_units: ov.includedUnits,
@@ -1362,6 +1397,10 @@ const PropertyDashboard = ({
         total_units: ov.totalUnits,
         units_over: ov.unitsOver,
         overage_cost: ov.overageCost,
+        // Per-visit waiver (admin "we messed up, don't charge") — billable_cost
+        // is the number invoicing should use; overage_cost stays the raw calc.
+        waived: ov.waived,
+        billable_cost: ov.billableCost,
       };
       const same =
         stored &&
@@ -1369,7 +1408,9 @@ const PropertyDashboard = ({
         stored.price_per_unit === snapshot.price_per_unit &&
         stored.total_units === snapshot.total_units &&
         stored.units_over === snapshot.units_over &&
-        stored.overage_cost === snapshot.overage_cost;
+        stored.overage_cost === snapshot.overage_cost &&
+        stored.waived === snapshot.waived &&
+        stored.billable_cost === snapshot.billable_cost;
       if (same) return;
       const merged = { ...((svc as any).report_data || {}), overage: snapshot };
       tasks.push(
@@ -1382,6 +1423,61 @@ const PropertyDashboard = ({
     if (tasks.length > 0) Promise.allSettled(tasks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planCfg.included_units, planCfg.overage_price_per_unit, propServices.length, property.id]);
+
+  // ─── Per-visit overage waiver ───
+  // Sometimes we over-schedule by mistake and don't want to bill the extra
+  // units. The waiver lives on the service row (report_data.overage_waived) so
+  // the banner, the list badges, the invoicing snapshot (report_data.overage)
+  // and Carmen's billing alert all agree. Fetch-fresh-merge so we never clobber
+  // report_data keys written by edge functions (overage_alert, pm_email_sent_at…).
+  const [waiverBusyId, setWaiverBusyId] = useState<string | null>(null);
+  const setOverageWaiver = async (svc: any, waive: boolean) => {
+    if (!svc?.id || String(svc.id).startsWith("projected")) return;
+    setWaiverBusyId(svc.id);
+    try {
+      const { data: fresh } = await supabase
+        .from("portal_services")
+        .select("report_data")
+        .eq("id", svc.id)
+        .maybeSingle();
+      const rd: any = { ...(((fresh as any)?.report_data as any) || svc.report_data || {}) };
+      if (waive) {
+        rd.overage_waived = true;
+        rd.overage_waived_at = new Date().toISOString();
+      } else {
+        delete rd.overage_waived;
+        delete rd.overage_waived_at;
+      }
+      if (rd.overage && typeof rd.overage === "object") {
+        rd.overage = { ...rd.overage, waived: waive, billable_cost: waive ? 0 : Number(rd.overage.overage_cost) || 0 };
+      }
+      const { error } = await supabase.from("portal_services").update({ report_data: rd }).eq("id", svc.id);
+      if (error) throw error;
+      // Flip the in-memory row so the UI updates before the realtime reload lands.
+      svc.report_data = rd;
+      // Carmen was already emailed to charge for this visit → tell her the
+      // charge is off (or back on). Fire-and-forget; the edge function no-ops
+      // when no prior alert exists.
+      if (rd.overage_alert) {
+        supabase.functions
+          .invoke("notify-unit-overage", {
+            body: { action: waive ? "waived" : "unwaived", propertyId: property.id, serviceId: svc.id },
+          })
+          .catch((e) => console.error("notify-unit-overage waiver notice failed", e));
+      }
+      toast({
+        title: waive ? "Overage waived" : "Overage charge reinstated",
+        description: waive ? "No additional unit charge for this visit." : "Extra units will be billed again.",
+        duration: 2000,
+      });
+      onRefresh();
+    } catch (e) {
+      console.error("overage waiver failed", e);
+      toast({ title: "Could not update overage waiver", variant: "destructive" });
+    } finally {
+      setWaiverBusyId(null);
+    }
+  };
 
   // Billing alert (apartments): whenever the FIRST upcoming visit's merged
   // unit list exceeds the plan's included allotment, email Carmen how many
@@ -3399,7 +3495,7 @@ const PropertyDashboard = ({
     const overageUnitCount = isUpcoming
       ? merged.units.length
       : (Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0);
-    const overage = computeOverage(overageUnitCount, planCfg);
+    const overage = computeOverage(overageUnitCount, planCfg, isOverageWaived(s));
 
     // ─── HOA dedicated layout ───
     // Boards (and the techs working on HOAs) get a totally different view
@@ -3785,18 +3881,62 @@ const PropertyDashboard = ({
         })()}
 
         {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
-        {overage.hasOverage && (
+        {overage.hasOverage && !overage.waived && (
           <div className="border-2 border-amber-500/70 bg-amber-50 dark:bg-amber-950/30 rounded-lg p-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
-              <Flag className="w-3.5 h-3.5" />
-              Overage on this service
-            </p>
-            <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-              {overage.totalUnits} units {isUpcoming ? "scheduled" : "treated"} — {overage.includedUnits} included • {overage.unitsOver} over the plan
-            </p>
-            <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
-              {overage.unitsOver} × {formatOverageMoney(overage.pricePerUnit)} = <span className="font-bold">{formatOverageMoney(overage.overageCost)}</span> additional charge for this visit.
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400 mb-1 flex items-center gap-1.5">
+                  <Flag className="w-3.5 h-3.5" />
+                  Overage on this service
+                </p>
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                  {overage.totalUnits} units {isUpcoming ? "scheduled" : "treated"} — {overage.includedUnits} included • {overage.unitsOver} over the plan
+                </p>
+                <p className="text-xs text-amber-800 dark:text-amber-200 mt-0.5">
+                  {overage.unitsOver} × {formatOverageMoney(overage.pricePerUnit)} = <span className="font-bold">{formatOverageMoney(overage.overageCost)}</span> additional charge for this visit.
+                </p>
+              </div>
+              {!isProjected && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0 h-8 text-xs border-amber-500/60 text-amber-900 dark:text-amber-100 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                  disabled={waiverBusyId === s.id}
+                  onClick={() => setOverageWaiver(s, true)}
+                  title="Don't bill the extra units for this visit (e.g. we over-scheduled by mistake)"
+                >
+                  Waive charge
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        {overage.hasOverage && overage.waived && (
+          <div className="border border-dashed border-muted-foreground/40 bg-muted/40 rounded-lg p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1.5">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  Overage waived — no additional charge
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {overage.totalUnits} units {isUpcoming ? "scheduled" : "treated"} • {overage.unitsOver} over the plan.{" "}
+                  <span className="line-through">{formatOverageMoney(overage.overageCost)}</span> waived for this visit
+                  {s.report_data?.overage_waived_at ? ` on ${formatDate(String(s.report_data.overage_waived_at).slice(0, 10))}` : ""}.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="shrink-0 h-8 text-xs"
+                disabled={waiverBusyId === s.id}
+                onClick={() => setOverageWaiver(s, false)}
+              >
+                Undo waiver
+              </Button>
+            </div>
           </div>
         )}
 
@@ -5128,6 +5268,7 @@ const PropertyDashboard = ({
                             service_frequency: opt.key,
                           };
                           (property as any).customer_preferences = updated;
+        rememberSavedPrefs(updated);
                           const { error } = await supabase
                             .from("portal_properties")
                             .update({ customer_preferences: updated })
@@ -5709,8 +5850,19 @@ const PropertyDashboard = ({
                           })()}
                           {(() => {
                             const total = Array.isArray(s.unit_details) ? (s.unit_details as any[]).length : 0;
-                            const ov = computeOverage(total, planCfg);
+                            const ov = computeOverage(total, planCfg, isOverageWaived(s));
                             if (!ov.hasOverage) return null;
+                            if (ov.waived) {
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  title={`${ov.totalUnits} units treated • ${ov.unitsOver} over plan • ${formatOverageMoney(ov.overageCost)} waived — not billed`}
+                                  className="text-xs text-muted-foreground border-dashed"
+                                >
+                                  +{ov.unitsOver} over • waived
+                                </Badge>
+                              );
+                            }
                             return (
                               <Badge
                                 title={`${ov.totalUnits} units treated • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
@@ -6710,8 +6862,19 @@ const PropertyDashboard = ({
                         {!isProjected && !isFirst && <Badge variant="secondary" className="text-xs">{(s as any).scheduling_status || "confirmed"}</Badge>}
                         {hasPmNote && <Badge className="text-xs bg-primary/15 text-primary border border-primary/60 hover:bg-primary/15"><ClipboardList className="w-3 h-3 mr-0.5" />PM Note</Badge>}
                         {(() => {
-                          const ov = computeOverage(unitsPlanned.length, planCfg);
+                          const ov = computeOverage(unitsPlanned.length, planCfg, isOverageWaived(s));
                           if (!ov.hasOverage) return null;
+                          if (ov.waived) {
+                            return (
+                              <Badge
+                                variant="outline"
+                                title={`${ov.totalUnits} units to treat • ${ov.unitsOver} over plan • ${formatOverageMoney(ov.overageCost)} waived — not billed`}
+                                className="text-xs text-muted-foreground border-dashed"
+                              >
+                                +{ov.unitsOver} over • waived
+                              </Badge>
+                            );
+                          }
                           return (
                             <Badge
                               title={`${ov.totalUnits} units to treat • ${ov.includedUnits} included • ${ov.unitsOver} over → +${formatOverageMoney(ov.overageCost)}`}
@@ -6981,6 +7144,23 @@ const PropertyDashboard = ({
                       )}
                     </div>
                   </div>
+                  {/* Arrival window + PM appointment reminder — only once the
+                      visit is a real scheduled row (projected cards have no
+                      date/row to anchor to yet). */}
+                  {isFirst && !isProjected && !String(s.id).startsWith("projected") && (
+                    <div className="px-3 pb-2">
+                      <AppointmentReminderControls
+                        service={s as any}
+                        property={property as any}
+                        clientId={clientId}
+                        clientName={clientName}
+                        links={links as any}
+                        propertyType={propertyType === "hoa" ? "hoa" : "apartments"}
+                        unitNumbers={unitsPlanned}
+                        onSaved={onRefresh}
+                      />
+                    </div>
+                  )}
                   {isExpanded && renderServiceDetails(s, true, isProjected, isFirst)}
                 </Card>
               );
