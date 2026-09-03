@@ -17,6 +17,7 @@ const InitialPestReport    = lazy(() => import("./pages/InitialPestReport"));
 const MultiProposalReport  = lazy(() => import("./pages/MultiProposalReport"));
 const TeamDocs             = lazy(() => import("./pages/TeamDocs"));
 const Competition          = lazy(() => import("./pages/Competition"));
+const CrestBrain           = lazy(() => import("./pages/CrestBrain"));
 const SubmittedReports     = lazy(() => import("./pages/SubmittedReports"));
 const CustomerReportView   = lazy(() => import("./pages/CustomerReportView"));
 const NotFound             = lazy(() => import("./pages/NotFound"));
@@ -84,6 +85,7 @@ const App = () => (
                     <Route path="/portal-admin" element={<PortalAdmin />} />
                     <Route path="/team-docs" element={<TeamDocs />} />
                     <Route path="/competition" element={<Competition />} />
+                    <Route path="/crest-brain" element={<CrestBrain />} />
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/slot-finder" element={<SlotFinder />} />
                     <Route path="/schedule-review" element={<ScheduleReview />} />

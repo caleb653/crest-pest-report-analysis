@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon, Trophy, Phone } from "lucide-react";
+import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon, Trophy, Phone, Brain } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
@@ -131,13 +131,24 @@ const reportTypes = [
     hoverBg: "hover:bg-teal-100",
     border: "hover:border-teal-300",
   },
+  {
+    id: "crest-brain",
+    title: "Crest Brain",
+    description: "Ask anything about how Crest works — answers from the Brain Trust",
+    icon: Brain,
+    path: "/crest-brain",
+    color: "text-emerald-700",
+    bg: "bg-emerald-50",
+    hoverBg: "hover:bg-emerald-100",
+    border: "hover:border-emerald-300",
+  },
 ];
 
 // Layout: row1 = initial-pest, team-docs, multi-sales
 //         row2 = created-initial, client-portal, created-sales
 //         row3 = slot-finder, schedule-review, competition
-//         row4 = customer-lookup
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9, 10];
+//         row4 = customer-lookup, crest-brain
+const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9, 10, 11];
 
 const Index = () => {
   const navigate = useNavigate();
