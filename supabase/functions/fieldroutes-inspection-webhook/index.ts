@@ -1,8 +1,10 @@
 // supabase/functions/fieldroutes-inspection-webhook
 // Real-time: a FieldRoutes "Appointment Status -> Scheduled" Trigger (filtered to
-// Pest/Rodent Inspection service types) POSTs here the moment an inspection is
-// booked, and we create a draft Initial Pest Report immediately — no BigQuery,
-// no polling. The trigger's Request Body carries the customer + appointment +
+// the inspection service types) POSTs here the moment an inspection is booked,
+// and we create a draft SALES report (multi-proposal) immediately — no BigQuery,
+// no polling. ANY inspection type qualifies (Pest, Rodent, Bed Bug, Termite,
+// Commercial … anything whose service name contains "inspection"); Initial
+// services and recurring subscriptions never do (Caleb, 2026-09-03). The trigger's Request Body carries the customer + appointment +
 // tech fields via FieldRoutes placeholders, so this needs no callback.
 //
 // Companion to fieldroutes-sync-inspections (the BigQuery-backed batch path):
@@ -40,7 +42,16 @@ const INSPECTION_SERVICE_TYPES: Record<string, string> = {
   "227": "Rodent Inspection",
 };
 
-const EXACT_INSPECTION_SERVICE_NAMES = new Set(["pest inspection", "rodent inspection"]);
+// Any FieldRoutes service whose name contains "inspection" is an inspection —
+// new inspection types added in FieldRoutes qualify automatically as long as the
+// Trigger sends them here. "Initial" services are explicitly excluded (initial
+// reports are created by hand from the sales report, never auto-spawned).
+function isInspectionService(serviceTypeId: string, serviceName: string): boolean {
+  const name = normalizeServiceName(serviceName);
+  if (name.includes("initial")) return false;
+  if (name.includes("inspection")) return true;
+  return INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined;
+}
 
 const TECHNICIANS = [
   { name: "Darrell Tanner", license: "FR 62523", aliases: ["darrell", "tanner", "d tanner", "darrell t"] },
@@ -239,28 +250,32 @@ serve(async (req) => {
       score: matchedTech?.score ?? null,
     });
     const isRodent = serviceName.toLowerCase().includes("rodent");
+    // Commercial inspections: open the sales report as a Commercial property with
+    // the company name filled in. Detected from the service name ("Commercial
+    // Inspection", "Commercial Pest Inspection", …) or a company-only customer.
+    const isCommercial =
+      normalizeServiceName(serviceName).includes("commercial") ||
+      (!!company && !fname && !lname);
 
-    // Guard: ONLY the whitelisted inspection service_type IDs + exact inspection
-    // names create a report. New subscriptions (Monthly/Bi-Monthly/Quarterly/
+    // Guard: ONLY inspections create a report (any inspection type — see
+    // isInspectionService). New subscriptions (Monthly/Bi-Monthly/Quarterly/
     // Commercial/Initial Service/etc.) must NEVER auto-spawn a report even if the
     // FieldRoutes trigger fires here for every scheduled appointment.
-    // Also require a known assigned technician; unassigned auto-created drafts are
-    // almost always noise and should stay in FieldRoutes until a human creates one.
-    const isInspection =
-      INSPECTION_SERVICE_TYPES[serviceTypeId] !== undefined &&
-      EXACT_INSPECTION_SERVICE_NAMES.has(normalizeServiceName(serviceName));
-    if (!isInspection) {
+    if (!isInspectionService(serviceTypeId, serviceName)) {
       console.log("fieldroutes-inspection-webhook rejected non-inspection", {
         serviceTypeId, serviceName, appointmentId,
       });
       return json({ ok: true, created: false, reason: "not_inspection", service_type_id: serviceTypeId, service: serviceName });
     }
 
+    // Tech is usually NOT assigned yet when an inspection is first scheduled
+    // (FieldRoutes assigns later). Every inspection must still get its sales
+    // report, so create it as "Unassigned" and let fieldroutes-backfill-techs
+    // fill the name in once FieldRoutes assigns someone.
     if (!matchedTech) {
-      console.log("fieldroutes-inspection-webhook rejected unknown technician", {
+      console.log("fieldroutes-inspection-webhook technician unresolved — creating as Unassigned", {
         serviceTypeId, serviceName, appointmentId, techName,
       });
-      return json({ ok: true, created: false, reason: "unknown_technician", service_type_id: serviceTypeId, service: serviceName });
     }
 
     // Idempotency: bail early if this appointment already has a report.
@@ -274,8 +289,8 @@ serve(async (req) => {
 
     const row = {
       id: crypto.randomUUID(),
-      technician_name: matchedTech.name,
-      license_number: matchedTech.license,
+      technician_name: matchedTech?.name ?? "Unassigned",
+      license_number: matchedTech?.license ?? null,
       customer_name: customerName,
       customer_email: clean(body.email),
       customer_phone: clean(body.phone1 ?? body.phone),
@@ -286,8 +301,18 @@ serve(async (req) => {
       // Stamp the multi-proposal marker so the report opens in the NEW Sales
       // Report (MultiProposalReport) flow — the old single-service /report
       // route is archived and must never receive auto-created reports.
-      notes: JSON.stringify({ _reportFormat: "multi-proposal", _source: "fieldroutes-webhook" }),
-      customer_preferences: { reportFormat: "multi-proposal", fieldroutes_login_link: loginLink },
+      notes: JSON.stringify({
+        _reportFormat: "multi-proposal",
+        _source: "fieldroutes-webhook",
+        // MultiProposalReport only reads propertyType/companyName from notes when
+        // _structuredNotes is set; every other structured field is optional.
+        ...(isCommercial ? { _structuredNotes: true, propertyType: "Commercial", companyName: company ?? "" } : {}),
+      }),
+      customer_preferences: {
+        reportFormat: "multi-proposal",
+        fieldroutes_login_link: loginLink,
+        ...(isCommercial ? { propertyType: "Commercial", ...(company ? { companyName: company } : {}) } : {}),
+      },
       fieldroutes_customer_id: customerId,
       fieldroutes_appointment_id: appointmentId,
     };
