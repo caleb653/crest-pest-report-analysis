@@ -38,6 +38,33 @@ export type Database = {
         }
         Relationships: []
       }
+      competitions: {
+        Row: {
+          entries: Json
+          id: string
+          is_sales: boolean
+          name: string
+          slot: number
+          updated_at: string
+        }
+        Insert: {
+          entries?: Json
+          id?: string
+          is_sales?: boolean
+          name?: string
+          slot: number
+          updated_at?: string
+        }
+        Update: {
+          entries?: Json
+          id?: string
+          is_sales?: boolean
+          name?: string
+          slot?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fieldroutes_write_queue: {
         Row: {
           action: string
