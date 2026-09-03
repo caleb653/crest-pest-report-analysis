@@ -450,12 +450,33 @@ function numberDot(color: string) {
   } as google.maps.Icon;
 }
 
+// Bright red square marking WHERE the searched address is — the stop the
+// Slot Finder is trying to place. Deliberately loud so it can't be confused
+// with any tech's numbered dots.
+function redSquare() {
+  const size = 30;
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+    `<rect x="3" y="3" width="${size - 6}" height="${size - 6}" fill="#ff1a1a" stroke="#ffffff" stroke-width="3"/>` +
+    `<rect x="1" y="1" width="${size - 2}" height="${size - 2}" fill="none" stroke="#b00000" stroke-width="1.5"/>` +
+    `</svg>`;
+  return {
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: typeof google !== "undefined" ? new google.maps.Size(size, size) : undefined,
+    anchor: typeof google !== "undefined" ? new google.maps.Point(size / 2, size / 2) : undefined,
+  } as google.maps.Icon;
+}
+
+type LatLng = { lat: number; lng: number };
+
 const DAY_MAP_STYLE = { width: "100%", height: "60vh" } as const;
 
 // One day, EVERY tech's route on the same map — one color per tech.
-function DayRoutesMap({ routes, colorFor }: {
+function DayRoutesMap({ routes, colorFor, target }: {
   routes: { route: DayRoute; stops: RouteMapStop[] }[];
   colorFor: (tech: string) => string;
+  /** Searched address (after a search) — drawn as a bright red square. */
+  target?: LatLng | null;
 }) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -472,13 +493,14 @@ function DayRoutesMap({ routes, colorFor }: {
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <DayRoutesMapInner routes={routes} colorFor={colorFor} apiKey={apiKey} />;
+  return <DayRoutesMapInner routes={routes} colorFor={colorFor} apiKey={apiKey} target={target} />;
 }
 
-function DayRoutesMapInner({ routes, colorFor, apiKey }: {
+function DayRoutesMapInner({ routes, colorFor, apiKey, target }: {
   routes: { route: DayRoute; stops: RouteMapStop[] }[];
   colorFor: (tech: string) => string;
   apiKey: string;
+  target?: LatLng | null;
 }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
@@ -505,6 +527,7 @@ function DayRoutesMapInner({ routes, colorFor, apiKey }: {
         n++;
       }
     }
+    if (target) { bounds.extend(target); n++; }
     if (n === 0) return;
     map.fitBounds(bounds, 48);
     // Clamp: a sparse day (one stop) would otherwise zoom to house level.
@@ -512,7 +535,7 @@ function DayRoutesMapInner({ routes, colorFor, apiKey }: {
       if ((map.getZoom() ?? 0) > 13) map.setZoom(13);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, dateKey]);
+  }, [map, dateKey, target?.lat, target?.lng]);
 
   if (loadError) return <div className="p-6 text-sm text-red-600">Failed to load Google Maps: {String(loadError)}</div>;
   if (!isLoaded) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
@@ -547,6 +570,14 @@ function DayRoutesMapInner({ routes, colorFor, apiKey }: {
             />
           )),
       )}
+      {target && (
+        <MarkerF
+          position={target}
+          icon={redSquare()}
+          zIndex={9999}
+          title="New stop — the address you searched"
+        />
+      )}
       {active && (
         <InfoWindowF
           position={{ lat: active.stop.lat as number, lng: active.stop.lng as number }}
@@ -578,8 +609,10 @@ function DayRoutesMapInner({ routes, colorFor, apiKey }: {
 // techs on/off). Shows the next 3 working days by default, plus an "Any day"
 // date picker that pulls any other day's routes on demand (same free
 // sentinel fetch — BigQuery only).
-function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookupDay }: {
+function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookupDay, target }: {
   dayRoutes: DayRoute[];
+  /** Searched address after a search — shown as a bright red square on the map. */
+  target?: LatLng | null;
   /** Ordered dates to offer as pills (defaults + any looked-up days). */
   dates: string[];
   loading: boolean;
@@ -673,8 +706,14 @@ function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookup
                 </p>
               )}
             </div>
+            {target && (
+              <p className="text-xs font-semibold flex items-center gap-1.5">
+                <span className="inline-block w-3.5 h-3.5 bg-[#ff1a1a] border-2 border-white shadow ring-1 ring-red-800" />
+                Red square = the address you searched (new stop)
+              </p>
+            )}
             {visible.length > 0
-              ? <DayRoutesMap routes={visible} colorFor={colorFor} />
+              ? <DayRoutesMap routes={visible} colorFor={colorFor} target={target} />
               : routesForDate.length > 0 && (
                 <p className="text-sm italic text-muted-foreground">All techs hidden — tap a name above to show a route.</p>
               )}
@@ -1252,6 +1291,7 @@ function FindMode({
           loading={routesLoading}
           lookupLoading={lookupLoading}
           onLookupDay={lookupDay}
+          target={result?.geocoded ?? null}
         />
       </div>
     </>
@@ -1621,8 +1661,34 @@ function SlotCard({
                 pushes day ~{c.push_delay_min} min
               </Badge>
             )}
-            {after?.stops_excluding_tasks != null && (
-              <span className="text-xs text-muted-foreground">{after.stops_excluding_tasks} stops after</span>
+          </div>
+        );
+      })()}
+
+      {/* ── Day load after the insert: total stops + expected hours worked ── */}
+      {after && (() => {
+        const LUNCH_HRS = 0.5;
+        const isDayFull = (after.stops_excluding_tasks ?? 0) >= 13;
+        const hrs = after.est_route_hours != null ? Math.max(0, after.est_route_hours - LUNCH_HRS) : null;
+        const hrsCls = hrs == null ? "" : hrs >= 9 ? "border-red-500 bg-red-50 text-red-800"
+          : hrs >= 8 ? "border-amber-500 bg-amber-50 text-amber-800"
+          : "border-border bg-background";
+        const stopsCls = isDayFull ? "border-red-500 bg-red-50 text-red-800" : "border-border bg-background";
+        return (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className={`inline-flex items-baseline gap-1.5 rounded-md border-2 px-3 py-1.5 ${stopsCls}`}>
+              <span className="text-xs font-bold uppercase tracking-wide opacity-80">Stops after</span>
+              <span className="text-lg font-extrabold leading-none">{after.stops_excluding_tasks}</span>
+              <span className="text-xs opacity-70">(+1 added)</span>
+            </div>
+            {hrs != null && (
+              <div className={`inline-flex items-baseline gap-1.5 rounded-md border-2 px-3 py-1.5 ${hrsCls}`}>
+                <span className="text-xs font-bold uppercase tracking-wide opacity-80">Expected hours</span>
+                <span className="text-lg font-extrabold leading-none">~{hrs.toFixed(1)}h</span>
+                {after.est_finish_min != null && (
+                  <span className="text-xs opacity-70">· done ~{fmtTime(after.est_finish_min)}</span>
+                )}
+              </div>
             )}
           </div>
         );
