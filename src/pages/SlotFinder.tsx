@@ -245,28 +245,6 @@ function tierPillClasses(c: SlotCandidate): string {
   return "bg-emerald-600 hover:bg-emerald-600 text-white";
 }
 
-function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?: string | null }) {
-  if (!counts) return null;
-  const order: (keyof WindowCounts)[] = ["8-12", "10-2", "1-5"];
-  return (
-    <span className="inline-flex flex-wrap gap-1">
-      {order.map((w) => {
-        const n = counts[w] ?? 0;
-        const isHi = highlight === w;
-        return (
-          <Badge
-            key={w}
-            variant="outline"
-            className={isHi ? "border-emerald-500 bg-emerald-100 text-emerald-900" : "text-muted-foreground"}
-          >
-            {w}: {n}
-          </Badge>
-        );
-      })}
-    </span>
-  );
-}
-
 // Canonical pretty label for a window key ("8-12" → "8 AM – 12 PM").
 function windowLabel(w?: string | null): string | null {
   if (!w) return null;
@@ -397,20 +375,23 @@ function followUpDates(firstIso: string, plan: FollowUpPlan): string[] {
 
 // The date of the overall best-fit slot in a search result (same ranking the
 // "★ Best Fit" banner uses), or null when nothing was found.
-function bestFitDate(result: FindResult | null): string | null {
+function bestFitSlot(result: FindResult | null): { date: string; weekday: string; c: SlotCandidate } | null {
   if (!result?.by_day) return null;
-  let best: { date: string; s: number; m: number; mi: number } | null = null;
+  let best: { date: string; weekday: string; c: SlotCandidate; s: number; m: number; mi: number } | null = null;
   for (const day of result.by_day) {
     for (const c of day.slots) {
       const s = c.score_sec ?? Infinity;
       const m = detourMinutes(c);
       const mi = parseFloat(detourMiles(c));
       if (!best || s < best.s || (s === best.s && (m < best.m || (m === best.m && mi < best.mi)))) {
-        best = { date: day.date, s, m, mi };
+        best = { date: day.date, weekday: day.weekday, c, s, m, mi };
       }
     }
   }
-  return best?.date ?? null;
+  return best ? { date: best.date, weekday: best.weekday, c: best.c } : null;
+}
+function bestFitDate(result: FindResult | null): string | null {
+  return bestFitSlot(result)?.date ?? null;
 }
 
 // ── Route maps (free: data rides along with the search / sentinel fetch;
@@ -1145,65 +1126,123 @@ function FindMode({
         </CardContent>
       </Card>
 
-      {result && (
-        <div className="mt-6 space-y-6">
-          {planInfo && (
-            <div className="rounded-md border-2 border-primary/60 bg-primary/5 p-3 flex flex-wrap items-center gap-2">
-              <Badge className="bg-primary text-primary-foreground font-bold uppercase tracking-wide">Visit 1</Badge>
-              <span className="text-sm font-semibold">
-                {visit1Date ? `${isoDayLabel(visit1Date)} · ` : ""}best opening in the next few days
-              </span>
-              <span className="text-xs text-muted-foreground">
-                — follow-up must land {planInfo.lo}–{planInfo.hi} days later. Use “Plan follow-up from this day” on any day below to re-anchor.
-              </span>
-            </div>
-          )}
+      {/* Single visit: one result block. */}
+      {result && !planInfo && (
+        <div className="mt-6">
           <FindResultsView
             result={result}
             windowWidth={Number(windowWidth)}
             scheduleContext={scheduleContext}
             scheduleHint={!canSchedule ? scheduleHint : null}
-            visitLabel={planInfo ? "Visit 1" : undefined}
-            dayAction={planInfo ? {
-              activeDate: visit1Date,
-              label: "Plan follow-up from this day",
-              activeLabel: "Follow-up planned from this day",
-              onPick: (iso) => { void runFollowUp(iso, plan); },
-            } : undefined}
           />
         </div>
       )}
 
-      {planInfo && result && (followUpLoading || followUp || visit1Date) && (
-        <div className="mt-6 space-y-6">
-          <div className="rounded-md border-2 border-violet-500/60 bg-violet-500/5 p-3 flex flex-wrap items-center gap-2">
-            <Badge className="bg-violet-600 hover:bg-violet-600 text-white font-bold uppercase tracking-wide">
-              {planInfo.label}
-            </Badge>
-            <span className="text-sm font-semibold">
-              {visit1Date
-                ? `${planInfo.lo}–${planInfo.hi} days after ${isoDayLabel(visit1Date)}`
-                : `${planInfo.lo}–${planInfo.hi} days after Visit 1`}
-            </span>
-            {visit1Date && (
-              <span className="text-xs text-muted-foreground">
-                — searching {followUpDates(visit1Date, plan).map(isoDayLabel).join(", ") || "no working days in range"}
-              </span>
-            )}
+      {/* Follow-up plan: Visit 1 and Visit 2 side by side. The block breaks
+          out of the page's 5xl column on large screens so both sets of slot
+          cards stay readable. */}
+      {result && planInfo && (() => {
+        const v1 = bestFitSlot(result);
+        const v2 = followUpLoading ? null : bestFitSlot(followUp);
+        const w = Number(windowWidth);
+        return (
+          <div className="mt-6 space-y-4 lg:relative lg:left-1/2 lg:-translate-x-1/2 lg:w-[min(96rem,calc(100vw-3rem))]">
+            {/* Recommendation strip: the two days to offer the customer. */}
+            <div className="rounded-lg border-2 border-emerald-600 bg-emerald-50/60 p-3">
+              <div className="text-xs font-bold uppercase tracking-wide text-emerald-800 mb-2">Recommend</div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-primary text-primary-foreground font-bold uppercase tracking-wide">Visit 1</Badge>
+                  {v1 ? (
+                    <span className="text-sm">
+                      <span className="font-bold">{v1.weekday}, {isoDayLabel(v1.date)}</span>
+                      {" · "}<span className="font-semibold">{bookWindowLabel(v1.c, w)}</span>
+                      {" · "}{v1.c.tech_name}
+                    </span>
+                  ) : <span className="text-sm italic text-muted-foreground">No opening found</span>}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-violet-600 hover:bg-violet-600 text-white font-bold uppercase tracking-wide">{planInfo.label}</Badge>
+                  {followUpLoading ? (
+                    <span className="text-sm italic text-muted-foreground">Searching…</span>
+                  ) : v2 ? (
+                    <span className="text-sm">
+                      <span className="font-bold">{v2.weekday}, {isoDayLabel(v2.date)}</span>
+                      {visit1Date && <span className="font-semibold text-violet-700"> (+{daysBetweenIso(visit1Date, v2.date)} days)</span>}
+                      {" · "}<span className="font-semibold">{bookWindowLabel(v2.c, w)}</span>
+                      {" · "}{v2.c.tech_name}
+                    </span>
+                  ) : <span className="text-sm italic text-muted-foreground">No opening found in the {planInfo.lo}–{planInfo.hi} day band</span>}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+              {/* ── Column 1: Visit 1 ── */}
+              <div className="space-y-4 min-w-0">
+                <div className="rounded-md border-2 border-primary/60 bg-primary/5 p-3 flex flex-wrap items-center gap-2">
+                  <Badge className="bg-primary text-primary-foreground font-bold uppercase tracking-wide">Visit 1</Badge>
+                  <span className="text-sm font-semibold">
+                    {visit1Date ? `${isoDayLabel(visit1Date)} · ` : ""}best opening in the next few days
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    — use “Plan follow-up from this day” on any day to re-anchor Visit 2.
+                  </span>
+                </div>
+                <FindResultsView
+                  result={result}
+                  windowWidth={w}
+                  scheduleContext={scheduleContext}
+                  scheduleHint={!canSchedule ? scheduleHint : null}
+                  visitLabel="Visit 1"
+                  dayAction={{
+                    activeDate: visit1Date,
+                    label: "Plan follow-up from this day",
+                    activeLabel: "Follow-up planned from this day",
+                    onPick: (iso) => { void runFollowUp(iso, plan); },
+                  }}
+                />
+              </div>
+
+              {/* ── Column 2: follow-up ── */}
+              <div className="space-y-4 min-w-0">
+                <div className="rounded-md border-2 border-violet-500/60 bg-violet-500/5 p-3 flex flex-wrap items-center gap-2">
+                  <Badge className="bg-violet-600 hover:bg-violet-600 text-white font-bold uppercase tracking-wide">
+                    Visit 2 · {planInfo.label}
+                  </Badge>
+                  <span className="text-sm font-semibold">
+                    {visit1Date
+                      ? `${planInfo.lo}–${planInfo.hi} days after ${isoDayLabel(visit1Date)}`
+                      : `${planInfo.lo}–${planInfo.hi} days after Visit 1`}
+                  </span>
+                  {visit1Date && (
+                    <span className="text-xs text-muted-foreground">
+                      — {followUpDates(visit1Date, plan).map(isoDayLabel).join(", ") || "no working days in range"}
+                    </span>
+                  )}
+                </div>
+                {followUpLoading && <p className="text-sm text-muted-foreground">Searching follow-up days…</p>}
+                {!followUpLoading && !followUp && (
+                  <p className="text-sm italic text-muted-foreground">
+                    {visit1Date ? "No follow-up results." : "Pick a Visit 1 day to plan the follow-up."}
+                  </p>
+                )}
+                {!followUpLoading && followUp && (
+                  <FindResultsView
+                    result={followUp}
+                    windowWidth={w}
+                    scheduleContext={scheduleContext}
+                    scheduleHint={!canSchedule ? scheduleHint : null}
+                    visitLabel={planInfo.label}
+                    dayBadge={(iso) => visit1Date ? `+${daysBetweenIso(visit1Date, iso)} days` : null}
+                  />
+                )}
+              </div>
+            </div>
           </div>
-          {followUpLoading && <p className="text-sm text-muted-foreground">Searching follow-up days…</p>}
-          {!followUpLoading && followUp && (
-            <FindResultsView
-              result={followUp}
-              windowWidth={Number(windowWidth)}
-              scheduleContext={scheduleContext}
-              scheduleHint={!canSchedule ? scheduleHint : null}
-              visitLabel={planInfo.label}
-              dayBadge={(iso) => visit1Date ? `+${daysBetweenIso(visit1Date, iso)} days` : null}
-            />
-          )}
-        </div>
-      )}
+        );
+      })()}
+
       {/* Upcoming routes map — always BELOW the proposed slots so the
           recommendations are the first thing the office sees after a search. */}
       <div className="mt-6">
@@ -1577,62 +1616,17 @@ function SlotCard({
                 Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
               </Badge>
             )}
+            {(c.push_delay_min ?? 0) >= 15 && (
+              <Badge variant="outline" className="border-amber-500 text-amber-700 font-semibold">
+                pushes day ~{c.push_delay_min} min
+              </Badge>
+            )}
+            {after?.stops_excluding_tasks != null && (
+              <span className="text-xs text-muted-foreground">{after.stops_excluding_tasks} stops after</span>
+            )}
           </div>
         );
       })()}
-
-      <div className="mt-2 text-xs text-muted-foreground">
-        <span className="font-semibold text-foreground">After stop: </span>
-        <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city}
-        {c.prev_stop?.est_depart_min != null ? `, done ~${fmtTime(c.prev_stop.est_depart_min)}` : ""})
-        {" → before "}
-        <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city}
-        {c.next_stop?.est_arrival_min != null ? `, ~${fmtTime(c.next_stop.est_arrival_min)}` : ""})
-        {(c.push_delay_min ?? 0) > 0 && (
-          <span className="text-amber-700"> · pushes rest of day ~{c.push_delay_min} min</span>
-        )}
-      </div>
-
-      {snap && after && (
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-          <span className="flex items-center gap-1">
-            After: <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
-          </span>
-          {after.est_finish_min != null && after.est_route_hours != null ? (
-            (() => {
-              const LUNCH_MIN = 30;
-              const workedHrs = Math.max(0, after.est_route_hours - LUNCH_MIN / 60);
-              return (
-                <span className="text-muted-foreground">
-                  First stop <span className="font-medium">{fmtTime(after.est_finish_min - Math.round(after.est_route_hours * 60))}</span>
-                  {" → last stop "}
-                  <span className="font-medium">{fmtTime(after.est_finish_min)}</span>
-                  {" · "}
-                  <span className="font-medium">~{workedHrs.toFixed(1)}h on the clock</span>
-                  {" (after 30-min lunch)"}
-                  {snap.has_home
-                    ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                    : " · no home base on file"}
-                </span>
-              );
-            })()
-          ) : (
-            <span className="text-muted-foreground">
-              ~{Math.max(0, after.est_route_hours - 0.5).toFixed(1)}h on the clock (after 30-min lunch)
-              {snap.has_home
-                ? (snap.home_base_min ? ` · +${(snap.home_base_min / 60).toFixed(1)}h commute` : "")
-                : " · no home base on file"}
-            </span>
-          )}
-          <span>
-            Total stops: <span className="font-semibold">{after.stops_excluding_tasks}</span> (+1 added)
-          </span>
-        </div>
-      )}
-
-      {c.justification && (
-        <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
-      )}
 
       <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:justify-end">
         {route && target && (
