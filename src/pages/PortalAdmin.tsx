@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PropertyDashboard from "@/components/portal/PropertyDashboard";
 import CommercialDashboardView from "@/components/portal/CommercialDashboardView";
 import { supabase } from "@/integrations/supabase/client";
+import { createIdleReloader } from "@/lib/typingGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -149,19 +150,23 @@ const PortalAdmin = () => {
     // tech typing into findings / products, which debounce-saves on every
     // keystroke) doesn't trigger a refetch storm that re-renders the
     // entire portal mid-keystroke and feels like phantom backspaces.
-    let t: any = null;
-    const debouncedReload = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => loadAll(), 1500);
-    };
+    // …and never while someone is typing: a reload that lands mid-keystroke
+    // snaps every prop-derived box back to its saved value (see typingGuard).
+    const reloader = createIdleReloader(() => loadAll(), { debounceMs: 1500 });
+    const debouncedReload = () => reloader.request();
     const channel = supabase
       .channel("portal-admin-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_services" }, debouncedReload)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests" }, debouncedReload)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties" }, debouncedReload)
       .subscribe();
-    return () => { if (t) clearTimeout(t); supabase.removeChannel(channel); };
+    return () => { reloader.cancel(); supabase.removeChannel(channel); };
   }, []);
+
+  // Dashboards call onRefresh after their own saves. Same rule: if the user has
+  // already moved on and is typing in another box, wait for them to finish.
+  const idleRefresh = useMemo(() => createIdleReloader(() => loadAll(), { debounceMs: 150 }), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const refreshWhenIdle = () => idleRefresh.request();
 
   // Deferred property restore after data is loaded
   useEffect(() => {
@@ -1049,7 +1054,7 @@ const PortalAdmin = () => {
             onDeleteService={deleteService}
             onCopyLink={copyLink}
             onOpenPortal={openPortal}
-            onRefresh={loadAll}
+            onRefresh={refreshWhenIdle}
             onUpdatePropertyImage={updatePropertyImage}
             uploadingPropertyImage={uploadingPropertyImage}
             onUpdatePropertyMapData={updatePropertyMapData}
@@ -1061,7 +1066,7 @@ const PortalAdmin = () => {
           links={propLinks}
           clientName={client?.company || client?.name || ""}
           clientId={selectedProperty.client_id}
-          onRefresh={loadAll}
+          onRefresh={refreshWhenIdle}
           onOpenServiceReport={openServiceReport}
           onEditService={(s) => openServiceDialog(s)}
           onDeleteService={deleteService}

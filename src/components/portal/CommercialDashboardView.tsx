@@ -20,6 +20,7 @@
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createIdleReloader } from "@/lib/typingGuard";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -502,10 +503,32 @@ export default function CommercialDashboardView({
       out[k] = v === "" ? null : v;
     }
     await saveServiceField(id, out);
-    setEdits(e => { const n = { ...e }; delete n[id]; return n; });
+    // Do NOT drop the edit here. The parent's refreshed `services` arrive
+    // later (and wait for idle typing), so dropping it now would flash the OLD
+    // value back into the box — which read as "my text got deleted". The
+    // pruning effect below clears an edit once the saved prop matches it.
     // Quiet confirmation so the RM knows the blur-autosave landed.
     toast({ title: "Saved", duration: 1200 });
   };
+
+  // Clear edits that the refreshed props now agree with (see flushEdits).
+  useEffect(() => {
+    setEdits(prev => {
+      let changed = false;
+      const next: typeof prev = {};
+      for (const [id, patch] of Object.entries(prev)) {
+        const svc = services.find(s => s.id === id);
+        if (!svc) { next[id] = patch; continue; }
+        const remaining: Record<string, any> = {};
+        for (const [k, v] of Object.entries(patch)) {
+          const saved = (svc as any)[k] ?? "";
+          if ((v ?? "") === saved) changed = true; else remaining[k] = v;
+        }
+        if (Object.keys(remaining).length) next[id] = remaining as any;
+      }
+      return changed ? next : prev;
+    });
+  }, [services]);
 
   // Conditions persister: save, then refresh immediately so the new/edited
   // condition renders right away instead of waiting on the realtime debounce.
@@ -810,11 +833,12 @@ export default function CommercialDashboardView({
     supabase.from("portal_documents").select("*").eq("property_id", property.id).order("created_at", { ascending: false }).then(({ data }) => {
       if (Array.isArray(data)) setDocs(data);
     });
+    const reloader = createIdleReloader(() => loadRequests(), { debounceMs: 800 });
     const channel = supabase
       .channel(`commercial-admin-${property.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${property.id}` }, () => loadRequests())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${property.id}` }, () => reloader.request())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { reloader.cancel(); supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [property.id]);
 

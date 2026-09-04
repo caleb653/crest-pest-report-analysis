@@ -9,6 +9,7 @@
  */
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { createIdleReloader } from "@/lib/typingGuard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,13 +221,17 @@ export default function CommercialPMView({ propertyId, linkId }: CommercialPMVie
 
   useEffect(() => {
     loadAll();
+    // Realtime reloads are debounced and wait until the user stops typing
+    // (typingGuard) so a mid-keystroke refresh can't wipe a half-typed box.
+    const reloader = createIdleReloader(() => loadAll(), { debounceMs: 1000 });
+    const reload = () => reloader.request();
     const channel = supabase
       .channel(`commercial-portal-${propertyId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, () => loadAll())
-      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, () => loadAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, reload)
+      .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, reload)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { reloader.cancel(); supabase.removeChannel(channel); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId]);
 

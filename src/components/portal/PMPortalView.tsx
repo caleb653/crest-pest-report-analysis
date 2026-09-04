@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { stableJson } from "@/lib/stableJson";
+import { createIdleReloader } from "@/lib/typingGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -261,18 +262,17 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     // Debounced so the admin's keystroke-driven debounce-saves (findings,
     // products, office notes) don't cascade into a refetch storm that
     // re-renders the PM view mid-keystroke.
-    let t: any = null;
-    const debouncedReload = () => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => loadAll(), 1500);
-    };
+    // …and never mid-typing (typingGuard): the PM's own auto-saves echo back
+    // through this channel and would otherwise reset the boxes they're typing in.
+    const reloader = createIdleReloader(() => loadAll(), { debounceMs: 1500 });
+    const debouncedReload = () => reloader.request();
     const channel = supabase
       .channel(`pm-portal-sync-${propertyId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_services", filter: `property_id=eq.${propertyId}` }, debouncedReload)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_requests", filter: `property_id=eq.${propertyId}` }, debouncedReload)
       .on("postgres_changes", { event: "*", schema: "public", table: "portal_properties", filter: `id=eq.${propertyId}` }, debouncedReload)
       .subscribe();
-    return () => { if (t) clearTimeout(t); supabase.removeChannel(channel); };
+    return () => { reloader.cancel(); supabase.removeChannel(channel); };
   }, [propertyId, linkId]);
 
   useEffect(() => {
