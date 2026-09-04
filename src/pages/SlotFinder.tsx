@@ -9,7 +9,7 @@
 //   Mode B "Check a day & window":  enter a date + time window and find out how
 //      out-of-the-way that slot is and whether it's feasible.
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -469,14 +469,38 @@ function redSquare() {
 
 type LatLng = { lat: number; lng: number };
 
+/** The route the Slot Finder recommends for the new stop on a given day, and
+    where in that route the stop goes (after stop #afterOrder; null = end). */
+type Recommendation = { date: string; route_id: number | null; tech_name: string; afterOrder: number | null };
+
+// Build the map recommendation from a search's best-fit slot. Position comes
+// from the backend's "stop 8 → stop 9 of 9" string; falls back to matching
+// prev_stop's customer name inside the day's booked route.
+function recommendationFor(result: FindResult | null): Recommendation | null {
+  const best = bestFitSlot(result);
+  if (!best) return null;
+  const c = best.c;
+  const m = (c.fits_between || "").match(/stop\s*(\d+)\s*[→\-\/]+\s*stop\s*(\d+)/i);
+  let afterOrder: number | null = m ? parseInt(m[1], 10) : null;
+  const route = result?.day_routes?.find((r) =>
+    r.date === best.date && (c.route_id != null ? r.route_id === c.route_id : r.tech_name === c.tech_name));
+  if (afterOrder == null && route && c.prev_stop?.customer_name) {
+    const hit = route.stops.find((st) => st.customer === c.prev_stop.customer_name);
+    if (hit) afterOrder = hit.order;
+  }
+  return { date: best.date, route_id: route?.route_id ?? c.route_id ?? null, tech_name: c.tech_name, afterOrder };
+}
+
 const DAY_MAP_STYLE = { width: "100%", height: "60vh" } as const;
 
 // One day, EVERY tech's route on the same map — one color per tech.
-function DayRoutesMap({ routes, colorFor, target }: {
+function DayRoutesMap({ routes, colorFor, target, recommended }: {
   routes: { route: DayRoute; stops: RouteMapStop[] }[];
   colorFor: (tech: string) => string;
   /** Searched address (after a search) — drawn as a bright red square. */
   target?: LatLng | null;
+  /** Recommended route for this day — its line is routed THROUGH the target. */
+  recommended?: Recommendation | null;
 }) {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -493,14 +517,15 @@ function DayRoutesMap({ routes, colorFor, target }: {
   }, []);
   if (keyError) return <div className="p-6 text-sm text-red-600">{keyError}</div>;
   if (!apiKey) return <div className="p-6 text-sm text-muted-foreground">Loading map…</div>;
-  return <DayRoutesMapInner routes={routes} colorFor={colorFor} apiKey={apiKey} target={target} />;
+  return <DayRoutesMapInner routes={routes} colorFor={colorFor} apiKey={apiKey} target={target} recommended={recommended} />;
 }
 
-function DayRoutesMapInner({ routes, colorFor, apiKey, target }: {
+function DayRoutesMapInner({ routes, colorFor, apiKey, target, recommended }: {
   routes: { route: DayRoute; stops: RouteMapStop[] }[];
   colorFor: (tech: string) => string;
   apiKey: string;
   target?: LatLng | null;
+  recommended?: Recommendation | null;
 }) {
   const { isLoaded, loadError } = useJsApiLoader({
     id: "route-map-script",
@@ -547,15 +572,43 @@ function DayRoutesMapInner({ routes, colorFor, apiKey, target }: {
       onLoad={setMap}
       options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, gestureHandling: "greedy" }}
     >
-      {routes.map((r) => (
-        <PolylineF
-          key={`line-${r.route.route_id}`}
-          path={r.stops
-            .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
-            .map((s) => ({ lat: s.lat as number, lng: s.lng as number }))}
-          options={{ strokeColor: colorFor(r.route.tech_name), strokeOpacity: 0.7, strokeWeight: 3, geodesic: false }}
-        />
-      ))}
+      {routes.map((r) => {
+        const pts = r.stops
+          .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
+          .map((s) => ({ order: s.order, lat: s.lat as number, lng: s.lng as number }));
+        const isRec = !!recommended && !!target && r.route.date === recommended.date
+          && (recommended.route_id != null ? r.route.route_id === recommended.route_id : r.route.tech_name === recommended.tech_name);
+        if (!isRec) {
+          return (
+            <PolylineF
+              key={`line-${r.route.route_id}`}
+              path={pts}
+              options={{ strokeColor: colorFor(r.route.tech_name), strokeOpacity: 0.7, strokeWeight: 3, geodesic: false }}
+            />
+          );
+        }
+        // Recommended route: splice the new stop in after `afterOrder` (or at
+        // the end), draw the full line thicker, and paint the two legs that
+        // touch the new stop bright red so the detour is unmistakable.
+        const pos = recommended!.afterOrder == null
+          ? pts.length
+          : pts.filter((p) => p.order <= (recommended!.afterOrder as number)).length;
+        const t = { order: -1, lat: target!.lat, lng: target!.lng };
+        const spliced = [...pts.slice(0, pos), t, ...pts.slice(pos)];
+        const legs = [pts[pos - 1], t, pts[pos]].filter(Boolean);
+        return (
+          <Fragment key={`line-${r.route.route_id}`}>
+            <PolylineF
+              path={spliced}
+              options={{ strokeColor: colorFor(r.route.tech_name), strokeOpacity: 0.9, strokeWeight: 5, geodesic: false, zIndex: 10 }}
+            />
+            <PolylineF
+              path={legs}
+              options={{ strokeColor: "#ff1a1a", strokeOpacity: 1, strokeWeight: 6, geodesic: false, zIndex: 11 }}
+            />
+          </Fragment>
+        );
+      })}
       {routes.map((r) =>
         r.stops
           .filter((s) => typeof s.lat === "number" && typeof s.lng === "number")
@@ -609,10 +662,14 @@ function DayRoutesMapInner({ routes, colorFor, apiKey, target }: {
 // techs on/off). Shows the next 3 working days by default, plus an "Any day"
 // date picker that pulls any other day's routes on demand (same free
 // sentinel fetch — BigQuery only).
-function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookupDay, target }: {
+function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookupDay, target, preferredDate, recommendations }: {
   dayRoutes: DayRoute[];
   /** Searched address after a search — shown as a bright red square on the map. */
   target?: LatLng | null;
+  /** Day the map should jump to after a search (the recommended Visit 1 day). */
+  preferredDate?: string | null;
+  /** Recommended route per day (Visit 1 and, in a follow-up plan, Visit 2). */
+  recommendations?: Recommendation[];
   /** Ordered dates to offer as pills (defaults + any looked-up days). */
   dates: string[];
   loading: boolean;
@@ -627,8 +684,15 @@ function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookup
     return (t: string) => m.get(t) ?? TECH_PALETTE[TECH_PALETTE.length - 1];
   }, [dayRoutes]);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
+  // Jump to the recommended day whenever a search produces one.
+  useEffect(() => {
+    if (preferredDate) setPickedDate(preferredDate);
+  }, [preferredDate]);
   const date = pickedDate && dates.includes(pickedDate) ? pickedDate : dates[0];
   const routesForDate = dayRoutes.filter((r) => r.date === date);
+  const recForDate = recommendations?.find((r) => r.date === date) ?? null;
+  const isRecRoute = (r: DayRoute) => !!recForDate
+    && (recForDate.route_id != null ? r.route_id === recForDate.route_id : r.tech_name === recForDate.tech_name);
   const [hiddenTechs, setHiddenTechs] = useState<Set<string>>(new Set());
   const toggleTech = (t: string) =>
     setHiddenTechs((cur) => {
@@ -660,8 +724,9 @@ function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookup
               {dates.map((d) => (
                 <Button key={d} type="button" size="sm"
                   variant={d === date ? "default" : "outline"}
+                  className={recommendations?.some((r) => r.date === d) ? "ring-2 ring-emerald-500 ring-offset-1" : ""}
                   onClick={() => setPickedDate(d)}>
-                  {isoDayLabel(d)}
+                  {recommendations?.some((r) => r.date === d) ? "★ " : ""}{isoDayLabel(d)}
                 </Button>
               ))}
               {/* Any-day lookup: picking a date fetches that day's routes and
@@ -697,6 +762,7 @@ function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookup
                   >
                     <span className="inline-block w-3 h-3 rounded-full border border-white shadow-sm" style={{ background: colorFor(r.tech_name) }} />
                     {r.tech_name} · {r.stop_count}{r.locked ? " · locked" : ""}
+                    {isRecRoute(r) && <span className="ml-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">★ recommended</span>}
                   </button>
                 );
               })}
@@ -707,13 +773,19 @@ function RoutesOverviewCard({ dayRoutes, dates, loading, lookupLoading, onLookup
               )}
             </div>
             {target && (
-              <p className="text-xs font-semibold flex items-center gap-1.5">
+              <p className="text-xs font-semibold flex flex-wrap items-center gap-1.5">
                 <span className="inline-block w-3.5 h-3.5 bg-[#ff1a1a] border-2 border-white shadow ring-1 ring-red-800" />
                 Red square = the address you searched (new stop)
+                {recForDate && (
+                  <span className="text-muted-foreground font-normal">
+                    · red legs = {recForDate.tech_name}'s route going to it
+                    {recForDate.afterOrder != null ? ` after stop ${recForDate.afterOrder}` : ""}
+                  </span>
+                )}
               </p>
             )}
             {visible.length > 0
-              ? <DayRoutesMap routes={visible} colorFor={colorFor} target={target} />
+              ? <DayRoutesMap routes={visible} colorFor={colorFor} target={target} recommended={recForDate} />
               : routesForDate.length > 0 && (
                 <p className="text-sm italic text-muted-foreground">All techs hidden — tap a name above to show a route.</p>
               )}
@@ -1285,14 +1357,35 @@ function FindMode({
       {/* Upcoming routes map — always BELOW the proposed slots so the
           recommendations are the first thing the office sees after a search. */}
       <div className="mt-6">
-        <RoutesOverviewCard
-          dayRoutes={[...(defaultRoutes ?? []), ...extraRoutes]}
-          dates={[...new Set([...defaultDates, ...extraDates])].sort()}
-          loading={routesLoading}
-          lookupLoading={lookupLoading}
-          onLookupDay={lookupDay}
-          target={result?.geocoded ?? null}
-        />
+        {(() => {
+          // Searched days ride along with each result (day_routes), so the
+          // map can show them even when they're outside the default 3 days.
+          const seen = new Set<string>();
+          const merged: DayRoute[] = [];
+          for (const r of [...(result?.day_routes ?? []), ...(followUp?.day_routes ?? []), ...(defaultRoutes ?? []), ...extraRoutes]) {
+            const k = `${r.date}|${r.route_id}`;
+            if (seen.has(k)) continue;
+            seen.add(k); merged.push(r);
+          }
+          const searchedDates = [
+            ...(result?.by_day ?? []).map((d) => d.date),
+            ...(followUp?.by_day ?? []).map((d) => d.date),
+          ];
+          const rec1 = recommendationFor(result);
+          const rec2 = planInfo && !followUpLoading ? recommendationFor(followUp) : null;
+          return (
+            <RoutesOverviewCard
+              dayRoutes={merged}
+              dates={[...new Set([...defaultDates, ...extraDates, ...searchedDates])].sort()}
+              loading={routesLoading}
+              lookupLoading={lookupLoading}
+              onLookupDay={lookupDay}
+              target={result?.geocoded ?? null}
+              preferredDate={rec1?.date ?? null}
+              recommendations={[rec1, rec2].filter((r): r is Recommendation => !!r)}
+            />
+          );
+        })()}
       </div>
     </>
   );
