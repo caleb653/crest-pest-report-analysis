@@ -75,8 +75,10 @@ type RouteSnapshot = {
   stops_excluding_tasks: number;
   stops_by_window: WindowCounts;
   total_drive_min: number;
+  job_drive_min?: number;
   home_base_min?: number;
   est_route_hours: number;
+  first_start_min?: number | null;
   est_finish_min: number | null;
   has_home: boolean;
 };
@@ -87,6 +89,8 @@ type AfterInsert = {
   stops_by_window: WindowCounts;
   est_route_hours: number;
   est_finish_min: number | null;
+  /** Minutes the insert adds to the day (drive + on-site). */
+  added_min?: number;
   new_stop_window: string | null;
 };
 
@@ -106,6 +110,10 @@ type SlotCandidate = {
       the day gets pushed back by this insertion. */
   fits_between?: string | null;
   push_delay_min?: number | null;
+  /** Google-refined legs (seconds) prev→NEW and NEW→next; absent on the
+      free haversine pass. */
+  drive_prev_to_new_sec?: number | null;
+  drive_new_to_next_sec?: number | null;
   prev_stop: Stop;
   next_stop: Stop;
   route_snapshot?: RouteSnapshot;
@@ -230,6 +238,30 @@ function DetourBadge({ c }: { c: SlotCandidate }) {
     <span className="inline-flex items-center gap-2 whitespace-nowrap">
       <span className="font-mono text-xs">+{min} min / +{detourMiles(c)} mi</span>
       <Badge className={`${cls} font-semibold`}>{label}</Badge>
+    </span>
+  );
+}
+
+// Per-window stop counts ("8-12: 3 · 10-2: 1 · 1-5: 6"); the window the new
+// stop lands in is highlighted so the office sees the crowding at a glance.
+function WindowChips({ counts, highlight }: { counts?: WindowCounts; highlight?: string | null }) {
+  if (!counts) return null;
+  const order: (keyof WindowCounts)[] = ["8-12", "10-2", "1-5"];
+  return (
+    <span className="inline-flex flex-wrap gap-1">
+      {order.map((w) => {
+        const n = counts[w] ?? 0;
+        const isHi = highlight === w;
+        return (
+          <Badge
+            key={w}
+            variant="outline"
+            className={isHi ? "border-emerald-500 bg-emerald-100 text-emerald-900 font-semibold" : "text-muted-foreground"}
+          >
+            {w}: {n}
+          </Badge>
+        );
+      })}
     </span>
   );
 }
@@ -1758,6 +1790,71 @@ function SlotCard({
         );
       })()}
 
+      {/* ── Where it lands: who it's between, the drive legs each side, and
+          the modeled clocks (restored — the office needs this to talk the
+          customer through the day). ─────────────────────────────────── */}
+      {(() => {
+        const p = c.prev_stop;
+        const n = c.next_stop;
+        const kind = c.insertion_kind ?? "mid_route";
+        const legA = c.drive_prev_to_new_sec != null ? Math.round(c.drive_prev_to_new_sec / 60) : null;
+        const legB = c.drive_new_to_next_sec != null ? Math.round(c.drive_new_to_next_sec / 60) : null;
+        const Leg = ({ min }: { min: number | null }) => (
+          <span className="inline-flex items-center gap-1 text-muted-foreground">
+            <span aria-hidden>→</span>
+            {min != null && <span className="font-mono text-[11px] rounded border px-1 bg-muted/40">{min} min drive</span>}
+            <span aria-hidden>→</span>
+          </span>
+        );
+        const StopName = ({ st, clock, clockLabel }: { st?: Stop; clock?: number | null; clockLabel: string }) => (
+          <span>
+            <span className="font-semibold text-foreground">{st?.customer_name ?? "?"}</span>
+            {st?.city ? <span className="text-muted-foreground"> ({st.city}{clock != null ? `, ${clockLabel} ~${fmtTime(clock)}` : ""})</span> : null}
+          </span>
+        );
+        const NewPill = () => (
+          <span className="inline-flex items-center rounded bg-red-600 text-white text-[11px] font-bold uppercase tracking-wide px-1.5 py-0.5">
+            New stop{c.est_min != null ? ` ~${fmtTime(c.est_min)}` : ""}
+          </span>
+        );
+        return (
+          <div className="mt-2 rounded-md border border-dashed border-border bg-muted/20 px-3 py-2 text-sm">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Where it lands</span>
+              {kind === "first_stop" ? (
+                <>
+                  <span className="text-muted-foreground">Day's first stop (on site 8:00 AM)</span>
+                  <NewPill />
+                  <Leg min={legB} />
+                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" />
+                </>
+              ) : kind === "last_stop" ? (
+                <>
+                  <span className="text-muted-foreground">Day's last stop, after</span>
+                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" />
+                  <Leg min={legA} />
+                  <NewPill />
+                  {legB != null && <span className="text-xs text-muted-foreground">· then {legB} min home</span>}
+                </>
+              ) : (
+                <>
+                  <span className="text-muted-foreground">after</span>
+                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" />
+                  <Leg min={legA} />
+                  <NewPill />
+                  <Leg min={legB} />
+                  <span className="text-muted-foreground">before</span>
+                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" />
+                </>
+              )}
+              {(c.push_delay_min ?? 0) > 0 && (
+                <span className="text-amber-700 font-medium">· pushes the rest of the day back ~{c.push_delay_min} min</span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Day load after the insert: total stops + expected hours worked ── */}
       {after && (() => {
         const LUNCH_HRS = 0.5;
@@ -1786,6 +1883,62 @@ function SlotCard({
           </div>
         );
       })()}
+
+      {/* ── Before → after: window crowding, day timeline, drive load ──── */}
+      {snap && after && (() => {
+        const LUNCH_MIN = 30;
+        const routeMin = after.est_route_hours != null ? Math.round(after.est_route_hours * 60) : null;
+        const firstStart = snap.first_start_min ?? (after.est_finish_min != null && routeMin != null ? after.est_finish_min - routeMin : null);
+        const workedHrs = after.est_route_hours != null ? Math.max(0, after.est_route_hours - LUNCH_MIN / 60) : null;
+        const beforeHrs = snap.est_route_hours != null ? Math.max(0, snap.est_route_hours - LUNCH_MIN / 60) : null;
+        return (
+          <div className="mt-2 space-y-1 text-xs">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="flex items-center gap-1">
+                <span className="font-semibold text-foreground">Before:</span>
+                <WindowChips counts={snap.stops_by_window} />
+                <span className="text-muted-foreground">({snap.stops_excluding_tasks} stops{beforeHrs != null ? `, ~${beforeHrs.toFixed(1)}h` : ""})</span>
+              </span>
+              <span className="text-muted-foreground">→</span>
+              <span className="flex items-center gap-1">
+                <span className="font-semibold text-foreground">After:</span>
+                <WindowChips counts={after.stops_by_window} highlight={after.new_stop_window} />
+                <span className="text-muted-foreground">({after.stops_excluding_tasks} stops{workedHrs != null ? `, ~${workedHrs.toFixed(1)}h` : ""})</span>
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+              {firstStart != null && after.est_finish_min != null ? (
+                <span>
+                  First stop <span className="font-medium text-foreground">{fmtTime(firstStart)}</span>
+                  {" → last stop "}
+                  <span className="font-medium text-foreground">{fmtTime(after.est_finish_min)}</span>
+                  {snap.est_finish_min != null && snap.est_finish_min !== after.est_finish_min && (
+                    <span> (was {fmtTime(snap.est_finish_min)})</span>
+                  )}
+                </span>
+              ) : workedHrs != null ? (
+                <span>~{workedHrs.toFixed(1)}h on the clock (after 30-min lunch)</span>
+              ) : null}
+              {workedHrs != null && firstStart != null && (
+                <span>· <span className="font-medium text-foreground">~{workedHrs.toFixed(1)}h on the clock</span> (after 30-min lunch)</span>
+              )}
+              {after.added_min != null && <span>· +{after.added_min} min added to the day</span>}
+              {snap.total_drive_min != null && (
+                <span>· {snap.total_drive_min} min driving today{snap.job_drive_min != null ? ` (${snap.job_drive_min} between jobs)` : ""}</span>
+              )}
+              <span>
+                · {snap.has_home
+                  ? (snap.home_base_min ? `+${(snap.home_base_min / 60).toFixed(1)}h commute` : "commute included")
+                  : "no home base on file"}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
+
+      {c.justification && (
+        <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
+      )}
 
       <div className="mt-3 flex flex-col sm:flex-row gap-2 sm:justify-end">
         {route && target && (
