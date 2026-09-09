@@ -11,6 +11,15 @@ import crestLogo from "@/assets/crest-logo.png";
 import crestLogoVideo from "@/assets/crest-logo-video.png";
 import { buildSignedReportPDF } from "@/lib/pdfExport";
 import {
+  parseSignatureStore,
+  resolveProposalSignature,
+  signedOptionLabels,
+  setProposalSignature,
+  hasPerOptionSignatures,
+  proposalFingerprint,
+  SIGNED_REPORT_CC,
+} from "@/lib/proposalSignatures";
+import {
   RODENT_GUARANTEE_HTML,
   hasRodentGuaranteeService,
   stripRodentGuaranteeFromHtml,
@@ -269,29 +278,9 @@ export default function CustomerReportView() {
   const reportRootRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
 
-  // Parse per-proposal signatures from the stored customer_signature field
-  const getPerProposalSignatures = (): Record<string, string> => {
-    if (!report?.customer_signature) return {};
-    try {
-      const parsed = JSON.parse(report.customer_signature);
-      if (parsed && parsed._perProposal) {
-        return parsed.signatures || {};
-      }
-    } catch {
-      // Legacy single signature — not per-proposal
-    }
-    return {};
-  };
-
-  const isLegacySingleSignature = (): boolean => {
-    if (!report?.customer_signature) return false;
-    try {
-      JSON.parse(report.customer_signature);
-      return false;
-    } catch {
-      return true; // It's a raw data: URI
-    }
-  };
+  // Every read of the stored signature goes through the shared store parser so
+  // this page and the office editor can never disagree about which option is signed.
+  const getSignatureStore = () => parseSignatureStore(report?.customer_signature);
 
   useEffect(() => {
     if (reportId) {
@@ -384,33 +373,55 @@ export default function CustomerReportView() {
     setIsSaving(true);
     if (proposalIndex !== undefined) setSavingProposalIndex(proposalIndex);
     try {
+      // Send exactly what the customer is looking at: the option's name and a
+      // fingerprint of its services/prices. The server refuses the signature if
+      // that option changed after this page loaded.
+      const signedProposal = proposalIndex !== undefined ? currentProposals()[proposalIndex] : undefined;
       const { data, error: invokeError } = await supabase.functions.invoke("save-customer-signature", {
         body: {
           reportId,
           signatureData,
           notifyOffice: true,
+          source: "customer",
           appBaseUrl: typeof window !== "undefined" ? window.location.origin : undefined,
-          ...(proposalIndex !== undefined ? { proposalIndex } : {}),
+          ...(proposalIndex !== undefined
+            ? {
+                proposalIndex,
+                proposalName: signedProposal?.name ?? "",
+                proposalFingerprint: proposalFingerprint(signedProposal),
+              }
+            : {}),
         },
       });
 
       if (invokeError) throw invokeError;
-      if (!(data as { ok?: boolean; error?: string } | null)?.ok) {
-        throw new Error((data as { error?: string } | null)?.error || "Failed to save signature");
+      const result = data as { ok?: boolean; error?: string; message?: string; customer_signature?: string | null; signedOptionName?: string | null } | null;
+      if (!result?.ok) {
+        if (result?.error === "proposal_changed" || result?.error === "invalid_proposal") {
+          toast.error(result.message || "This proposal was updated after you opened it. Reloading so you can review it before signing.", { duration: 8000 });
+          await loadReport();
+          return;
+        }
+        throw new Error(result?.error || "Failed to save signature");
       }
 
+      // Prefer the value the server actually stored (merged with anything signed
+      // elsewhere). Fall back to a local merge only if the server didn't return it.
+      setReport((prev) => {
+        if (!prev) return prev;
+        if (typeof result.customer_signature === "string") {
+          return { ...prev, customer_signature: result.customer_signature };
+        }
+        if (proposalIndex !== undefined) {
+          const merged = setProposalSignature(parseSignatureStore(prev.customer_signature), proposalIndex, signatureData, signedProposal, "customer");
+          return { ...prev, customer_signature: JSON.stringify({ _perProposal: true, signatures: merged.signatures, meta: merged.meta, ...(merged.legacy ? { legacy: merged.legacy } : {}) }) };
+        }
+        return { ...prev, customer_signature: signatureData };
+      });
       if (proposalIndex !== undefined) {
-        // Update local state with per-proposal signature
-        setReport((prev) => {
-          if (!prev) return prev;
-          const existingSignatures = getPerProposalSignaturesFromValue(prev.customer_signature);
-          existingSignatures[String(proposalIndex)] = signatureData;
-          return { ...prev, customer_signature: JSON.stringify({ _perProposal: true, signatures: existingSignatures }) };
-        });
-        const optionLabel = `Option ${String.fromCharCode(65 + proposalIndex)}`;
+        const optionLabel = result.signedOptionName || signedProposal?.name || `Option ${String.fromCharCode(65 + proposalIndex)}`;
         toast.success(`Signature saved for ${optionLabel}! Thank you.`);
       } else {
-        setReport((prev) => (prev ? { ...prev, customer_signature: signatureData } : prev));
         toast.success("Signature saved! Thank you for approving the proposal.");
       }
 
@@ -447,6 +458,7 @@ export default function CustomerReportView() {
           emailMessage: `Hi ${report?.customer_name || "there"},\n\nThank you for signing your proposal! A copy with your signature is attached for your records.\n\nWe'll be in touch shortly to confirm next steps. If you have any questions, just reply to this email.\n\n— Crest Pest Control`,
           buttonText: "View Signed Proposal",
           reportType: "sales",
+          ccEmails: [SIGNED_REPORT_CC], // every signed report copies Caleb
           pdfBase64,
           pdfFilename: `Crest_Signed_Proposal_${safeName}.pdf`,
         },
@@ -458,13 +470,15 @@ export default function CustomerReportView() {
     }
   };
 
-  const getPerProposalSignaturesFromValue = (value: string | null): Record<string, string> => {
-    if (!value) return {};
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed && parsed._perProposal) return parsed.signatures || {};
-    } catch { /* legacy */ }
-    return {};
+  /** Proposals exactly as this page is rendering them (multi-proposal reports only). */
+  const currentProposals = (): Proposal[] => {
+    const svc = report?.services;
+    if (!svc || !Array.isArray(svc) || svc.length === 0) return [];
+    const first = svc[0] as unknown;
+    if (first && typeof first === "object" && "name" in (first as object) && "services" in (first as object)) {
+      return svc as Proposal[];
+    }
+    return [];
   };
 
   const handleSubmitSignature = () => {
@@ -871,22 +885,38 @@ export default function CustomerReportView() {
                   </div>
                   <div className="p-4">
                     {(() => {
-                      const perSigs = getPerProposalSignatures();
-                      const existingSig = perSigs[String(proposalIndex)];
-                      if (existingSig) {
+                      const resolved = resolveProposalSignature(getSignatureStore(), parsedProposals, proposalIndex);
+                      if (resolved.status === "signed") {
+                        const signedName = resolved.meta?.proposalName || proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`;
+                        const signedDate = resolved.meta?.signedAt ? new Date(resolved.meta.signedAt) : null;
                         return (
                           <div className="space-y-3">
                             <div className="border rounded p-3 bg-muted/30">
-                              <img src={existingSig} alt={`Signature for ${proposal.name}`} className="max-h-16 mx-auto" />
+                              <img src={resolved.data} alt={`Signature for ${signedName}`} className="max-h-16 mx-auto" />
                             </div>
                             <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
                               <Check className="w-4 h-4" />
-                              <span className="font-medium">{proposal.name || `Option ${String.fromCharCode(65 + proposalIndex)}`} — Signed</span>
+                              <span className="font-medium">{signedName} — Signed</span>
                             </div>
                             <div className="flex justify-between text-xs text-muted-foreground border-t pt-2">
                               <span><span className="font-medium text-foreground">Print:</span> {report.customer_name}</span>
-                              <span><span className="font-medium text-foreground">Date:</span> {new Date().toLocaleDateString()}</span>
+                              <span><span className="font-medium text-foreground">Date:</span> {(signedDate && !isNaN(signedDate.getTime()) ? signedDate : new Date()).toLocaleDateString()}</span>
                             </div>
+                          </div>
+                        );
+                      }
+                      if (resolved.status === "mismatch") {
+                        // A signature was captured for this slot, but the option has
+                        // changed since. Never present it as a signature for the current terms.
+                        return (
+                          <div className="space-y-2 text-sm">
+                            <p className="text-foreground">
+                              A signature is on file for <strong>{resolved.meta.proposalName || "this option"}</strong>, but the
+                              option has been updated since it was signed.
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Please contact our office at (949) 424-5000 to confirm the current terms before signing again.
+                            </p>
                           </div>
                         );
                       }
@@ -1160,8 +1190,7 @@ export default function CustomerReportView() {
             <span className="text-foreground font-medium">
               {isMultiProposal
                 ? (() => {
-                    const sigs = getPerProposalSignatures();
-                    const signedOptions = Object.keys(sigs).map(k => `Option ${String.fromCharCode(65 + parseInt(k))}`);
+                    const signedOptions = signedOptionLabels(getSignatureStore(), parsedProposals);
                     return signedOptions.length > 0
                       ? `Signed: ${signedOptions.join(", ")}. Thank you!`
                       : "This proposal has been signed and approved. Thank you!";
@@ -1424,10 +1453,10 @@ export default function CustomerReportView() {
                       <span className="text-xs font-bold uppercase">Customer Signature</span>
                     </div>
                     <div className="p-4">
-                      {report.customer_signature && isLegacySingleSignature() ? (
+                      {getSignatureStore().legacy && !hasPerOptionSignatures(getSignatureStore()) ? (
                         <div className="space-y-3">
                           <div className="border rounded p-3 bg-muted/30">
-                            <img src={report.customer_signature} alt="Customer signature" className="max-h-16 mx-auto" />
+                            <img src={getSignatureStore().legacy as string} alt="Customer signature" className="max-h-16 mx-auto" />
                           </div>
                           <div className="flex items-center justify-center gap-2 text-dark-sage text-sm">
                             <Check className="w-4 h-4" />

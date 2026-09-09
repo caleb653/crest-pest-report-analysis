@@ -24,6 +24,7 @@ import {
   ChevronsUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { SignedElsewhereError, SIGNED_REPORT_CC } from "@/lib/proposalSignatures";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { MapCanvas } from "@/components/MapCanvas";
@@ -675,7 +676,7 @@ const Report = () => {
   const [emailMessage, setEmailMessage] = useState("");
   const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
   const [selectedPrepSheets, setSelectedPrepSheets] = useState<Array<{ id: string; title: string; file_url: string | null }>>([]);
-  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
+  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [additionalDetails, setAdditionalDetails] = useState("");
@@ -762,6 +763,64 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
   
   // Track if signature was loaded from database (already saved - cannot be changed)
   const [signatureWasSaved, setSignatureWasSaved] = useState(false);
+  /** customer_signature exactly as last read from the server (null = none). */
+  const serverSignatureRef = useRef<string | null>(null);
+
+  /**
+   * The ONLY source of `customer_signature` for any save from this editor.
+   * If the customer signed from their own device after this tab loaded, the
+   * save is refused and the editor locks — a stale tab must never wipe a signature.
+   */
+  const resolveSignatureForSave = async (): Promise<string | null> => {
+    const local = signatureRef.current?.forceSave() ?? customerSignature;
+    if (!reportId) return local;
+    const { data, error } = await supabase
+      .from("reports")
+      .select("customer_signature")
+      .eq("id", reportId)
+      .maybeSingle();
+    if (error) throw error;
+    const server = ((data as { customer_signature?: string | null } | null)?.customer_signature ?? null) as string | null;
+    if (server && server !== serverSignatureRef.current) {
+      serverSignatureRef.current = server;
+      setCustomerSignature(server);
+      setSignatureWasSaved(true);
+      throw new SignedElsewhereError();
+    }
+    return local ?? server;
+  };
+
+  // Pick up a signature the customer adds from their own device while this tab is open.
+  useEffect(() => {
+    if (!reportId) return;
+    let cancelled = false;
+    const refresh = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const { data } = await supabase
+          .from("reports")
+          .select("customer_signature")
+          .eq("id", reportId)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        const server = ((data as { customer_signature?: string | null }).customer_signature ?? null) as string | null;
+        if (!server || server === serverSignatureRef.current) return;
+        serverSignatureRef.current = server;
+        setCustomerSignature(server);
+        setSignatureWasSaved(true);
+        toast.info("The customer signed this proposal. The report is now locked.", { duration: 8000 });
+      } catch (err) {
+        console.warn("[signature refresh] failed:", err);
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [reportId]);
 
   // Read-only mode — locked once customer has signed (signature saved in DB)
   const [sentToCustomerAt, setSentToCustomerAt] = useState<string | null>(null);
@@ -1088,6 +1147,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       }
 
       // Load new fields
+      serverSignatureRef.current = (row.customer_signature as string | null) ?? null;
       if (row.customer_signature) {
         setCustomerSignature(row.customer_signature);
         setSignatureWasSaved(true); // Mark as saved from DB - cannot be re-signed
@@ -1506,7 +1566,7 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
 
     setIsSaving(true);
     try {
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const finalSignature = await resolveSignatureForSave();
 
       const rawMap = latestMapDataRef.current ?? mapData;
       console.log("Submitting report with map data:", {
@@ -1532,6 +1592,10 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
       toast.success("Report saved successfully!");
     } catch (error: any) {
+      if (error instanceof SignedElsewhereError) {
+        toast.warning(error.message, { duration: 10000 });
+        return;
+      }
       toast.error("Failed to save report");
       console.error(error);
     } finally {
@@ -1551,10 +1615,14 @@ const [displayedProducts, setDisplayedProducts] = useState(PRODUCT_OPTIONS);
       if (rawMap) {
         try { mapPayload = JSON.parse(rawMap); } catch { mapPayload = rawMap; }
       }
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const finalSignature = await resolveSignatureForSave();
       await persistReport(buildBaseReportPayload(mapPayload, finalSignature));
       console.log("[autosave] saved successfully");
     } catch (err) {
+      if (err instanceof SignedElsewhereError) {
+        toast.warning(err.message, { duration: 10000 });
+        return;
+      }
       console.error("[autosave] failed:", err);
     }
   };
@@ -1675,7 +1743,7 @@ Crest Pest Control`;
 
     setIsSendingEmail(true);
     try {
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const finalSignature = await resolveSignatureForSave();
       const rawMap = latestMapDataRef.current ?? mapData;
 
       let mapPayload: any = null;
@@ -1734,7 +1802,11 @@ Crest Pest Control`;
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
-          ccEmails: ccEmails.length > 0 ? ccEmails : undefined,
+          // Signed reports always CC Caleb (unsigned sends use only the chosen CCs).
+          ccEmails: (() => {
+            const list = finalSignature && !ccEmails.includes(SIGNED_REPORT_CC) ? [...ccEmails, SIGNED_REPORT_CC] : ccEmails;
+            return list.length > 0 ? list : undefined;
+          })(),
           customerName: editableCustomer,
           technicianName: editableTech,
           address: editableAddress || extractedAddress || address || "",
@@ -1762,6 +1834,10 @@ Crest Pest Control`;
       toast.success(`Report saved and sent to ${customerEmail}`);
       setShowComposeDialog(false);
     } catch (error: any) {
+      if (error instanceof SignedElsewhereError) {
+        toast.warning(error.message, { duration: 10000 });
+        return;
+      }
       console.error("Error sending email:", error);
       toast.error("Failed to save or send email. Please try again.");
     } finally {

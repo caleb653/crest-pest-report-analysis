@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,19 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  type SignatureStore,
+  SignedElsewhereError,
+  emptySignatureStore,
+  parseSignatureStore,
+  serializeSignatureStore,
+  storeHasAnySignature,
+  signatureKeys,
+  resolveProposalSignature,
+  clearProposalSignature,
+  applyLocalSignatureEdits,
+  SIGNED_REPORT_CC,
+} from "@/lib/proposalSignatures";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { MapCanvas } from "@/components/MapCanvas";
@@ -631,6 +644,10 @@ const Report = () => {
   };
 
   const addProposal = () => {
+    if (storeHasAnySignature(viewSigStore)) {
+      toast.error("Options can't be added after a signature is on file. Clear the signature first.");
+      return;
+    }
     if (proposals.length < 4) {
       const nextName = PROPOSAL_NAMES[proposals.length] || `Option ${proposals.length + 1}`;
       setProposals((prev) => [...prev, { name: nextName, services: [{ serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 }] }]);
@@ -638,6 +655,10 @@ const Report = () => {
   };
 
   const removeProposal = (index: number) => {
+    if (storeHasAnySignature(viewSigStore)) {
+      toast.error("Options can't be removed after a signature is on file. Clear the signature first.");
+      return;
+    }
     if (proposals.length > 1) {
       setProposals((prev) => prev.filter((_, i) => i !== index));
       if (recommendedProposal >= index) {
@@ -738,13 +759,25 @@ const Report = () => {
   const [emailMessage, setEmailMessage] = useState("");
   const [selectedPrepSheetIds, setSelectedPrepSheetIds] = useState<string[]>([]);
   const [selectedPrepSheets, setSelectedPrepSheets] = useState<Array<{ id: string; title: string; file_url: string | null }>>([]);
-  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com", "caleb@crestpestco.com"]);
+  const [ccEmails, setCcEmails] = useState<string[]>(["office@crestpestcontrol.com", "sales@crestpestco.com"]);
   const [ccInput, setCcInput] = useState("");
   const [customerSignature, setCustomerSignature] = useState<string | null>(null);
   const [perProposalSignatures, setPerProposalSignatures] = useState<Record<number, string | null>>({});
+  // Signatures as last read from the server (never mutated locally) + the keys this
+  // editor has explicitly changed. Saves merge dirty keys onto a FRESH server read,
+  // so a tab opened before the customer signed can never overwrite their signature.
+  const [serverSigStore, setServerSigStore] = useState<SignatureStore>(emptySignatureStore());
+  const serverSigStoreRef = useRef<SignatureStore>(emptySignatureStore());
+  useEffect(() => { serverSigStoreRef.current = serverSigStore; }, [serverSigStore]);
+  const [sigDirty, setSigDirty] = useState<Set<number>>(new Set());
+  const markSigDirty = (idx: number) => setSigDirty((prev) => new Set(prev).add(idx));
+  /** What this editor currently shows: server truth + this tab's explicit edits. */
+  const viewSigStore = useMemo(
+    () => applyLocalSignatureEdits(serverSigStore, perProposalSignatures, sigDirty, proposals, "editor"),
+    [serverSigStore, perProposalSignatures, sigDirty, proposals],
+  );
   const [additionalDetails, setAdditionalDetails] = useState("");
   const signatureRef = useRef<SignatureCanvasRef>(null);
-  const proposalSignatureRefs = useRef<Record<number, SignatureCanvasRef | null>>({});
   const [signatureModalIndex, setSignatureModalIndex] = useState<number | null>(null);
   const [modalSignatureDraft, setModalSignatureDraft] = useState<string | null>(null);
   const modalSignatureRef = useRef<SignatureCanvasRef>(null);
@@ -1029,21 +1062,19 @@ const Report = () => {
     if (idx === null) return;
     setClearSigSaving(true);
     try {
-      // Build the next per-proposal signatures map with this slot cleared.
-      const nextSigs: Record<number, string | null> = { ...perProposalSignatures, [idx]: null };
-      setPerProposalSignatures(nextSigs);
-
-      // Determine if ANY signatures remain — if not, also clear the legacy
-      // top-level customer_signature so the report flips back out of read-only.
-      const anyRemain = Object.values(nextSigs).some((v) => !!v);
-      const payloadSig = anyRemain
-        ? JSON.stringify({
-            _perProposal: true,
-            signatures: Object.fromEntries(
-              Object.entries(nextSigs).filter(([, v]) => !!v)
-            ),
-          })
-        : null;
+      // Clear against a FRESH server read so nothing signed elsewhere is lost.
+      let server = serverSigStore;
+      if (reportId) {
+        const { data, error } = await supabase
+          .from("reports")
+          .select("customer_signature")
+          .eq("id", reportId)
+          .maybeSingle();
+        if (error) throw error;
+        if (data) server = parseSignatureStore((data as { customer_signature: string | null }).customer_signature);
+      }
+      const next = clearProposalSignature(server, idx, proposals.length);
+      const payloadSig = serializeSignatureStore(next);
 
       if (reportId) {
         const { error } = await supabase
@@ -1052,8 +1083,11 @@ const Report = () => {
           .eq("id", reportId);
         if (error) throw error;
       }
-      if (!anyRemain) {
-        setCustomerSignature(null);
+      setServerSigStore(next);
+      setPerProposalSignatures((prev) => { const c = { ...prev }; delete c[idx]; return c; });
+      setSigDirty((prev) => { const n = new Set(prev); n.delete(idx); return n; });
+      setCustomerSignature(payloadSig);
+      if (!storeHasAnySignature(next)) {
         setSignatureWasSaved(false);
       }
       toast.success("Signature cleared");
@@ -1071,71 +1105,6 @@ const Report = () => {
     .some((value) => value.trim().length > 0 && value.trim() !== "-");
   const showSchedulingSection = !isReadOnly || hasSchedulingInfo;
   
-  const handleSignatureSave = async (signatureData: string | null) => {
-    setCustomerSignature(signatureData);
-    const hasAdminSession = !!localStorage.getItem("admin_session");
-    const shouldPersist = !!reportId && !!signatureData && (isReadOnly || !hasAdminSession);
-    if (shouldPersist) {
-      setIsSavingSignature(true);
-      try {
-        const { error } = await supabase
-          .from("reports")
-          .update({ customer_signature: signatureData })
-          .eq("id", reportId);
-        if (error) throw error;
-        toast.success("Signature saved successfully!");
-      } catch (error: any) {
-        console.error("Error saving signature:", error);
-        toast.error("Failed to save signature");
-      } finally {
-        setIsSavingSignature(false);
-      }
-    }
-    // Signed = proposal accepted → queue its PDF to FieldRoutes. Auto mode is
-    // idempotent and silently no-ops without an admin session / linked customer.
-    if (signatureData) {
-      void sendReportToFieldRoutes({ auto: true });
-      // If this sales report contains Rodent Exclusion (or Trapping &
-      // Exclusion), auto-spawn a Rodent Exclusion Report so the tech has a
-      // pre-populated photo/exclusion write-up ready.
-      void (async () => {
-        try {
-          const mod = await import("@/lib/rodentExclusionAutoCreate");
-          // Flatten all proposals' services for the trigger check.
-          const flat = proposals.flatMap((p) => p.services || []);
-          if (!mod.salesReportHasRodentExclusion(flat) || !reportId) return;
-          const res = await mod.ensureRodentExclusionReport({
-            id: reportId,
-            technician_name: editableTech,
-            customer_name: editableCustomer,
-            customer_email: customerEmail || null,
-            customer_phone: customerPhone || null,
-            address: editableAddress,
-            service_date: editableServiceDate,
-            license_number: editableLicenseNumber,
-            map_data: mapData ? JSON.parse(mapData) : null,
-            custom_map_url: customMapImage,
-            rendered_map_url: renderedMapImage,
-            fieldroutes_customer_id: fieldroutesCustomerId,
-            services: flat,
-            property_images: propertyImages,
-          });
-          if (res?.created) {
-            toast.success("Rodent Exclusion Report created", {
-              description: "Open it to upload before/after photos.",
-              action: {
-                label: "Open",
-                onClick: () => navigate(mod.rodentExclusionUrl(res.reportId)),
-              },
-            });
-          }
-        } catch (e) {
-          console.warn("Rodent Exclusion auto-create failed:", e);
-        }
-      })();
-    }
-  };
-
   const expandWithAI = async (
     text: string,
     type: "findings" | "expect",
@@ -1267,21 +1236,16 @@ const Report = () => {
         setUserEditedFindings(true);
       }
 
-      if (row.customer_signature) {
-        setCustomerSignature(row.customer_signature);
-        setSignatureWasSaved(true);
-        // Load per-proposal signatures if stored as JSON
-        try {
-          const parsed = JSON.parse(row.customer_signature);
-          if (parsed && parsed._perProposal && parsed.signatures) {
-            const sigs: Record<number, string | null> = {};
-            Object.entries(parsed.signatures).forEach(([k, v]) => { sigs[parseInt(k)] = v as string; });
-            setPerProposalSignatures(sigs);
-          }
-        } catch {
-          // Legacy single signature — apply to proposal 0
-          setPerProposalSignatures({ 0: row.customer_signature });
-        }
+      {
+        // Signatures are resolved to options by what was signed (name + service
+        // fingerprint), never by guessing from array position. A legacy single
+        // signature on a multi-option report is kept but tied to no option.
+        const store = parseSignatureStore((row.customer_signature as string | null) ?? null);
+        setServerSigStore(store);
+        setPerProposalSignatures({});
+        setSigDirty(new Set());
+        setCustomerSignature(serializeSignatureStore(store));
+        setSignatureWasSaved(storeHasAnySignature(store));
       }
       
       // Load proposals from services field
@@ -1771,31 +1735,96 @@ const Report = () => {
     return newId;
   };
 
-  const getSerializedSignature = (): string | null => {
-    // Collect per-proposal signatures
-    const sigs: Record<string, string | null> = {};
-    let hasSig = false;
-    Object.entries(perProposalSignatures).forEach(([k, v]) => {
-      if (v) { sigs[k] = v; hasSig = true; }
-    });
-    // Also force-save from refs
-    Object.entries(proposalSignatureRefs.current).forEach(([k, ref]) => {
-      const data = ref?.forceSave();
-      if (data) { sigs[k] = data; hasSig = true; }
-    });
-    if (!hasSig) return customerSignature;
-    return JSON.stringify({ _perProposal: true, signatures: sigs });
+  /**
+   * The ONLY source of `customer_signature` for any save from this editor.
+   * Re-reads the row and merges this tab's explicit signature edits onto it, so
+   * a stale tab can never overwrite or re-label a signature captured elsewhere.
+   * If the server holds signatures this tab has never seen, the save is refused
+   * (SignedElsewhereError) and the editor locks itself.
+   */
+  const resolveSignatureForSave = async (): Promise<{ value: string | null; commit: () => void }> => {
+    let server = serverSigStore;
+    if (reportId) {
+      const { data, error } = await supabase
+        .from("reports")
+        .select("customer_signature")
+        .eq("id", reportId)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) server = parseSignatureStore((data as { customer_signature: string | null }).customer_signature);
+    }
+    const known = new Set(signatureKeys(serverSigStore));
+    const unseen = signatureKeys(server).filter((k) => !known.has(k));
+    if (unseen.length > 0) {
+      setServerSigStore(server);
+      setPerProposalSignatures({});
+      setSigDirty(new Set());
+      setCustomerSignature(serializeSignatureStore(server));
+      setSignatureWasSaved(true);
+      throw new SignedElsewhereError();
+    }
+    const merged = applyLocalSignatureEdits(server, perProposalSignatures, sigDirty, proposals, "editor");
+    const value = serializeSignatureStore(merged);
+    return {
+      value,
+      commit: () => {
+        setServerSigStore(merged);
+        setSigDirty(new Set());
+        setCustomerSignature(value);
+        setSignatureWasSaved(storeHasAnySignature(merged));
+      },
+    };
   };
+
+  // Pick up a signature the customer adds from their own device while this tab
+  // is open: on tab focus, re-read the signature column and lock the editor.
+  useEffect(() => {
+    if (!reportId) return;
+    let cancelled = false;
+    const refresh = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const { data } = await supabase
+          .from("reports")
+          .select("customer_signature")
+          .eq("id", reportId)
+          .maybeSingle();
+        if (cancelled || !data) return;
+        const store = parseSignatureStore((data as { customer_signature: string | null }).customer_signature);
+        const known = new Set(signatureKeys(serverSigStoreRef.current));
+        const unseen = signatureKeys(store).filter((k) => !known.has(k));
+        if (unseen.length === 0) return;
+        setServerSigStore(store);
+        setCustomerSignature(serializeSignatureStore(store));
+        setSignatureWasSaved(true);
+        toast.info("The customer signed this proposal. The report is now locked.", { duration: 8000 });
+      } catch (err) {
+        console.warn("[signature refresh] failed:", err);
+      }
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      cancelled = true;
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [reportId]);
 
   const handleSubmit = async () => {
     if (!editableTech) { toast.error("Please enter technician name"); return; }
     setIsSaving(true);
     try {
-      const finalSignature = getSerializedSignature();
+      const { value: finalSignature, commit: commitSignature } = await resolveSignatureForSave();
       const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
       await persistReport(buildBaseReportPayload(mainMapPayload, finalSignature, undefined, { duplicateMapDataOverride }));
+      commitSignature();
       toast.success("Report saved successfully!");
     } catch (error: any) {
+      if (error instanceof SignedElsewhereError) {
+        toast.warning(error.message, { duration: 10000 });
+        return;
+      }
       toast.error("Failed to save report");
       console.error(error);
     } finally {
@@ -1808,10 +1837,15 @@ const Report = () => {
   const autoSave = async () => {
     if (!editableTech || !reportId) return;
     try {
+      const { value: finalSignature, commit: commitSignature } = await resolveSignatureForSave();
       const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
       await persistReport(buildBaseReportPayload(mainMapPayload, finalSignature, undefined, { duplicateMapDataOverride }));
+      commitSignature();
     } catch (err) {
+      if (err instanceof SignedElsewhereError) {
+        toast.warning(err.message, { duration: 10000 });
+        return;
+      }
       console.error("[autosave] failed:", err);
     }
   };
@@ -1885,7 +1919,10 @@ const Report = () => {
         setupMaterials: getProposalSetupMaterials(i),
         exclusions: EXCLUSION_PRESETS.filter((p) => exLabels.includes(p.label)),
         invoiceNote: getInvoiceNoteForProposal(i),
-        signature: perProposalSignatures[i] ?? null,
+        signature: (() => {
+          const r = resolveProposalSignature(viewSigStore, proposals, i);
+          return r.status === "signed" ? r.data : null;
+        })(),
       };
     });
 
@@ -2052,7 +2089,7 @@ Crest Pest Control`;
     if (!emailRegex.test(customerEmail)) { toast.error("Please enter a valid email address"); return; }
     setIsSendingEmail(true);
     try {
-      const finalSignature = signatureRef.current?.forceSave() ?? customerSignature;
+      const { value: finalSignature, commit: commitSignature } = await resolveSignatureForSave();
       const { mainMapPayload, duplicateMapDataOverride } = await captureFreshMapState();
       const freshRenderedMap = await captureFreshRenderedMap();
       const sentAt = new Date().toISOString();
@@ -2061,6 +2098,7 @@ Crest Pest Control`;
         customer_email: customerEmail,
         sent_to_customer_at: sentAt,
       });
+      commitSignature();
 
       let pdfBase64: string | undefined;
       if (pdfAttachOption !== "none") {
@@ -2078,7 +2116,11 @@ Crest Pest Control`;
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
           customerEmail,
-          ccEmails: ccEmails.length > 0 ? ccEmails : undefined,
+          // Signed reports always CC Caleb (unsigned sends use only the chosen CCs).
+          ccEmails: (() => {
+            const list = finalSignature && !ccEmails.includes(SIGNED_REPORT_CC) ? [...ccEmails, SIGNED_REPORT_CC] : ccEmails;
+            return list.length > 0 ? list : undefined;
+          })(),
           customerName: editableCustomer,
           technicianName: editableTech,
           address: editableAddress || extractedAddress || address || "",
@@ -2103,6 +2145,10 @@ Crest Pest Control`;
       toast.success(`Report saved and sent to ${customerEmail}`);
       setShowComposeDialog(false);
     } catch (error: any) {
+      if (error instanceof SignedElsewhereError) {
+        toast.warning(error.message, { duration: 10000 });
+        return;
+      }
       console.error("Error sending email:", error);
       toast.error("Failed to save or send email. Please try again.");
     } finally {
@@ -3225,7 +3271,9 @@ Crest Pest Control`;
 
             {/* Customer Signature — per-proposal */}
             {(() => {
-              const sigData = perProposalSignatures[proposalIndex] ?? null;
+              const resolved = resolveProposalSignature(viewSigStore, proposals, proposalIndex);
+              const sigData = resolved.status === "signed" ? resolved.data : null;
+              const sigMismatch = resolved.status === "mismatch" ? resolved.meta : null;
               const optionLetter = String.fromCharCode(65 + proposalIndex);
               const sigLabel = proposals[proposalIndex]?.name?.trim() || `Option ${optionLetter}`;
               return (
@@ -3248,10 +3296,12 @@ Crest Pest Control`;
                               <div className="flex gap-1 no-print shrink-0">
                                 <Button variant="outline" size="sm" onClick={() => {
                                   setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
+                                  markSigDirty(proposalIndex);
                                   pendingAutoSaveRef.current = true;
                                 }} className="h-7 max-md:h-9 text-xs">Re-sign</Button>
                                 <Button variant="outline" size="sm" onClick={() => {
                                   setPerProposalSignatures(prev => ({ ...prev, [proposalIndex]: null }));
+                                  markSigDirty(proposalIndex);
                                   pendingAutoSaveRef.current = true;
                                 }} className="h-7 max-md:h-9 text-xs text-destructive hover:text-destructive">
                                   <X className="w-3 h-3 mr-1" /> Delete
@@ -3271,6 +3321,17 @@ Crest Pest Control`;
                                 </Button>
                               </div>
                             )}
+                          </div>
+                        ) : sigMismatch ? (
+                          // A signature exists in this slot but the option changed after it
+                          // was signed. It is never shown as a signature for the current terms.
+                          <div className="h-full flex items-center justify-between gap-2 rounded border border-destructive/40 bg-destructive/5 px-2 text-[11px] leading-tight">
+                            <span className="text-destructive">
+                              Signed as “{sigMismatch.proposalName || `Option ${optionLetter}`}” — this option changed after signing, so that signature is not valid for the current terms.
+                            </span>
+                            <Button variant="outline" size="sm" onClick={() => requestClearSignature(proposalIndex)} className="h-7 text-xs no-print shrink-0">
+                              Clear
+                            </Button>
                           </div>
                         ) : (
                           <>
@@ -3326,6 +3387,14 @@ Crest Pest Control`;
             </span>
             {customerSignature && (
               <span className="text-sm opacity-90">— Thank you for choosing Crest Pest Control!</span>
+            )}
+            {viewSigStore.legacy && proposals.length > 1 && (
+              <span className="text-xs opacity-90 flex items-center gap-2">
+                (older signature not tied to a specific option)
+                <Button variant="secondary" size="sm" className="h-6 text-xs no-print" onClick={() => requestClearSignature(-1)}>
+                  Clear
+                </Button>
+              </span>
             )}
           </div>
         </div>
@@ -4336,6 +4405,7 @@ Crest Pest Control`;
                 const idx = signatureModalIndex;
                 if (idx === null) return;
                 setPerProposalSignatures(prev => ({ ...prev, [idx]: sig }));
+                markSigDirty(idx);
                 setCustomerSignature(sig);
                 pendingAutoSaveRef.current = true;
                 setSignatureModalIndex(null);
