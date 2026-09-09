@@ -262,6 +262,14 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 100,
     defaultRecurring: 100,
   },
+  "Fogging Service": {
+    frequency: 0,
+    targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
+    proposedServices:
+      `<b>Fogging Service:</b><br>• Apply a targeted fog treatment to affected interior and/or exterior areas to knock down active pest populations<br>• Treat harborage areas, voids, and hard-to-reach spaces that standard applications can't penetrate<br>• Follow up with residual treatments as needed to maintain control<br><br><b>Additional Details:</b> Fogging provides a fast knockdown of active pests but has limited residual effect. Areas being fogged must be vacated during treatment and ventilated afterward per label instructions.`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
   "Rodent Clean Up": {
     frequency: 0,
     targetPests: ["Rodents"],
