@@ -2424,6 +2424,57 @@ const PropertyDashboard = ({
       console.warn("send-service-completed failed", e);
     }
 
+    // ─── Office copy: "units treated" list for the FieldRoutes invoice ───
+    // Apartments only (HOA has no per-unit billing). Fires whether or not a
+    // PM recipient exists. The edge fn dedupes per service via
+    // report_data.office_units_email_sent_at, so a re-click never resends.
+    if (!isHOA) {
+      try {
+        const svcRow = propServices.find(s => s.id === serviceId);
+        const officeUnits = glanceUnitsFromPast(unitRows).map(u => ({
+          unit_number: u.unit_number,
+          service: u.service.replace(/\s*•\s*Follow-up needed$/i, ""),
+          follow_up_needed: u.tone === "follow_up",
+        }));
+        const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(svcRow));
+        const { data: officeRes, error: officeErr } = await supabase.functions.invoke("notify-office-units-treated", {
+          body: {
+            propertyId: property.id,
+            serviceId,
+            propertyName: property.name,
+            propertyAddress: (property as any)?.address || "",
+            clientName: clientName || "",
+            serviceType: (svcRow as any)?.appointment_service || svcRow?.service_type || "",
+            serviceDate: (svcRow as any)?.service_date || today,
+            technician: data?.technician || svcRow?.technician || "",
+            units: officeUnits,
+            overage: planCfg.included_units
+              ? {
+                  totalUnits: ov.totalUnits,
+                  includedUnits: ov.includedUnits,
+                  unitsOver: ov.unitsOver,
+                  overageCost: ov.overageCost,
+                  billableCost: ov.billableCost,
+                  waived: ov.waived,
+                  perUnitPrice: planCfg.overage_price_per_unit ?? null,
+                  baseServicePrice: planCfg.base_service_price ?? null,
+                }
+              : null,
+          },
+        });
+        if (officeErr || !(officeRes as any)?.ok) {
+          if ((officeRes as any)?.skipped !== "already_sent") {
+            console.warn("notify-office-units-treated failed", officeErr || officeRes);
+            toast({ title: "Office units email not sent", description: "The completion saved, but the office copy failed. Try again from the visit if needed.", variant: "destructive" });
+          }
+        } else {
+          toast({ title: "Office copy sent", description: `${officeUnits.length} unit${officeUnits.length === 1 ? "" : "s"} emailed to office@crestpestcontrol.com` });
+        }
+      } catch (e) {
+        console.warn("notify-office-units-treated threw", e);
+      }
+    }
+
     onRefresh();
   };
 
