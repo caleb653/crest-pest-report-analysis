@@ -31,6 +31,7 @@ import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
 import { ProductUsage, normalizeUsageList, makeDefaultUsage, collectServiceProductUsage, aggregateUsage } from "@/lib/productCatalog";
 import { PRESET_NOTES } from "@/lib/presetNotes";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
+import { VisitUnitsAtAGlance, glanceUnitsFromUpcoming, glanceUnitsFromPast } from "@/components/portal/VisitUnitsAtAGlance";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
 import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import {
@@ -3751,6 +3752,16 @@ const PropertyDashboard = ({
             </div>
           </div>
         )}
+        {/* Every unit on this visit, at a glance + copyable — mirrors the
+            PM portal so office + PM see the same list at the top. */}
+        <VisitUnitsAtAGlance
+          units={isUpcoming ? glanceUnitsFromUpcoming(merged.unitContexts) : glanceUnitsFromPast(unitDetails)}
+          title={isUpcoming
+            ? `Units to be treated (${merged.unitContexts.length})`
+            : `Units treated (${unitDetails.length})`}
+          serviceTitle={(s as any).appointment_service || s.service_type}
+          serviceDate={s.service_date ? formatDate(s.service_date) : null}
+        />
         {redNotesValue && (
           <div className="rounded-lg border-2 border-red-500 bg-red-50 p-3 shadow-sm">
             <p className="text-xs font-bold uppercase tracking-wide text-red-800 mb-1 flex items-center gap-1.5">

@@ -47,6 +47,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { VisitUnitsAtAGlance, glanceUnitsFromUpcoming, glanceUnitsFromPast } from "@/components/portal/VisitUnitsAtAGlance";
 import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
@@ -1108,6 +1109,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
     return (
       <div className="px-3 pb-3 border-t pt-3 space-y-2.5 text-xs">
+        {/* Every unit treated on this visit, at a glance + copyable. */}
+        {!hideUnitSummary && (
+          <VisitUnitsAtAGlance
+            units={glanceUnitsFromPast(unitDetails)}
+            title={`Units treated (${unitDetails.length})`}
+            serviceTitle={(s as any).appointment_service || s.service_type}
+            serviceDate={s.service_date ? formatDate(s.service_date) : null}
+          />
+        )}
         {/* ─── Prominent follow-up banner ───
             Surface units the technician explicitly flagged as follow_up_needed
             at the very top of the past-service body so PMs see it before any
@@ -2879,6 +2889,15 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             </>
                           ) : (
                           <>
+                          {/* Every unit on this visit, at a glance + copyable —
+                              pinned above the summary chips so PMs see the
+                              full list before scrolling into the report. */}
+                          <VisitUnitsAtAGlance
+                            units={glanceUnitsFromUpcoming(unitContexts)}
+                            title={`Units to be treated (${unitContexts.length})`}
+                            serviceTitle={(s as any).appointment_service || s.service_type}
+                            serviceDate={s.service_date ? formatDate(s.service_date) : null}
+                          />
                           {/* Big summary chips */}
                           {!isHOA && (woCount > 0 || fuCount > 0) && (
                             <div className="grid grid-cols-2 gap-3">
