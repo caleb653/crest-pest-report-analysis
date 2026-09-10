@@ -13,7 +13,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeft, Crown, Lock, Pencil, Plus, RefreshCw, Sparkles, Star, Trophy, Unlock, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Award, Crown, Lock, Pencil, Plus, RefreshCw, Sparkles, Star, Trophy, Unlock, X } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -122,15 +122,178 @@ function LeaderTile({ icon, title, unit, rows, loading }: {
 }
 
 // ── Reviews (auto from Google + Yelp name mentions) ──────────────────────────
+// ── Monthly Clubs ────────────────────────────────────────────────────────────
+// The quarterly-meeting clubs: hit a milestone in ONE CALENDAR MONTH and the
+// magnet rides on your truck (field) / the sticker goes on your bottle
+// (office). Counts come from the two auto boards' `monthly` breakdowns —
+// every calendar month that overlaps the competition period, counted in
+// full (a club is monthly, so Aug 1–4 still counts for August even when the
+// period starts Aug 5). Nothing here is hand-entered.
+
+type MonthlyRow = { month: string; name: string } & Partial<Record<ClubMetric, number>>;
+type ClubMetric = "five_star_reviews" | "reviews" | "upsells" | "recurring_sales";
+type Club = {
+  key: string;
+  name: string;
+  team: "field" | "office";
+  metric: ClubMetric;
+  threshold: number;
+  rule: string;
+  prize: string;
+  plaque: string; // plaque styling (mirrors the award art)
+};
+
+// Route Managers + techs = field; everyone else on the roster = office.
+const FIELD_TEAM = new Set([
+  "Darrell Tanner", "Jake Shubin", "Jackson Latham", "Dylan Gallegos", "Michael Muniz", "Nick Stovall", "Brock Lyttle",
+]);
+const teamOf = (name: string): Club["team"] | null =>
+  FIELD_TEAM.has(name) ? "field" : PEOPLE.includes(name) ? "office" : null;
+
+const CLUBS: Club[] = [
+  { key: "century_club", name: "Century Club", team: "field", metric: "five_star_reviews", threshold: 20,
+    rule: "20 five-star reviews in one month", prize: "$100 cash + truck magnet",
+    plaque: "bg-muted text-foreground border-foreground/20" },
+  { key: "seven_up", name: "7up", team: "field", metric: "upsells", threshold: 7,
+    rule: "7 upsells in one month", prize: "$100 cash + truck magnet",
+    plaque: "bg-foreground text-background border-foreground" },
+  { key: "triple_digits", name: "Triple Digits", team: "office", metric: "recurring_sales", threshold: 100,
+    rule: "100 recurring sales in one month", prize: "$100 cash + bottle sticker",
+    plaque: "bg-card text-foreground border-foreground/20" },
+  { key: "hang_10", name: "Hang 10", team: "office", metric: "reviews", threshold: 10,
+    rule: "10 reviews in one month", prize: "$100 cash + bottle sticker",
+    plaque: "bg-primary text-primary-foreground border-primary" },
+];
+
+// Calendar months (YYYY-MM) overlapping the period, oldest first.
+const monthsIn = (period: Period): string[] => {
+  const out: string[] = [];
+  let [y, m] = period.start.slice(0, 7).split("-").map(Number);
+  const end = period.end.slice(0, 7);
+  while (`${y}-${String(m).padStart(2, "0")}` <= end && out.length < 24) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    m += 1;
+    if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
+};
+const monthLabel = (ym: string) =>
+  new Date(`${ym}-15T12:00:00`).toLocaleDateString("en-US", { month: "short" });
+const thisMonth = () => new Date().toISOString().slice(0, 7);
+
+function ClubTile({ club, months, rows }: { club: Club; months: string[]; rows: MonthlyRow[] }) {
+  const current = thisMonth();
+  return (
+    <div className="rounded-lg border border-border bg-card p-3 border-l-4 border-l-primary flex flex-col gap-2.5">
+      <div className="flex items-start gap-3">
+        {/* Plaque — the magnet / sticker */}
+        <div className={`shrink-0 w-[108px] rounded-md border-2 px-2 py-2 text-center shadow-sm ${club.plaque}`}>
+          <div className="text-[7px] font-semibold uppercase tracking-[0.2em] opacity-70">Crest Pest Control</div>
+          <div className="text-base font-black uppercase tracking-wide leading-tight mt-0.5">{club.name}</div>
+          <div className="text-[7px] uppercase tracking-wider opacity-70 mt-0.5 leading-tight">{club.rule}</div>
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground leading-tight">{club.name}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{club.rule}</p>
+          <p className="text-xs text-muted-foreground">{club.prize}</p>
+        </div>
+      </div>
+      <ul className="space-y-1.5">
+        {months.map((ym) => {
+          const inMonth = rows
+            .filter((r) => r.month === ym && teamOf(r.name) === club.team)
+            .map((r) => ({ name: r.name, value: r[club.metric] ?? 0 }))
+            .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+          const winners = inMonth.filter((r) => r.value >= club.threshold);
+          const closest = inMonth[0];
+          const live = ym === current;
+          return (
+            <li key={ym} className="flex items-start gap-2 text-xs">
+              <span className={`w-9 shrink-0 font-semibold tabular-nums ${live ? "text-foreground" : "text-muted-foreground"}`}>
+                {monthLabel(ym)}
+              </span>
+              {winners.length > 0 ? (
+                <span className="flex flex-wrap gap-1">
+                  {winners.map((w) => (
+                    <span key={w.name} title={`${w.name}: ${w.value} — hit ${club.name} in ${monthLabel(ym)}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-900 px-2 py-0.5 font-semibold">
+                      <Award className="w-3 h-3" /> {firstName(w.name)} · {w.value}
+                    </span>
+                  ))}
+                </span>
+              ) : closest ? (
+                <span className="flex-1 min-w-0">
+                  <span className="text-muted-foreground">
+                    {live ? "In progress · " : "Not hit · "}closest {firstName(closest.name)}{" "}
+                    <span className="tabular-nums text-foreground">{closest.value}/{club.threshold}</span>
+                  </span>
+                  <span className="block h-1 mt-1 rounded-full bg-muted overflow-hidden">
+                    <span className="block h-full rounded-full bg-primary"
+                          style={{ width: `${Math.min(100, Math.round((closest.value / club.threshold) * 100))}%` }} />
+                  </span>
+                </span>
+              ) : (
+                <span className="text-muted-foreground">{live ? "In progress · nothing yet" : "Not hit"}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function MonthlyClubsCard({ period, reviewRows, salesRows, loading }: {
+  period: Period; reviewRows: MonthlyRow[]; salesRows: MonthlyRow[]; loading: boolean;
+}) {
+  const months = useMemo(() => monthsIn(period), [period.start, period.end]); // eslint-disable-line react-hooks/exhaustive-deps
+  const rows = useMemo(() => [...reviewRows, ...salesRows], [reviewRows, salesRows]);
+  const group = (team: Club["team"], caption: string) => (
+    <div className="space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{caption}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {CLUBS.filter((c) => c.team === team).map((c) => <ClubTile key={c.key} club={c} months={months} rows={rows} />)}
+      </div>
+    </div>
+  );
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg flex-wrap">
+          <Award className="w-5 h-5 text-amber-500" />
+          Monthly Clubs
+          <span className="text-[10px] font-bold uppercase tracking-wider rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5">
+            auto
+          </span>
+          <span className="flex-1" />
+          <span className="text-xs font-normal text-muted-foreground">
+            {months.map(monthLabel).join(" · ")} {months.length > 0 && months[0].slice(0, 4)}
+          </span>
+        </CardTitle>
+        <p className="text-xs text-muted-foreground">
+          Hit a milestone in one calendar month and claim it. Field: the magnet rides on your truck until someone takes it.
+          Office: the sticker goes on your bottle. Counted for every calendar month inside the competition period.
+          {loading && " Counting…"}
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {group("field", "Field team · Route Managers")}
+        {group("office", "Office team")}
+      </CardContent>
+    </Card>
+  );
+}
+
 type ReviewMention = { review_date: string | null; platform: string; location: string | null; reviewer: string | null; stars: number | null; recommended: boolean | null };
 type ReviewsResult = {
   start_date: string;
   end_date: string;
   leaderboard: { name: string; mentions: number; google: number; yelp: number; reviews: ReviewMention[] }[];
   reviews_with_mentions: { google: number; yelp: number };
+  monthly?: { month: string; name: string; reviews: number; five_star_reviews: number }[];
 };
 
-function ReviewsSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean) => void }) {
+function ReviewsSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean, monthly?: MonthlyRow[]) => void }) {
   const staff = useCurrentStaff();
   const [data, setData] = useState<ReviewsResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -148,7 +311,7 @@ function ReviewsSection({ period, onData }: { period: Period; onData: (rows: { n
       if (fnError || !res?.ok) throw new Error(res?.error || fnError?.message || "load failed");
       const result = res.result as ReviewsResult;
       setData(result);
-      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.mentions })), false);
+      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.mentions })), false, result.monthly ?? []);
     } catch (e) {
       setError(String((e as Error).message || e));
       onData([], false);
@@ -249,6 +412,7 @@ type SelfGenResult = {
   leaderboard: { name: string; points: number; upsells: number; selfgen_residential: number; selfgen_commercial: number }[];
   events: SelfGenEvent[];
   needs_attribution: SelfGenEvent[];
+  monthly?: { month: string; name: string; upsells: number; recurring_sales: number }[];
 };
 
 const EVENT_LABELS: Record<SelfGenEvent["event_type"], string> = {
@@ -260,7 +424,7 @@ const EVENT_LABELS: Record<SelfGenEvent["event_type"], string> = {
 const shortDate = (iso: string | null) =>
   iso ? `${parseInt(iso.slice(5, 7), 10)}/${parseInt(iso.slice(8, 10), 10)}` : "";
 
-function SelfGenSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean) => void }) {
+function SelfGenSection({ period, onData }: { period: Period; onData: (rows: { name: string; value: number }[], loading: boolean, monthly?: MonthlyRow[]) => void }) {
   const staff = useCurrentStaff();
   const [data, setData] = useState<SelfGenResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -278,7 +442,7 @@ function SelfGenSection({ period, onData }: { period: Period; onData: (rows: { n
       if (fnError || !res?.ok) throw new Error(res?.error || fnError?.message || "load failed");
       const result = res.result as SelfGenResult;
       setData(result);
-      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.points })), false);
+      onData(result.leaderboard.map((r) => ({ name: r.name, value: r.points })), false, result.monthly ?? []);
     } catch (e) {
       setError(String((e as Error).message || e));
       onData([], false);
@@ -402,6 +566,9 @@ export default function Competition() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [selfGenRows, setSelfGenRows] = useState<{ name: string; value: number }[]>([]);
   const [selfGenLoading, setSelfGenLoading] = useState(true);
+  // Per-calendar-month counts for the Monthly Clubs card.
+  const [reviewMonthly, setReviewMonthly] = useState<MonthlyRow[]>([]);
+  const [salesMonthly, setSalesMonthly] = useState<MonthlyRow[]>([]);
   const [compsUnavailable, setCompsUnavailable] = useState(false);
   const [localPeriodTick, setLocalPeriodTick] = useState(0); // re-read after a localStorage save
   const period = useMemo(() => readPeriod(comps), [comps, localPeriodTick]);
@@ -660,8 +827,10 @@ export default function Competition() {
           </CardContent>
         </Card>
 
-        <ReviewsSection period={period} onData={(rows, l) => { setReviewRows(rows); setReviewsLoading(l); }} />
-        <SelfGenSection period={period} onData={(rows, l) => { setSelfGenRows(rows); setSelfGenLoading(l); }} />
+        <MonthlyClubsCard period={period} reviewRows={reviewMonthly} salesRows={salesMonthly} loading={reviewsLoading || selfGenLoading} />
+
+        <ReviewsSection period={period} onData={(rows, l, monthly) => { setReviewRows(rows); setReviewsLoading(l); if (monthly) setReviewMonthly(monthly); }} />
+        <SelfGenSection period={period} onData={(rows, l, monthly) => { setSelfGenRows(rows); setSelfGenLoading(l); if (monthly) setSalesMonthly(monthly); }} />
 
         {loading ? (
           <p className="text-center text-sm text-muted-foreground py-10">Loading…</p>
