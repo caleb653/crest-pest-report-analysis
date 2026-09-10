@@ -19,10 +19,12 @@ export type GlanceUnit = {
   tone: "work_order" | "follow_up" | "planned";
 };
 
+// Dark text on a solid card; the tone only drives the border colour so the
+// list stays high-contrast (the tinted-on-tint version read too light).
 const TONE_CLASS: Record<GlanceUnit["tone"], string> = {
-  follow_up: "border-orange-500 bg-orange-50 text-orange-900",
-  work_order: "border-primary/60 bg-primary/10 text-primary",
-  planned: "border-border bg-muted/50 text-foreground",
+  follow_up: "border-orange-500",
+  work_order: "border-primary",
+  planned: "border-muted-foreground/60",
 };
 
 /** Unit list for an UPCOMING visit, straight from the merged upcoming contexts. */
@@ -120,10 +122,10 @@ export function VisitUnitsAtAGlance({
         {units.map((u, i) => (
           <li
             key={`${u.unit_number}-${i}`}
-            className={`inline-flex items-baseline gap-1.5 rounded-md border px-2 py-1 text-sm leading-tight ${TONE_CLASS[u.tone]}`}
+            className={`inline-flex items-baseline gap-1.5 rounded-md border-2 bg-background px-2.5 py-1 text-sm leading-tight text-foreground shadow-sm ${TONE_CLASS[u.tone]}`}
           >
             <span className="font-bold">Unit {u.unit_number}</span>
-            <span className="text-xs opacity-80">— {u.service}</span>
+            <span className="text-xs font-semibold text-foreground/80">— {u.service}</span>
           </li>
         ))}
       </ul>
