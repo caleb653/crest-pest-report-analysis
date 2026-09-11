@@ -1030,6 +1030,58 @@ const SubmittedReports = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Initial report variant picker — mirrors the home-screen picker so the
+          prominent "Create Initial Report" button can route to general vs
+          rodent-exclusion/attic write-ups. */}
+      <Dialog open={showInitialVariantPicker} onOpenChange={setShowInitialVariantPicker}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose Initial Report Type</DialogTitle>
+            <DialogDescription>
+              Pick the type of initial service this report is for.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "general" } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-emerald-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                <Bug className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">General Pest / Bait Boxes</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Standard initial pest service report
+                </p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "rodent-exclusion", targetPests: ["Rodents"] } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-amber-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+                <HomeIcon className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Rodent Exclusion / Attic</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Photo-heavy exclusion & attic write-up
+                </p>
+              </div>
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
