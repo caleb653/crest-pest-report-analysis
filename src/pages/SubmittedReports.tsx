@@ -577,7 +577,7 @@ const SubmittedReports = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-md:flex-wrap max-md:gap-2">
           <div className="flex items-center gap-4">
             <img src={crestLogo} alt="Crest Pest Control logo" className="h-12" />
-            <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{mode === "initial" ? "Initial Reports" : "Sales Reports"}</h1>
           </div>
           <div className="flex items-center gap-2">
             {/* <NotificationBell /> hidden to prevent crashes */}
