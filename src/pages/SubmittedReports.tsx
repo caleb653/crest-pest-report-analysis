@@ -125,6 +125,10 @@ const SubmittedReports = () => {
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
     locationFilter === "sales" ? "sales-all" : locationFilter === "all" ? "all" : "initial"
   );
+  // The home screen now routes both Create and Created into this page; "mode"
+  // drives the prominent Create button at the top (initial vs sales).
+  const mode: "initial" | "sales" = locationFilter === "initial" ? "initial" : "sales";
+  const [showInitialVariantPicker, setShowInitialVariantPicker] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
