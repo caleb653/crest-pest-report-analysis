@@ -593,6 +593,26 @@ const SubmittedReports = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-4">
+        {/* Prominent create button — context-aware based on which home card opened this page */}
+        {mode === "initial" ? (
+          <Button
+            size="lg"
+            onClick={() => setShowInitialVariantPicker(true)}
+            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+          >
+            <Plus className="w-6 h-6" />
+            Create Initial Report
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            onClick={() => navigate("/multi-proposal-report")}
+            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+          >
+            <Plus className="w-6 h-6" />
+            Create Sales Report
+          </Button>
+        )}
         {/* Search and Filters */}
         <Card>
           <CardContent className="p-4 space-y-4">
