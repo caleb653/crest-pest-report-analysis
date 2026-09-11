@@ -33,6 +33,9 @@ import {
   Trophy,
   XCircle,
   RotateCcw,
+  Plus,
+  Bug,
+  Home as HomeIcon,
 } from "lucide-react";
 import {
   Select,
@@ -122,6 +125,10 @@ const SubmittedReports = () => {
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>(
     locationFilter === "sales" ? "sales-all" : locationFilter === "all" ? "all" : "initial"
   );
+  // The home screen now routes both Create and Created into this page; "mode"
+  // drives the prominent Create button at the top (initial vs sales).
+  const mode: "initial" | "sales" = locationFilter === "initial" ? "initial" : "sales";
+  const [showInitialVariantPicker, setShowInitialVariantPicker] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -570,7 +577,7 @@ const SubmittedReports = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-md:flex-wrap max-md:gap-2">
           <div className="flex items-center gap-4">
             <img src={crestLogo} alt="Crest Pest Control logo" className="h-12" />
-            <h1 className="text-xl md:text-2xl font-bold">Created Reports</h1>
+            <h1 className="text-xl md:text-2xl font-bold">{mode === "initial" ? "Initial Reports" : "Sales Reports"}</h1>
           </div>
           <div className="flex items-center gap-2">
             {/* <NotificationBell /> hidden to prevent crashes */}
@@ -586,6 +593,26 @@ const SubmittedReports = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-4">
+        {/* Prominent create button — context-aware based on which home card opened this page */}
+        {mode === "initial" ? (
+          <Button
+            size="lg"
+            onClick={() => setShowInitialVariantPicker(true)}
+            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+          >
+            <Plus className="w-6 h-6" />
+            Create Initial Report
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            onClick={() => navigate("/multi-proposal-report")}
+            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+          >
+            <Plus className="w-6 h-6" />
+            Create Sales Report
+          </Button>
+        )}
         {/* Search and Filters */}
         <Card>
           <CardContent className="p-4 space-y-4">
@@ -1001,6 +1028,58 @@ const SubmittedReports = () => {
               Cancel
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Initial report variant picker — mirrors the home-screen picker so the
+          prominent "Create Initial Report" button can route to general vs
+          rodent-exclusion/attic write-ups. */}
+      <Dialog open={showInitialVariantPicker} onOpenChange={setShowInitialVariantPicker}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Choose Initial Report Type</DialogTitle>
+            <DialogDescription>
+              Pick the type of initial service this report is for.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "general" } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-emerald-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
+                <Bug className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">General Pest / Bait Boxes</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Standard initial pest service report
+                </p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowInitialVariantPicker(false);
+                navigate("/initial-pest-report", { state: { variant: "rodent-exclusion", targetPests: ["Rodents"] } });
+              }}
+              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-amber-400 hover:shadow-md transition-all"
+            >
+              <div className="w-14 h-14 rounded-full bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+                <HomeIcon className="w-7 h-7 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Rodent Exclusion / Attic</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-snug">
+                  Photo-heavy exclusion & attic write-up
+                </p>
+              </div>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

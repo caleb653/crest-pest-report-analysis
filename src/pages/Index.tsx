@@ -2,40 +2,35 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ClipboardList, FolderOpen, FileText, Archive, Building2, BookOpen, Lock, LogOut, MapPin, Bug, Home as HomeIcon, Trophy, Phone, Brain } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ClipboardList, FileText, Building2, BookOpen, Lock, LogOut, MapPin, Trophy, Phone, Brain } from "lucide-react";
 import crestLogo from "@/assets/crest-logo.png";
 import crestBug from "@/assets/crest-bug.png";
 import { supabase } from "@/integrations/supabase/client";
+
+// Consolidated: "Initial Reports" and "Sales Reports" each open the Created
+// Reports list (filtered to that type), where a prominent Create button at the
+// top lets you start a new one. This keeps the home screen to one card per
+// report family instead of separate Create / Created cards.
 const reportTypes = [
   {
-    id: "initial-pest",
-    title: "Initial Pest Report",
-    description: "Create a new initial service report",
+    id: "initial-reports",
+    title: "Initial Reports",
+    description: "Create & manage initial service reports",
     icon: ClipboardList,
-    path: "/initial-pest-report",
+    path: "/submitted-reports",
+    state: { filter: "initial" },
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     hoverBg: "hover:bg-emerald-100",
     border: "hover:border-emerald-300",
   },
   {
-    id: "sales",
-    title: "Archived Sales Report",
-    description: "Legacy single-service report (archive only — do not create new)",
+    id: "sales-reports",
+    title: "Sales Reports",
+    description: "Create & manage sales proposals",
     icon: FileText,
-    path: "/report",
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    hoverBg: "hover:bg-blue-100",
-    border: "hover:border-blue-300",
-  },
-  {
-    id: "multi-sales",
-    title: "Sales Report",
-    description: "Create a multi-service sales proposal",
-    icon: FileText,
-    path: "/multi-proposal-report",
+    path: "/submitted-reports",
+    state: { filter: "sales" },
     color: "text-blue-600",
     bg: "bg-blue-50",
     hoverBg: "hover:bg-blue-100",
@@ -51,30 +46,6 @@ const reportTypes = [
     bg: "bg-amber-50",
     hoverBg: "hover:bg-amber-100",
     border: "border-2 border-amber-400 hover:border-amber-500",
-  },
-  {
-    id: "created-initial",
-    title: "Created Initial Reports",
-    description: "View and manage initial pest reports",
-    icon: FolderOpen,
-    path: "/submitted-reports",
-    state: { filter: "initial" },
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-    hoverBg: "hover:bg-emerald-100",
-    border: "hover:border-emerald-300",
-  },
-  {
-    id: "created-sales",
-    title: "Created Sales Reports",
-    description: "View and manage sales reports",
-    icon: Archive,
-    path: "/submitted-reports",
-    state: { filter: "sales" },
-    color: "text-blue-600",
-    bg: "bg-blue-50",
-    hoverBg: "hover:bg-blue-100",
-    border: "hover:border-blue-300",
   },
   {
     id: "team-docs",
@@ -144,12 +115,6 @@ const reportTypes = [
   },
 ];
 
-// Layout: row1 = initial-pest, team-docs, multi-sales
-//         row2 = created-initial, client-portal, created-sales
-//         row3 = slot-finder, schedule-review, competition
-//         row4 = customer-lookup, crest-brain
-const gridOrder = [0, 6, 2, 4, 3, 5, 7, 8, 9, 10, 11];
-
 const Index = () => {
   const navigate = useNavigate();
   // Detect "is this device signed in as admin?" Optimistically check localStorage
@@ -157,7 +122,6 @@ const Index = () => {
   // navigate to an admin route (via useAdminSession), so an expired token will
   // bounce to /admin-login at click time rather than silently failing here.
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showInitialVariantPicker, setShowInitialVariantPicker] = useState(false);
   const currentUser = sessionStorage.getItem("app_logged_in_user") || "";
   const RESTRICTED_USERS = new Set([
     "Michael Muniz",
@@ -176,10 +140,6 @@ const Index = () => {
   }, []);
 
   const handleCardClick = (report: typeof reportTypes[0]) => {
-    if (report.id === "initial-pest") {
-      setShowInitialVariantPicker(true);
-      return;
-    }
     if ("state" in report && report.state) {
       navigate(report.path, { state: report.state });
     } else {
@@ -215,9 +175,9 @@ const Index = () => {
         {isAdmin ? "Sign out (admin)" : "Admin"}
       </Button>
       <div className="text-center mb-10">
-        <img 
-          src={crestLogo} 
-          alt="Crest Pest Control" 
+        <img
+          src={crestLogo}
+          alt="Crest Pest Control"
           className="h-28 mx-auto mb-4"
         />
         <h1 className="text-3xl font-bold text-foreground mb-2">The Crest App</h1>
@@ -225,8 +185,7 @@ const Index = () => {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-4xl w-full">
-        {gridOrder
-          .map((idx) => reportTypes[idx])
+        {reportTypes
           .filter((report) => !(isRestricted && RESTRICTED_CARDS.has(report.id)))
           .map((report) => {
           const Icon = report.icon;
@@ -247,56 +206,6 @@ const Index = () => {
           );
         })}
       </div>
-
-      <Dialog open={showInitialVariantPicker} onOpenChange={setShowInitialVariantPicker}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Choose Initial Report Type</DialogTitle>
-            <DialogDescription>
-              Pick the type of initial service this report is for.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => {
-                setShowInitialVariantPicker(false);
-                navigate("/initial-pest-report", { state: { variant: "general" } });
-              }}
-              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-emerald-400 hover:shadow-md transition-all"
-            >
-              <div className="w-14 h-14 rounded-full bg-emerald-50 group-hover:bg-emerald-100 flex items-center justify-center transition-colors">
-                <Bug className="w-7 h-7 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">General Pest / Bait Boxes</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-snug">
-                  Standard initial pest service report
-                </p>
-              </div>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowInitialVariantPicker(false);
-                navigate("/initial-pest-report", { state: { variant: "rodent-exclusion", targetPests: ["Rodents"] } });
-              }}
-              className="group flex flex-col items-center text-center gap-3 rounded-xl border-2 border-border bg-card p-5 hover:border-amber-400 hover:shadow-md transition-all"
-            >
-              <div className="w-14 h-14 rounded-full bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
-                <HomeIcon className="w-7 h-7 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Rodent Exclusion / Attic</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-snug">
-                  Photo-heavy exclusion & attic write-up
-                </p>
-              </div>
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
     </div>
   );
 };
