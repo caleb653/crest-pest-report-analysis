@@ -33,6 +33,9 @@ import {
   Trophy,
   XCircle,
   RotateCcw,
+  Plus,
+  Bug,
+  Home as HomeIcon,
 } from "lucide-react";
 import {
   Select,
