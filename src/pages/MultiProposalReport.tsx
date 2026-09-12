@@ -1987,88 +1987,113 @@ const Report = () => {
     }
   };
 
-  // Queue this report's PDF to upload back onto the linked FieldRoutes customer.
-  // Goes through the approval queue (fieldroutes-document-submit) — it does NOT
-  // write to FieldRoutes directly. Admin-only; requires a linked customer.
-  // `auto` mode (fired on signature) stays quiet on the "nothing to do" cases
-  // and never double-queues (server-side dedup + this ref).
+  // Uint8Array -> base64, chunked to avoid call-stack limits on big files.
+  const bytesToBase64 = (bytes: Uint8Array): string => {
+    let bin = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+  };
+
+  // SIGNED proposals push to FieldRoutes automatically from any signed-in staff
+  // device (no admin session): fieldroutes-signed-agreement-push applies the
+  // "Signed Agreement" customer flag and attaches the signed PDF, committing
+  // directly (no approval click). The server verifies the report is signed +
+  // linked and dedups (one document per report, one flag per customer), so
+  // re-fires are harmless. The PDF is only rendered when the server says one is
+  // still needed. Remote (customer-link) signatures are pushed server-side by
+  // save-customer-signature; this is the in-person path and the backstop.
   const frQueueAttemptedRef = useRef(false);
-  const sendReportToFieldRoutes = async (opts?: { auto?: boolean }) => {
-    const auto = opts?.auto === true;
-    const sessionToken = localStorage.getItem("admin_session");
-    // On a customer's device (remote signing) there's no admin session — we
-    // can't authenticate a write, so auto-mode silently skips.
-    if (!sessionToken) { if (!auto) toast.error("Admin session required to send to FieldRoutes."); return; }
-    if (!fieldroutesCustomerId) {
-      if (!auto) toast.error("Link a FieldRoutes customer first (the search box at the top).");
-      return;
-    }
-    if (auto) {
-      if (frQueueAttemptedRef.current) return;
-      frQueueAttemptedRef.current = true;
-    }
+  const pushSignedAgreementToFieldRoutes = async () => {
+    if (!reportId || !fieldroutesCustomerId) return;
+    if (frQueueAttemptedRef.current) return;
+    frQueueAttemptedRef.current = true;
+    const staffName = currentStaff?.fullName || sessionStorage.getItem("app_logged_in_user") || undefined;
     try {
-      if (!auto) toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      const probe = await supabase.functions.invoke("fieldroutes-signed-agreement-push", {
+        body: { reportId, documentSource: "none", staffName, source: "editor" },
+      });
+      const p = probe.data as { ok?: boolean; error?: string; needsDocument?: boolean } | null;
+      if (probe.error || !p?.ok) {
+        frQueueAttemptedRef.current = false; // e.g. not_signed yet — retry on the next trigger
+        console.warn("FieldRoutes signed-agreement push skipped", p?.error ?? probe.error?.message);
+        return;
+      }
+      if (!p.needsDocument) return; // PDF already attached
       // compact: smaller images so the FieldRoutes upload middleware never 502s
       const pdfBytes = await capturePdfBytes("short", { compact: true });
-      // Uint8Array -> base64, chunked to avoid call-stack limits on big files.
-      let bin = "";
-      const chunk = 0x8000;
-      for (let i = 0; i < pdfBytes.length; i += chunk) {
-        bin += String.fromCharCode(...pdfBytes.subarray(i, i + chunk));
+      const { data, error } = await supabase.functions.invoke("fieldroutes-signed-agreement-push", {
+        body: {
+          reportId,
+          documentSource: "provided",
+          fileBase64: bytesToBase64(pdfBytes),
+          filename: `Crest_${(editableCustomer || "Customer").replace(/\s+/g, "_")}_Signed_Agreement.pdf`,
+          staffName,
+          source: "editor",
+        },
+      });
+      const d = data as { ok?: boolean; error?: string; document?: { status?: string; error?: string } } | null;
+      if (error || !d?.ok) {
+        frQueueAttemptedRef.current = false;
+        console.warn("FieldRoutes signed-agreement upload failed", d?.document?.error ?? d?.error ?? error?.message);
       }
-      const fileBase64 = btoa(bin);
-      // Signed agreements skip the approval queue and upload directly with a
-      // standard "Signed Agreement" tag. Manual sends still go through the
-      // approval queue with the descriptive title.
-      const description = auto
-        ? "Signed Agreement"
-        : `${editableTitle || "Proposal"} — ${editableCustomer || "Customer"}`.slice(0, 120);
+    } catch (e) {
+      frQueueAttemptedRef.current = false;
+      console.warn("FieldRoutes signed-agreement push error", e);
+    }
+  };
+
+  // Manual "Send to FieldRoutes…": queues this report's PDF for one-click
+  // approval in Admin → FieldRoutes Writes (fieldroutes-document-submit). It
+  // does NOT write to FieldRoutes directly. Admin-only; requires a linked customer.
+  const sendReportToFieldRoutes = async () => {
+    const sessionToken = localStorage.getItem("admin_session");
+    if (!sessionToken) { toast.error("Admin session required to send to FieldRoutes."); return; }
+    if (!fieldroutesCustomerId) {
+      toast.error("Link a FieldRoutes customer first (the search box at the top).");
+      return;
+    }
+    try {
+      toast.info("Preparing PDF…", { duration: 15000, id: "fr-doc" });
+      // compact: smaller images so the FieldRoutes upload middleware never 502s
+      const pdfBytes = await capturePdfBytes("short", { compact: true });
       const { data, error } = await supabase.functions.invoke("fieldroutes-document-submit", {
         body: {
           sessionToken,
           customerID: Number(fieldroutesCustomerId),
-          fileBase64,
+          fileBase64: bytesToBase64(pdfBytes),
           filename: `Crest_${(editableCustomer || "Customer").replace(/\s+/g, "_")}.pdf`,
-          description,
+          description: `${editableTitle || "Proposal"} — ${editableCustomer || "Customer"}`.slice(0, 120),
           reportId: reportId ?? undefined,
           showCustomer: false,
-          autoApprove: auto, // signed-agreement auto-push bypasses approval
         },
       });
-      if (!auto) toast.dismiss("fr-doc");
+      toast.dismiss("fr-doc");
       if (error || !data?.ok) {
-        frQueueAttemptedRef.current = false; // allow a retry on a real failure
-        if (!auto) toast.error(`Could not send: ${data?.error ?? error?.message ?? "unknown error"}`);
-        else console.warn("FieldRoutes auto-queue failed", data?.error ?? error?.message);
+        toast.error(`Could not send: ${data?.error ?? error?.message ?? "unknown error"}`);
         return;
       }
-      if (data?.deduped) { if (!auto) toast.info("Already queued for FieldRoutes."); return; }
-      if (auto && data?.autoApproved) {
-        // silent success on auto-push
-      } else if (data?.autoApproved) {
-        toast.success("Uploaded to FieldRoutes ✓");
-      } else {
-        toast.success("Sales report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
-      }
+      if (data?.deduped) { toast.info("Already queued for FieldRoutes."); return; }
+      toast.success("Sales report queued for FieldRoutes — approve it in Admin → FieldRoutes Writes.");
     } catch (e) {
       console.error("send to FieldRoutes error:", e);
-      frQueueAttemptedRef.current = false;
-      if (!auto) { toast.dismiss("fr-doc"); toast.error("Failed to prepare/queue the PDF. Try again."); }
+      toast.dismiss("fr-doc");
+      toast.error("Failed to prepare/queue the PDF. Try again.");
     }
   };
 
-  // Auto-push a signed proposal to FieldRoutes whenever an admin opens it.
-  // The customer's own device never has an admin session, so the on-sign
-  // auto-call there silently no-ops. This effect closes that gap: any admin
-  // viewing the report fires the queue (server-side dedup makes re-fires safe).
+  // Fire the push whenever this report is signed (server-persisted) AND linked:
+  // after an in-person signature is saved from this editor, when a customer
+  // signs remotely while it's open (focus refresh), or whenever a signed report
+  // is opened later. Any signed-in staff device counts — no admin session.
   useEffect(() => {
-    if (!reportId || !customerSignature || !fieldroutesCustomerId) return;
-    if (!localStorage.getItem("admin_session")) return;
+    if (!reportId || !signatureWasSaved || !fieldroutesCustomerId) return;
     if (frQueueAttemptedRef.current) return;
-    void sendReportToFieldRoutes({ auto: true });
+    void pushSignedAgreementToFieldRoutes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reportId, customerSignature, fieldroutesCustomerId]);
+  }, [reportId, signatureWasSaved, fieldroutesCustomerId]);
 
   const handleOpenCompose = () => {
     const firstName = (editableCustomer || "").split(" ")[0] || "there";
@@ -2109,17 +2134,24 @@ Crest Pest Control`;
       commitSignature();
 
       let pdfBase64: string | undefined;
+      let frPdfBase64: string | undefined;
+      toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
       if (pdfAttachOption !== "none") {
-        toast.info("Generating PDF for email...", { duration: 15000, id: "pdf-email" });
         try {
-          const pdfBytes = await capturePdfBytes(pdfAttachOption);
-          const binary = Array.from(pdfBytes).map((b) => String.fromCharCode(b)).join("");
-          pdfBase64 = btoa(binary);
+          pdfBase64 = bytesToBase64(await capturePdfBytes(pdfAttachOption));
         } catch (pdfErr) {
           console.warn("PDF generation failed, sending email without attachment:", pdfErr);
         }
-        toast.dismiss("pdf-email");
       }
+      // A compact copy is kept server-side so that if the customer signs from
+      // this email, the signed agreement reaches FieldRoutes without anyone
+      // opening the report (a signature page is stamped onto this copy).
+      try {
+        frPdfBase64 = bytesToBase64(await capturePdfBytes("short", { compact: true }));
+      } catch (pdfErr) {
+        console.warn("FieldRoutes copy of the proposal PDF failed:", pdfErr);
+      }
+      toast.dismiss("pdf-email");
 
       const { error } = await supabase.functions.invoke("send-report-email", {
         body: {
@@ -2137,6 +2169,8 @@ Crest Pest Control`;
           emailMessage,
           baseUrl: window.location.origin,
           reportType: "multi-proposal",
+          reportId: finalReportId,
+          ...(frPdfBase64 ? { frPdfBase64 } : {}),
           customerPortalUrl: fieldroutesLoginLink || undefined,
           ...(selectedPrepSheets.length > 0 ? {
             extraAttachments: buildPrepSheetAttachments(selectedPrepSheets),

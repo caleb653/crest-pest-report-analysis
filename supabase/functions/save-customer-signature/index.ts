@@ -238,7 +238,7 @@ serve(async (req) => {
       .from("reports")
       .update({ customer_signature: signatureValue })
       .eq("id", reportId)
-      .select("id, customer_name, address, technician_name, report_title")
+      .select("id, customer_name, address, technician_name, report_title, fieldroutes_customer_id")
       .single();
 
     if (updateError) {
@@ -258,8 +258,48 @@ serve(async (req) => {
           : `${signedOptionName} (Option ${String.fromCharCode(65 + Number(proposalIndex))})`)
       : null;
 
-    // Send notification email to office if requested
-    if (notifyOffice && RESEND_API_KEY) {
+    // FieldRoutes: attach the signed PDF + apply the "Signed Agreement" customer
+    // flag (fieldroutes-signed-agreement-push — server-verified, deduped, commits
+    // directly). Returns the status line for the office email. The PDF it uses is
+    // the one emailed to the customer (stored by send-report-email) with a
+    // signature page stamped on; if none is on file, the flag still applies and
+    // the PDF attaches the next time the report is opened in the app.
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const pushToFieldRoutes = async (): Promise<string> => {
+      const linked = String(updatedReport?.fieldroutes_customer_id ?? "").trim();
+      const wrap = (color: string, html: string) =>
+        `<div style="margin-top: 16px; padding: 12px 16px; background-color: #f9fafb; border-radius: 8px; border-left: 4px solid ${color};"><p style="margin: 0; color: #333; font-size: 14px;"><strong>FieldRoutes:</strong> ${html}</p></div>`;
+      if (!linked) {
+        return wrap("#f59e0b", `⚠️ this report is <strong>not linked</strong> to a FieldRoutes customer, so nothing was uploaded. Open it in the Crest app and link the customer — the signed agreement PDF and the "Signed Agreement" tag will then upload automatically.`);
+      }
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/fieldroutes-signed-agreement-push`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+          body: JSON.stringify({ reportId, documentSource: "stored", source: source || "customer" }),
+        });
+        const out = await res.json().catch(() => ({}));
+        const flag = out?.flag?.status as string | undefined;
+        const doc = out?.document?.status as string | undefined;
+        const flagOk = flag === "committed" || flag === "deduped";
+        const docOk = doc === "committed" || doc === "deduped";
+        console.log("fieldroutes-signed-agreement-push result:", { reportId, flag, doc, error: out?.error });
+        if (flagOk && docOk) {
+          return wrap("#22c55e", `signed agreement PDF attached to customer #${linked} and the "Signed Agreement" tag applied ✓`);
+        }
+        if (flagOk && (doc === "no_pdf" || doc === "needed")) {
+          return wrap("#f59e0b", `"Signed Agreement" tag applied to customer #${linked} ✓ — no emailed PDF was on file, so the signed PDF will attach automatically the next time this report is opened in the Crest app.`);
+        }
+        return wrap("#ef4444", `⚠️ upload to customer #${linked} did not complete (tag: ${flag ?? out?.error ?? "?"}, document: ${doc ?? "?"}). Check Admin → FieldRoutes Writes.`);
+      } catch (e) {
+        console.error("fieldroutes-signed-agreement-push call failed:", e);
+        return wrap("#ef4444", `⚠️ upload to customer #${linked} failed (${String(e).slice(0, 120)}). Check Admin → FieldRoutes Writes.`);
+      }
+    };
+
+    // Office notification (carries the FieldRoutes outcome).
+    const sendOfficeEmail = async (fieldroutesLine: string) => {
+      if (!notifyOffice || !RESEND_API_KEY) return;
       try {
         // Build a real, openable link to the signed report. Prefer the
         // origin the customer signed from; fall back to the public site.
@@ -307,7 +347,8 @@ serve(async (req) => {
         <p style="margin: 0 0 8px; font-weight: 600; color: #333;">Customer Signature${optionLabel ? ` (${optionLabel})` : ''}:</p>
         <img src="${signatureData}" alt="Customer signature" style="max-height: 60px; background: white; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;" />
       </div>
-      
+      ${fieldroutesLine}
+
       <div style="text-align: center; margin-top: 24px;">
         <a href="${reportUrl}" style="display: inline-block; background-color: #2A2A2A; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">View Signed Report</a>
       </div>
@@ -343,7 +384,19 @@ serve(async (req) => {
       } catch (emailErr) {
         console.error("Error sending office notification:", emailErr);
       }
-    }
+    };
+
+    // Push + notify AFTER responding, so the customer's page isn't held up by
+    // the FieldRoutes upload. Falls back to inline when the runtime can't
+    // keep background work alive.
+    const afterSave = (async () => {
+      const line = await pushToFieldRoutes();
+      await sendOfficeEmail(line);
+    })();
+    // deno-lint-ignore no-explicit-any
+    const runtime = (globalThis as any).EdgeRuntime;
+    if (runtime?.waitUntil) runtime.waitUntil(afterSave);
+    else await afterSave;
 
     return new Response(
       JSON.stringify({ ok: true, reportId, customer_signature: signatureValue, signedOptionName }),

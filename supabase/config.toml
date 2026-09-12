@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.fieldroutes-queue-worker]
 verify_jwt = false
+
+[functions.fieldroutes-signed-agreement-push]
+verify_jwt = false

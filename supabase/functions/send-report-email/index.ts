@@ -1,6 +1,21 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+
+// Where the most recently emailed proposal PDF is kept per report, so a remote
+// customer signature can be pushed to FieldRoutes server-side
+// (fieldroutes-signed-agreement-push stamps a signature page onto this file).
+const FR_BUCKET = "fieldroutes-writes";
+const storedProposalPath = (reportId: string) => `${reportId}/proposal-latest.pdf`;
+
+function b64ToBytes(b64: string): Uint8Array {
+  const clean = b64.includes(",") ? b64.slice(b64.indexOf(",") + 1) : b64;
+  const bin = atob(clean);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
 
 // External logo URL for email
 const LOGO_URL = "https://i.imgur.com/e28LvN4.png";
@@ -28,6 +43,10 @@ interface SendReportRequest {
   customerPortalUrl?: string;
   /** Additional file attachments fetched by URL (e.g. prep sheets). */
   extraAttachments?: Array<{ url: string; filename: string }>;
+  /** reports.id — enables keeping the proposal PDF on file for signed-agreement pushes. */
+  reportId?: string;
+  /** Compact copy of the proposal PDF to keep on file (falls back to pdfBase64). */
+  frPdfBase64?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -52,6 +71,8 @@ const handler = async (req: Request): Promise<Response> => {
       reportType,
       customerPortalUrl,
       extraAttachments,
+      reportId,
+      frPdfBase64,
     }: SendReportRequest = await req.json();
 
     const sanitizeEmail = (e: string) => e.trim().replace(/[.\s,;]+$/, "");
@@ -245,6 +266,23 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await res.json();
 
     console.log("Email sent successfully:", emailResponse);
+
+    // Keep the proposal PDF the customer just received on file (sales reports
+    // only). Best-effort: a storage problem must never fail an email that sent.
+    const storeBase64 = frPdfBase64 || pdfBase64;
+    const validReportId = reportId && /^[0-9a-f-]{36}$/i.test(reportId) ? reportId : null;
+    if (validReportId && storeBase64 && reportType !== "initial") {
+      try {
+        const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { error: storeErr } = await supabase.storage
+          .from(FR_BUCKET)
+          .upload(storedProposalPath(validReportId), b64ToBytes(storeBase64), { contentType: "application/pdf", upsert: true });
+        if (storeErr) console.warn("proposal PDF store failed:", storeErr.message);
+        else console.log("proposal PDF stored for signed-agreement push:", validReportId);
+      } catch (e) {
+        console.warn("proposal PDF store error:", e);
+      }
+    }
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,

@@ -607,7 +607,7 @@ const SubmittedReports = () => {
           <Button
             size="lg"
             onClick={() => navigate("/multi-proposal-report")}
-            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+            className="w-full h-auto py-5 text-lg font-bold gap-2 bg-sage text-brand-black border-2 border-dark-sage hover:bg-dark-sage hover:text-brand-white shadow-md"
           >
             <Plus className="w-6 h-6" />
             Create Sales Report
