@@ -250,7 +250,7 @@ const SERVICE_CONFIG: Record<
     frequency: 0,
     targetPests: ["Ants", "American Roaches", "Crickets", "Earwigs", "Spiders", "Silverfish", "Centipedes", "Millipedes", "Wasps", "Fleas & Ticks"],
     proposedServices:
-      `<b>Fogging Service:</b><br>• Fog the interior of the property to reach as many pests as possible, including the hard-to-reach spaces a standard treatment can't get to<br>• Drive pests out of their hiding spots so the treatment reaches them where they live<br>• Follow up with residual treatments as needed to maintain control<br><br><b>Additional Details:</b> Fogging is an interior-only treatment that quickly knocks down active pest populations. The space must be vacated during treatment and ventilated afterward per label instructions.`,
+      `<b>Fogging Service:</b><br>• Fog the interior of the property to reach as many pests as possible, including the hard-to-reach spaces a standard treatment can't get to<br>• Drive pests out of their hiding spots so the treatment reaches them where they live<br>• 7-day follow-up visit with a liquid and aerosol treatment to reinforce the fogging<br><br><b>Additional Details:</b> Fogging is an interior-only treatment that quickly knocks down active pest populations. The space must be vacated during treatment and ventilated afterward per label instructions.<br><br><b>Please Note:</b> Fogging prep must be completed prior to the fogging service.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },
