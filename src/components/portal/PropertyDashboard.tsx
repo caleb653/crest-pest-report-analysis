@@ -33,7 +33,7 @@ import { PRESET_NOTES } from "@/lib/presetNotes";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { VisitUnitsAtAGlance, glanceUnitsFromUpcoming, glanceUnitsFromPast } from "@/components/portal/VisitUnitsAtAGlance";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
-import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { generateFreeAndClearCertificatePdf, isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
   DEFAULT_SURVEY_INTRO,
@@ -455,7 +455,7 @@ const PropertyDashboard = ({
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   // Inline completion form data
   type CompletionDraft = {
-    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string; follow_up_needed?: boolean; sanitization_concern?: boolean; photos?: { url: string; uploading?: boolean }[]; kind?: string }[];
+    unitRows: { unit_number: string; target_pest: string; findings: string; pest_activity: string; products_used: ProductUsage[]; status: string; notes: string; source: string; request_id?: string; follow_up_needed?: boolean; sanitization_concern?: boolean; bedbug_free_and_clear?: boolean; photos?: { url: string; uploading?: boolean }[]; kind?: string }[];
     summary: string; findings: string; notes: string; technician: string;
     time_in: string; time_out: string;
     photos: { url: string; uploading?: boolean }[];
@@ -3086,6 +3086,7 @@ const PropertyDashboard = ({
                         >
                           <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                         </Button>
+                        {isBedBugFreeAndClear(unit) && (
                         <Button
                           type="button"
                           size="sm"
@@ -3106,6 +3107,7 @@ const PropertyDashboard = ({
                         >
                           <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
                         </Button>
+                        )}
                       </>
                     )}
                     <VisitPdfButton
@@ -3295,6 +3297,19 @@ const PropertyDashboard = ({
                     </select>)}
                   </div>
                   <div className="flex items-center gap-2">
+                    {isFreeAndClearStatus(unit.status) && (
+                      <label
+                        className="flex items-center gap-1.5 h-9 px-2.5 rounded-md border-2 border-primary/70 bg-background cursor-pointer select-none"
+                        title="Uncheck if this unit should NOT get a bed bug free & clear certificate"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Checkbox
+                          checked={unit.bedbug_free_and_clear !== false}
+                          onCheckedChange={(v) => updateUnitField(s.id, j, "bedbug_free_and_clear", v === true)}
+                        />
+                        <span className="text-xs font-semibold">Bed bug free &amp; clear</span>
+                      </label>
+                    )}
                     <select
                       className={`h-9 text-sm bg-background border-2 rounded-md px-2.5 cursor-pointer font-semibold ${
                         isFollowUp ? "border-orange-500 text-orange-700" : "border-primary/70 text-foreground"
@@ -4812,6 +4827,23 @@ const PropertyDashboard = ({
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              {/* Bed bug certificate opt-OUT. A unit marked free and
+                                  clear gets the bed-bug-specific certificate by
+                                  default; unchecking here hides it on every portal. */}
+                              {isFreeAndClearStatus(row.status) && (
+                                <label
+                                  data-no-toggle
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1.5 h-9 px-2.5 rounded-md border-2 border-primary/70 bg-background cursor-pointer select-none"
+                                  title="Uncheck if this unit should NOT get a bed bug free & clear certificate"
+                                >
+                                  <Checkbox
+                                    checked={row.bedbug_free_and_clear !== false}
+                                    onCheckedChange={(v) => updateRow(idx, "bedbug_free_and_clear", v === true)}
+                                  />
+                                  <span className="text-xs font-semibold">Bed bug free &amp; clear</span>
+                                </label>
+                              )}
                               <div data-no-toggle onClick={(e) => e.stopPropagation()}>
                                 <Select value={row.status} onValueChange={(v) => updateRow(idx, "status", v)}>
                                   <SelectTrigger className={`h-9 text-sm w-[230px] font-semibold border-2 ${

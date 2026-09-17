@@ -24,7 +24,7 @@ import { normalizeUsageList, collectServiceProductUsage, aggregateUsage } from "
 import { computeUpcomingUnits, getOpenRequests, getFollowUpDetailsFromPast, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { readScheduledWindow, formatArrivalWindow } from "@/lib/appointmentReminder";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
-import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { generateFreeAndClearCertificatePdf, isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
 import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import crestLogo from "@/assets/crest-logo.png";
@@ -1351,6 +1351,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             >
                               <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                             </Button>
+                            {isBedBugFreeAndClear(u) && (
                             <Button
                               type="button"
                               size="sm"
@@ -1371,6 +1372,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                             >
                               <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
                             </Button>
+                            )}
                           </>
                         )}
                         <VisitPdfButton
@@ -2067,6 +2069,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                         >
                                           <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
                                         </Button>
+                                        {isBedBugFreeAndClear(unitDetail) && (
                                         <Button
                                           type="button"
                                           size="sm"
@@ -2086,6 +2089,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                         >
                                           <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
                                         </Button>
+                                        )}
                                       </>
                                     )}
                                     {unitDetail && (

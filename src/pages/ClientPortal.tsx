@@ -11,7 +11,7 @@ import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, Chev
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
-import { generateFreeAndClearCertificatePdf, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { generateFreeAndClearCertificatePdf, isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import crestLogo from "@/assets/crest-logo.png";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import CommercialPMView from "@/components/portal/CommercialPMView";
@@ -217,6 +217,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
                             >
                               Download Free & Clear Certificate
                             </Button>
+                            {isBedBugFreeAndClear(unit) && (
                             <Button
                               type="button"
                               size="sm"
@@ -236,6 +237,7 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
                             >
                               Download Bed Bug Free & Clear Certificate
                             </Button>
+                            )}
                           </div>
                         )}
                       </div>

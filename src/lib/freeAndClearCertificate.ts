@@ -68,16 +68,6 @@ const DEFAULT_AREAS = [
   "Living/Common Areas",
 ];
 
-// Bed bug inspections follow the harborage, not the room — so the checklist
-// names the places a licensed inspector actually pulls apart.
-const BEDBUG_AREAS = [
-  "Beds, Mattresses & Box Springs (seams, tufts, folds)",
-  "Bed Frames, Headboards & Nightstands",
-  "Upholstered Furniture & Seating",
-  "Baseboards, Carpet Edges, Outlets & Wall Voids",
-  "Closets, Luggage & Personal Storage",
-];
-
 const formatDate = (iso?: string | null): string => {
   if (!iso) return "";
   // accept yyyy-mm-dd (most reports) and full ISO
@@ -93,14 +83,16 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   const margin = 54; // 0.75"
   let y = margin;
 
+  // The bed bug variant reports a finding, not a different inspection: the
+  // same areas are inspected, and the certificate states only that no bed
+  // bugs were observed during it.
   const isBedBug = ctx.variant === "bedbug";
-  const standardAreas = isBedBug ? BEDBUG_AREAS : DEFAULT_AREAS;
 
   const inspectorName = (ctx.inspectorName || "").trim();
   const inspectorLicense =
     (ctx.inspectorLicense || "").trim() || TECH_LICENSE[inspectorName] || "";
   const inspectionDate = formatDate(ctx.inspectionDate);
-  const areas = ctx.areasInspected && ctx.areasInspected.length ? ctx.areasInspected : standardAreas;
+  const areas = ctx.areasInspected && ctx.areasInspected.length ? ctx.areasInspected : DEFAULT_AREAS;
   const fullAddress = [ctx.propertyName, ctx.propertyAddress].filter(Boolean).join(" — ");
 
   // Branded header band
@@ -134,7 +126,7 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.text("PEST INSPECTION CERTIFICATION", W - margin, 38, { align: "right" });
   pdf.setTextColor(...BRAND_SAGE);
   pdf.setFont("helvetica", "normal").setFontSize(11);
-  pdf.text(isBedBug ? "Bed Bug Free and Clear" : "Free and Clear", W - margin, 58, { align: "right" });
+  pdf.text(isBedBug ? "Free and Clear — No Bed Bugs Observed" : "Free and Clear", W - margin, 58, { align: "right" });
   pdf.setTextColor(...BRAND_BLACK);
 
   y = headerH + 28;
@@ -165,14 +157,14 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.setTextColor(...BRAND_BLACK);
   pdf.setFont("helvetica", "bold").setFontSize(12);
   pdf.text(
-    isBedBug ? "CERTIFICATION OF NO BED BUG ACTIVITY" : "CERTIFICATION OF NO PEST ACTIVITY",
+    isBedBug ? "CERTIFICATION OF NO BED BUGS OBSERVED" : "CERTIFICATION OF NO PEST ACTIVITY",
     margin,
     y,
   );
   y += 16;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
   const cert = isBedBug
-    ? "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough bed bug inspection of the above-referenced dwelling unit. Based on this inspection, no evidence of bed bug activity (Cimex lectularius) was observed in any life stage, including but not limited to:"
+    ? "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough inspection of the above-referenced dwelling unit. During that inspection, no evidence of bed bug activity (Cimex lectularius) was observed in any life stage, including but not limited to:"
     : "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough inspection of the above-referenced dwelling unit. Based on this inspection, no evidence of pest activity was observed, including but not limited to:";
   const certLines = pdf.splitTextToSize(cert, W - margin * 2);
   pdf.text(certLines, margin, y);
@@ -200,10 +192,10 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   y += 8;
 
   pdf.setFont("helvetica", "bold").setFontSize(11);
-  pdf.text(isBedBug ? "Areas & Harborage Inspected:" : "Areas Inspected:", margin, y);
+  pdf.text("Areas Inspected:", margin, y);
   y += 14;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
-  standardAreas.forEach((a) => {
+  DEFAULT_AREAS.forEach((a) => {
     const checked = areas.some((x) => x.toLowerCase().trim() === a.toLowerCase().trim());
     pdf.text(checked ? "[x]" : "[ ]", margin, y);
     pdf.text(a, margin + 22, y);
@@ -220,7 +212,7 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   y += 16;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
   const decl = isBedBug
-    ? "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected for bed bugs in accordance with industry standards and that no active bed bug infestation or evidence of bed bug activity was identified at the time of inspection."
+    ? "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected in accordance with industry standards and that no bed bug activity, and no evidence of a bed bug infestation, was observed at the time of inspection."
     : "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected in accordance with industry standards and that no active pest infestation or evidence of pest activity was identified at the time of inspection.";
   const declLines = pdf.splitTextToSize(decl, W - margin * 2);
   pdf.text(declLines, margin, y);
@@ -258,7 +250,7 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   y += 36;
   pdf.setFont("helvetica", "italic").setFontSize(8);
   const disclaimer = isBedBug
-    ? 'This report documents the observable bed bug conditions present in the above-referenced unit at the date and time of inspection only. A "bed bug free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Bed bugs are cryptic insects that conceal themselves in inaccessible harborage and are frequently reintroduced by human activity. Crest Pest Control expressly disclaims any and all liability for: (1) bed bug activity originating after the inspection date; (2) bed bugs concealed behind walls, under flooring, inside furniture or belongings, or in areas inaccessible at the time of inspection; (3) bed bugs migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or the introduction of infested luggage, secondhand furniture, or other items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently bed-bug-free environment.'
+    ? 'This report documents the conditions observed in the above-referenced unit at the date and time of inspection only. The inspection described was a visual pest inspection; it was not a comprehensive or canine-assisted bed bug inspection. A "no bed bugs observed" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Bed bugs are cryptic insects that conceal themselves in inaccessible harborage and are frequently reintroduced by human activity. Crest Pest Control expressly disclaims any and all liability for: (1) bed bug activity originating after the inspection date; (2) bed bugs concealed behind walls, under flooring, inside furniture or belongings, or in areas inaccessible at the time of inspection; (3) bed bugs migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or the introduction of infested luggage, secondhand furniture, or other items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently bed-bug-free environment.'
     : 'This report documents the observable pest conditions present in the above-referenced unit at the date and time of inspection only. A "free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Crest Pest Control expressly disclaims any and all liability for: (1) pest activity originating after the inspection date; (2) conditions concealed behind walls, under flooring, or in areas inaccessible at the time of inspection; (3) infestation migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or introduction of infested items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently pest-free environment.';
   const dLines = pdf.splitTextToSize(disclaimer, W - margin * 2);
   const PH = pdf.internal.pageSize.getHeight();
@@ -295,6 +287,12 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
 };
 
 /**
+ * Per-unit flag that suppresses the bed bug certificate. Stored on the unit
+ * row in `unit_details` (and on the completion draft before that).
+ */
+export const BEDBUG_FREE_AND_CLEAR_FIELD = "bedbug_free_and_clear";
+
+/**
  * True when a unit's stored status should be treated as "Free and Clear"
  * (independent of whether the unit is an inspection or service row).
  */
@@ -306,4 +304,15 @@ export const isFreeAndClearStatus = (raw: unknown): boolean => {
     s === "inspected: free and clear" ||
     s === "no activity found - free and clear"
   );
+};
+
+/**
+ * True when a free-and-clear unit should also offer the bed-bug-specific
+ * certificate. Opt-OUT, not opt-in: a unit marked free and clear gets it
+ * automatically unless someone explicitly unchecked the box on the report,
+ * so legacy rows (which have no flag at all) keep working.
+ */
+export const isBedBugFreeAndClear = (unit: unknown): boolean => {
+  const u = (unit ?? {}) as Record<string, unknown>;
+  return isFreeAndClearStatus(u.status) && u[BEDBUG_FREE_AND_CLEAR_FIELD] !== false;
 };
