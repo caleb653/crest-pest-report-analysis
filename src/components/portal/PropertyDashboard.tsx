@@ -57,6 +57,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { stableJson } from "@/lib/stableJson";
 import AppointmentReminderControls from "@/components/portal/AppointmentReminderControls";
+import { STANDARD_PRODUCTS, CATALOG_PRODUCTS } from "@/lib/productCatalog";
 
 // ─── Types ───
 interface PortalProperty {
@@ -187,18 +188,15 @@ const TECHNICIAN_OPTIONS = [
   "Joseph Ibarbo",
 ];
 
-const PRODUCT_OPTIONS_LIST = [
-  "Alpine WSG", "Bifen I/T", "Essentria IC Pro", "Temprid FX", "Termidor SC",
-  "Phantom", "ExciteR", "Gentrol IGR Concentrate", "Nyguard IGR Concentrate",
-  "PT Wasp Freeze", "PT Alpine Flea & Bed Bug", "PT Alpine Fly Bait",
-  "Gentrol Aerosol", "Bedlam", "Invade Hot Spot +", "Niban", "Bifen LP",
-  "Advion Ant Gel Bait", "Maxforce FC Ant Gel", "MasterLine B MaxxPro",
-  "Advion Cockroach Gel Bait", "Contrac California", "Delta Dust (Bayer)",
-  "In2Care Mix", "OneGuard", "Advion Microflow", "Optigard",
-  "Crossfire Bedbug Concentrate",
-  "Nibor-D Insecticide", "Nibor-D Foam + IGR", "Neogen SureKill SK100",
-  "ProFoam Platinum", "Invade Bio Cleaner", "Take Down II Soft Bait",
-];
+// Derived from the shared product catalog so the apartment portal always shows
+// every chemical available elsewhere in the app.
+const PRODUCT_OPTIONS_LIST = Array.from(
+  new Set([
+    ...STANDARD_PRODUCTS.map(p => p.name),
+    ...CATALOG_PRODUCTS.map(p => p.name),
+  ])
+).sort((a, b) => a.localeCompare(b));
+
 
 interface Props {
   property: PortalProperty;
