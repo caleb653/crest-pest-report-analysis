@@ -1064,6 +1064,9 @@ function FindMode({
   );
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FindResult | null>(null);
+  // The form is the biggest thing on the page but the office only touches it
+  // once per search, so it folds away as soon as there are slots to look at.
+  const [formOpen, setFormOpen] = useState(true);
 
   // Follow-up plan: when set, a second search runs for the follow-up band
   // counted from the chosen Visit 1 date (defaults to the best-fit day).
@@ -1193,7 +1196,7 @@ function FindMode({
     let first: FindResult | null = null;
     try {
       first = await searchDates(selectedDates);
-      if (first) setResult(first);
+      if (first) { setResult(first); setFormOpen(false); }
     } finally {
       setLoading(false);
     }
@@ -1218,21 +1221,70 @@ function FindMode({
   } : null;
   const scheduleHint = `Pick a customer${!serviceType ? " and a service type" : (!isStandalone && subscriptionId.trim() === "" ? " and a subscription id" : "")} above to enable the "Schedule" button on each slot.`;
 
+  // The routes map. Rendered under the Best Fit card once a single-visit search
+  // has results, and on its own at the bottom of the page otherwise.
+  const routesMapNode = (() => {
+    const seen = new Set<string>();
+    const merged: DayRoute[] = [];
+    for (const r of [...(result?.day_routes ?? []), ...(followUp?.day_routes ?? []), ...(defaultRoutes ?? []), ...extraRoutes]) {
+      const k = `${r.date}|${r.route_id}`;
+      if (seen.has(k)) continue;
+      seen.add(k); merged.push(r);
+    }
+    const searchedDates = [
+      ...(result?.by_day ?? []).map((d) => d.date),
+      ...(followUp?.by_day ?? []).map((d) => d.date),
+    ];
+    const rec1 = recommendationFor(result);
+    const rec2 = planInfo && !followUpLoading ? recommendationFor(followUp) : null;
+    return (
+      <RoutesOverviewCard
+        dayRoutes={merged}
+        dates={[...new Set([...defaultDates, ...extraDates, ...searchedDates])].sort()}
+        loading={routesLoading}
+        lookupLoading={lookupLoading}
+        onLookupDay={lookupDay}
+        target={result?.geocoded ?? null}
+        preferredDate={rec1?.date ?? null}
+        recommendations={[rec1, rec2].filter((r): r is Recommendation => !!r)}
+      />
+    );
+  })();
+
   return (
     <>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" /> Find open slots
-          </CardTitle>
-          <CardDescription>
-            Pick the day(s) and an optional time window. Returns the 5 most
-            efficient openings per day — each showing the Route Manager's
-            resulting stops, per-window load, estimated route time, and why it
-            works. Detours are traffic-aware via Google.
-          </CardDescription>
+        <CardHeader className={formOpen ? undefined : "py-3"}>
+          <button
+            type="button"
+            onClick={() => setFormOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={formOpen}
+          >
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" /> Find open slots
+            </CardTitle>
+            <span className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+              {formOpen ? "Hide" : "Change search"}
+              <ChevronDown className={`h-4 w-4 transition-transform ${formOpen ? "rotate-180" : ""}`} />
+            </span>
+          </button>
+          {formOpen ? (
+            <CardDescription>
+              Pick the day(s) and an optional time window. Returns the 5 most
+              efficient openings per day — each showing the Route Manager's
+              resulting stops, per-window load, estimated route time, and why it
+              works. Detours are traffic-aware via Google.
+            </CardDescription>
+          ) : (
+            <CardDescription className="truncate">
+              {address || "No address"}
+              {selectedDates.length ? ` · ${selectedDates.length} day${selectedDates.length === 1 ? "" : "s"}` : ""}
+              {window !== "none" ? ` · ${window}` : ""}
+            </CardDescription>
+          )}
         </CardHeader>
-        <CardContent>
+        <CardContent className={formOpen ? undefined : "hidden"}>
           <form onSubmit={onSubmit} className="space-y-4">
             {/* ── Visit plan boxes: single visit vs. 7 / 14 day follow-up ── */}
             <div className="space-y-2">
@@ -1396,6 +1448,7 @@ function FindMode({
             windowWidth={Number(windowWidth)}
             scheduleContext={scheduleContext}
             scheduleHint={!canSchedule ? scheduleHint : null}
+            mapSlot={routesMapNode}
           />
         </div>
       )}
@@ -1505,38 +1558,11 @@ function FindMode({
         );
       })()}
 
-      {/* Upcoming routes map — always BELOW the proposed slots so the
-          recommendations are the first thing the office sees after a search. */}
-      <div className="mt-6">
-        {(() => {
-          // Searched days ride along with each result (day_routes), so the
-          // map can show them even when they're outside the default 3 days.
-          const seen = new Set<string>();
-          const merged: DayRoute[] = [];
-          for (const r of [...(result?.day_routes ?? []), ...(followUp?.day_routes ?? []), ...(defaultRoutes ?? []), ...extraRoutes]) {
-            const k = `${r.date}|${r.route_id}`;
-            if (seen.has(k)) continue;
-            seen.add(k); merged.push(r);
-          }
-          const searchedDates = [
-            ...(result?.by_day ?? []).map((d) => d.date),
-            ...(followUp?.by_day ?? []).map((d) => d.date),
-          ];
-          const rec1 = recommendationFor(result);
-          const rec2 = planInfo && !followUpLoading ? recommendationFor(followUp) : null;
-          return (
-            <RoutesOverviewCard
-              dayRoutes={merged}
-              dates={[...new Set([...defaultDates, ...extraDates, ...searchedDates])].sort()}
-              loading={routesLoading}
-              lookupLoading={lookupLoading}
-              onLookupDay={lookupDay}
-              target={result?.geocoded ?? null}
-              preferredDate={rec1?.date ?? null}
-              recommendations={[rec1, rec2].filter((r): r is Recommendation => !!r)}
-            />
-          );
-        })()}
+      {/* With a result on screen the map is threaded INTO the results, directly
+          under the Best Fit card (Caleb: best fit, then the map, then the other
+          choices). With no search yet it stands alone here. */}
+      <div className={result && !planInfo ? "hidden" : "mt-6"}>
+        {routesMapNode}
       </div>
     </>
   );
@@ -1546,7 +1572,7 @@ function FindMode({
 // 2nd Best summary, then a card per day with its SlotCards. Used once for a
 // single-visit search and twice (Visit 1 + follow-up) for a follow-up plan.
 function FindResultsView({
-  result, windowWidth, scheduleContext, scheduleHint, visitLabel, dayAction, dayBadge,
+  result, windowWidth, scheduleContext, scheduleHint, visitLabel, dayAction, dayBadge, mapSlot,
 }: {
   result: FindResult;
   windowWidth: number;
@@ -1559,51 +1585,12 @@ function FindResultsView({
   dayAction?: { activeDate: string | null; label: string; activeLabel: string; onPick: (iso: string) => void };
   /** Optional per-day badge text (e.g. "+8 days" on follow-up cards). */
   dayBadge?: (iso: string) => string | null;
+  /** Route map, rendered directly under the Best Fit card. */
+  mapSlot?: React.ReactNode;
 }) {
   const byDay = result.by_day ?? [];
   return (
     <div className="space-y-6">
-      {result.scheduling_note && (
-        <div className={`rounded-md border-2 p-3 ${result.note_manual ? "border-red-500 bg-red-500/10" : "border-amber-500 bg-amber-500/10"}`}>
-          <p className="text-sm font-semibold">
-            {result.note_manual
-              ? "🛑 Call to schedule — this customer's note says not to auto-book"
-              : "📌 Scheduling note on this customer — days it forbids are already hidden"}
-          </p>
-          <p className="text-sm mt-1 italic">“{result.scheduling_note}”</p>
-          {(result.note_rules?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {result.note_rules!.map((r) => (
-                <Badge key={r} variant="outline" className="border-amber-600 text-amber-700 dark:text-amber-400">{r}</Badge>
-              ))}
-            </div>
-          )}
-          {(result.note_blocked_dates?.length ?? 0) > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Hidden by the note:{" "}
-              {result.note_blocked_dates!.map((b) => `${b.date} — ${b.reason}`).join(" · ")}
-            </p>
-          )}
-        </div>
-      )}
-      <p className="text-xs text-muted-foreground">
-        Scored {result.routes_scored} route-openings across{" "}
-        {result.stops_in_horizon} stops. Geocoded to{" "}
-        <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
-        {result.drive_source === "google"
-          ? " Every drive time below is a real Google road time."
-          : result.drive_source === "partial"
-            ? " Some drive times below are estimates (Google covered part of the search)."
-            : result.drive_source === "estimate"
-              ? " Drive times below are estimates — Google was unavailable for this search."
-              : ""}
-      </p>
-      {(result.off_day_routes?.length ?? 0) > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Not offered (Route Manager off):{" "}
-          {result.off_day_routes!.map((o) => `${o.tech_name} ${isoDayLabel(o.date)} — ${o.reason}`).join(" · ")}
-        </p>
-      )}
       {(() => {
         // Rank every slot across every day by smallest detour minutes,
         // then fewest extra miles, and surface the top 2 at the top.
@@ -1628,9 +1615,7 @@ function FindResultsView({
         const top = all.slice(0, 2);
         if (top.length === 0) return null;
         const DAILY_MAX_STOPS = 13;
-        return (
-          <div className="space-y-2">
-            {top.map((r, i) => {
+        function renderTop(r: Ranked, i: number) {
               const recKey = (r.c.after_insert?.new_stop_window as string | null) ?? null;
               const recLabel = bookWindowLabel(r.c, windowWidth);
               const snap = r.c.route_snapshot;
@@ -1642,37 +1627,95 @@ function FindResultsView({
               const afterTotal = after?.stops_excluding_tasks ?? 0;
               const isDayFull = afterTotal >= DAILY_MAX_STOPS;
               const isPrimary = i === 0;
+              const risks = [
+                isCrowded ? `already ${beforeCount} stops in this window` : null,
+                isDayFull ? `${r.c.tech_name.split(" ")[0]} ${afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max (${afterTotal} stops)` : null,
+                r.c.day_unworkable ? `${r.c.tech_name.split(" ")[0]}'s day already can't be finished as booked` : null,
+              ].filter(Boolean) as string[];
+
+              // THE recommendation. The office should be able to read what to
+              // do from across the room, so the primary slot gets the day, the
+              // window and the arrival time at heading size.
+              if (isPrimary) {
+                return (
+                  <div
+                    key={`${r.date}#${r.idx}`}
+                    className="rounded-lg border-2 border-emerald-600 bg-emerald-50/70 dark:bg-emerald-950/30 p-4 shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white font-bold uppercase tracking-wide text-sm px-3 py-1">
+                        ★ Book this one
+                      </Badge>
+                      <span className="ml-auto"><DetourBadge c={r.c} /></span>
+                    </div>
+                    <p className="mt-2 text-2xl font-extrabold leading-tight text-foreground">
+                      {r.c.tech_name}
+                      <span className="text-muted-foreground font-bold"> · </span>
+                      {isoDayLabel(r.date)}
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-foreground">
+                      {recLabel}
+                      {r.c.est_min != null && (
+                        <span className="font-semibold text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
+                      )}
+                    </p>
+                    {r.c.fits_between && (
+                      <p className="mt-1 text-sm font-medium text-muted-foreground">
+                        Goes in at {r.c.fits_between}
+                        {r.c.prev_stop?.customer_name ? `, after ${r.c.prev_stop.customer_name}` : ""}
+                        {r.c.next_stop?.customer_name && r.c.insertion_kind !== "last_stop"
+                          ? ` and before ${r.c.next_stop.customer_name}` : ""}
+                      </p>
+                    )}
+                    {risks.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {risks.map((t) => (
+                          <Badge key={t} className="bg-orange-500 hover:bg-orange-500 text-white font-semibold">
+                            <AlertTriangle className="w-3 h-3 mr-1" />{t}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Full detail, day plan and the Schedule button are on this slot's card below.
+                    </p>
+                  </div>
+                );
+              }
               return (
-                <div key={`${r.date}#${r.idx}`} className={`rounded-md p-3 border-2 ${tierBorder(r.c)} flex flex-wrap items-center gap-3`}>
-                  <Badge className={`${isPrimary ? "bg-emerald-600 hover:bg-emerald-600" : "bg-emerald-500/80 hover:bg-emerald-500/80"} text-white font-bold uppercase tracking-wide`}>
-                    {isPrimary ? "★ Best Fit" : "★ 2nd Best"}
+                <div key={`${r.date}#${r.idx}`} className="rounded-md border border-border bg-background px-3 py-2 flex flex-wrap items-center gap-2">
+                  <Badge variant="outline" className="font-semibold uppercase tracking-wide text-muted-foreground">
+                    Backup
                   </Badge>
                   <span className="text-sm">
                     <span className="font-semibold">{r.c.tech_name}</span>
-                    {" · "}
-                    <span className="font-semibold">{r.weekday}, {r.date}</span>
-                    {" · "}
+                    <span className="text-muted-foreground"> · {isoDayLabel(r.date)} · </span>
                     <span className="font-semibold">{recLabel}</span>
                     {r.c.est_min != null && (
                       <span className="text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
                     )}
                   </span>
-                  {isCrowded && (
-                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Risk — already {beforeCount} stops in this window
-                    </Badge>
-                  )}
-                  {isDayFull && (
-                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white font-bold uppercase tracking-wide">
-                      <AlertTriangle className="w-3 h-3 mr-1" />
-                      Risk — tech {afterTotal > DAILY_MAX_STOPS ? "over" : "at"} daily max ({afterTotal} stops)
-                    </Badge>
+                  {risks.length > 0 && (
+                    <span className="text-xs text-orange-700">({risks.join("; ")})</span>
                   )}
                   <span className="ml-auto"><DetourBadge c={r.c} /></span>
                 </div>
               );
-            })}
+        }
+        return (
+          <div className="space-y-2">
+            {top.map((r, i) => (
+              <Fragment key={`wrap-${r.date}#${r.idx}`}>
+                {i === 1 && mapSlot ? <div className="py-1">{mapSlot}</div> : null}
+                {i === 1 ? (
+                  <p className="pt-1 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Other options
+                  </p>
+                ) : null}
+                {renderTop(r, i)}
+              </Fragment>
+            ))}
+            {top.length === 1 && mapSlot ? <div className="py-1">{mapSlot}</div> : null}
           </div>
         );
       })()}
@@ -1681,6 +1724,53 @@ function FindResultsView({
           {scheduleHint}
         </p>
       )}
+      {result.scheduling_note && (
+        <div className="rounded-md border border-border bg-muted/40 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Special scheduling notes
+          </p>
+          {result.note_manual && (
+            <p className="mt-1 text-sm font-semibold text-amber-700">
+              Call to schedule — this customer is not to be auto-booked.
+            </p>
+          )}
+          <p className="mt-1 text-sm italic">“{result.scheduling_note}”</p>
+          {(result.note_rules?.length ?? 0) > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {result.note_rules!.map((r) => (
+                <Badge key={r} variant="outline" className="text-muted-foreground">{r}</Badge>
+              ))}
+            </div>
+          )}
+          {(result.note_blocked_dates?.length ?? 0) > 0 && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Days not shown:{" "}
+              {result.note_blocked_dates!.map((b) => `${b.date} — ${b.reason}`).join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
+      <details className="text-xs text-muted-foreground">
+        <summary className="cursor-pointer select-none">Search details</summary>
+        <p className="mt-2">
+          Scored {result.routes_scored} route-openings across{" "}
+          {result.stops_in_horizon} stops. Geocoded to{" "}
+          <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
+          {result.drive_source === "google"
+            ? " Every drive time below is a real Google road time."
+            : result.drive_source === "partial"
+              ? " Some drive times below are estimates (Google covered part of the search)."
+              : result.drive_source === "estimate"
+                ? " Drive times below are estimates — Google was unavailable for this search."
+                : ""}
+        </p>
+        {(result.off_day_routes?.length ?? 0) > 0 && (
+          <p className="mt-1">
+            Not offered (Route Manager off):{" "}
+            {result.off_day_routes!.map((o) => `${o.tech_name} ${isoDayLabel(o.date)} — ${o.reason}`).join(" · ")}
+          </p>
+        )}
+      </details>
       {byDay.length === 0 && (
         <p className="text-sm italic text-muted-foreground">
           No field-tech routes on the selected day(s).
