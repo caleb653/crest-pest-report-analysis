@@ -66,6 +66,19 @@ type DayRouteStop = {
 type DayRoute = {
   date: string; route_id: number; tech_name: string; locked: boolean;
   stop_count: number; stops: DayRouteStop[];
+  /** 'google' when every modeled leg is a real Google road time. */
+  drive_source?: string;
+  off_day?: string | null;
+};
+
+/** One row of a slot's day plan: the tech's whole day with the NEW stop in
+    place. Booked stops keep their map number; stops after the insert carry
+    re-simulated ETAs (pushed_min / window_blown). */
+type DayPlanRow = {
+  order: number | null; is_new: boolean; customer: string; city?: string | null;
+  window?: string | null; eta?: string | null; eta_min: number; depart_min: number;
+  eta_before_min?: number | null; pushed_min: number; window_blown: boolean;
+  drive_from_prev_min?: number | null; same_stop_as_prev?: boolean;
 };
 
 type WindowCounts = { "8-12"?: number; "10-2"?: number; "1-5"?: number };
@@ -92,6 +105,9 @@ type AfterInsert = {
   /** Minutes the insert adds to the day (drive + on-site). */
   added_min?: number;
   new_stop_window: string | null;
+  /** Later stops whose booked window the insert would break / max push. */
+  windows_blown?: number;
+  max_push_min?: number;
 };
 
 type SlotCandidate = {
@@ -114,6 +130,16 @@ type SlotCandidate = {
       free haversine pass. */
   drive_prev_to_new_sec?: number | null;
   drive_new_to_next_sec?: number | null;
+  /** Structured position in the modeled day (matches the map numbers):
+      mid-route = between prev_order and next_order; first stop = next_order 1;
+      last stop = prev_order N. */
+  prev_order?: number | null;
+  next_order?: number | null;
+  stops_total?: number | null;
+  /** 'google' = detour/ETA/push built from real Google road times at this
+      slot's clock; 'google_partial'; 'estimate' = calibrated model. */
+  drive_source?: string;
+  day_plan?: DayPlanRow[];
   prev_stop: Stop;
   next_stop: Stop;
   route_snapshot?: RouteSnapshot;
@@ -141,6 +167,10 @@ type FindResult = {
   routes_scored: number;
   stops_in_horizon: number;
   day_routes?: DayRoute[];
+  /** Tech-days the engine refused because the Route Manager is off. */
+  off_day_routes?: { date: string; tech_name: string; reason: string }[];
+  drive_source?: string;
+  maps_spend_usd?: number;
   error?: string;
   // Special-scheduling note on the customer at this address (backend filters
   // note-forbidden days out entirely; these fields exist so the office SEES why).
@@ -239,6 +269,85 @@ function DetourBadge({ c }: { c: SlotCandidate }) {
       <span className="font-mono text-xs">+{min} min / +{detourMiles(c)} mi</span>
       <Badge className={`${cls} font-semibold`}>{label}</Badge>
     </span>
+  );
+}
+
+// Where the drive numbers on a card come from — the office must know when a
+// slot is built on real Google road times vs the calibrated estimate.
+function DriveSourceBadge({ source }: { source?: string | null }) {
+  if (source === "google") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800" title="Detour, ETA and push-back use real Google road times at this slot's time of day">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />Google road times
+      </span>
+    );
+  }
+  if (source === "google_partial") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded border border-emerald-300 bg-emerald-50 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800" title="New legs are Google road times; the leg they replace is estimated">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />Google (partial)
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded border border-border bg-muted/40 px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground" title="Google was unavailable for this slot — drive numbers are the calibrated estimate">
+      <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" aria-hidden />Estimated drive
+    </span>
+  );
+}
+
+// The tech's whole day with the NEW stop dropped in. Booked stops keep their
+// map numbers (#1..#N); every stop after the insert shows its re-simulated
+// ETA, how far it got pushed, and whether its booked window breaks.
+function DayPlanList({ plan, defaultOpen, techName }: { plan: DayPlanRow[]; defaultOpen: boolean; techName: string }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const booked = plan.filter((r) => !r.is_new).length;
+  const pushed = plan.filter((r) => !r.is_new && r.pushed_min > 0).length;
+  const blown = plan.filter((r) => r.window_blown).length;
+  return (
+    <div className="mt-2 rounded-md border border-border bg-background">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-xs font-bold uppercase tracking-wide text-muted-foreground hover:bg-muted/40"
+      >
+        <span>{techName}'s day with this stop in it · {booked} booked + NEW</span>
+        <span className="flex items-center gap-2 normal-case font-normal">
+          {pushed > 0 && <span className="text-amber-700">{pushed} pushed</span>}
+          {blown > 0 && <span className="font-semibold text-red-700">{blown} miss window</span>}
+          <span className="font-semibold">{open ? "Hide" : "Show"}</span>
+        </span>
+      </button>
+      {open && (
+        <ol className="divide-y divide-border text-sm">
+          {plan.map((r, i) => (
+            <li
+              key={`${r.is_new ? "new" : r.order}-${i}`}
+              className={`grid grid-cols-[2.6rem_minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-1 ${
+                r.is_new ? "bg-red-600 font-semibold text-white"
+                : r.window_blown ? "bg-red-50"
+                : r.pushed_min > 0 ? "bg-amber-50/60" : ""}`}
+            >
+              <span className="font-mono text-xs">{r.is_new ? "NEW" : `#${r.order}`}</span>
+              <span className="truncate">
+                {r.customer}
+                {r.city ? <span className={r.is_new ? "opacity-90" : "text-muted-foreground"}> ({r.city})</span> : null}
+                {r.same_stop_as_prev && <span className="text-xs text-muted-foreground"> · 2nd service, same stop</span>}
+                {r.window && !r.is_new && <span className="text-xs text-muted-foreground"> · {fmtRouteWindow(r.window)}</span>}
+              </span>
+              <span className="whitespace-nowrap text-right font-mono text-xs">
+                {r.drive_from_prev_min != null && i > 0 && (
+                  <span className={r.is_new ? "opacity-90" : "text-muted-foreground"}>{r.drive_from_prev_min} min → </span>
+                )}
+                {fmtTime(r.eta_min)}
+                {r.pushed_min > 0 && <span className="text-amber-700"> (+{r.pushed_min})</span>}
+                {r.window_blown && <span className="font-semibold text-red-700"> misses window</span>}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
   );
 }
 
@@ -513,7 +622,9 @@ function recommendationFor(result: FindResult | null): Recommendation | null {
   if (!best) return null;
   const c = best.c;
   const m = (c.fits_between || "").match(/stop\s*(\d+)\s*[→\-\/]+\s*stop\s*(\d+)/i);
-  let afterOrder: number | null = m ? parseInt(m[1], 10) : null;
+  let afterOrder: number | null = c.prev_order != null ? c.prev_order
+    : c.insertion_kind === "first_stop" ? 0
+    : m ? parseInt(m[1], 10) : null;
   const route = result?.day_routes?.find((r) =>
     r.date === best.date && (c.route_id != null ? r.route_id === c.route_id : r.tech_name === c.tech_name));
   if (afterOrder == null && route && c.prev_stop?.customer_name) {
@@ -1471,7 +1582,20 @@ function FindResultsView({
         Scored {result.routes_scored} route-openings across{" "}
         {result.stops_in_horizon} stops. Geocoded to{" "}
         <code>{result.geocoded.lat.toFixed(4)}, {result.geocoded.lng.toFixed(4)}</code>.
+        {result.drive_source === "google"
+          ? " Every drive time below is a real Google road time."
+          : result.drive_source === "partial"
+            ? " Some drive times below are estimates (Google covered part of the search)."
+            : result.drive_source === "estimate"
+              ? " Drive times below are estimates — Google was unavailable for this search."
+              : ""}
       </p>
+      {(result.off_day_routes?.length ?? 0) > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Not offered (Route Manager off):{" "}
+          {result.off_day_routes!.map((o) => `${o.tech_name} ${isoDayLabel(o.date)} — ${o.reason}`).join(" · ")}
+        </p>
+      )}
       {(() => {
         // Rank every slot across every day by smallest detour minutes,
         // then fewest extra miles, and surface the top 2 at the top.
@@ -1711,7 +1835,10 @@ function SlotCard({
             </Badge>
           )}
         </div>
-        <DetourBadge c={c} />
+        <span className="flex items-center gap-2">
+          <DriveSourceBadge source={c.drive_source ?? (c.extra_sec_gmaps != null ? "google" : "estimate")} />
+          <DetourBadge c={c} />
+        </span>
       </div>
 
       {/* ── BIG recommendation pill — single source of truth for the window
@@ -1728,22 +1855,26 @@ function SlotCard({
         const DAILY_MAX_STOPS = 13;
         const afterTotal = after?.stops_excluding_tasks ?? 0;
         const isDayFull = afterTotal >= DAILY_MAX_STOPS;
-        // Parse "stop 1 → stop 2 of 6" (or similar) so we can render a bold,
-        // scannable "Insert between Stop # and Stop # of N" pill next to
-        // Book in. Falls back gracefully if the backend string changes.
+        // EXACT position in the modeled day — the same numbers the map and
+        // the day plan use. Structured fields first; the legacy "stop 1 →
+        // stop 2 of 6" string is only a fallback for older responses.
         const fb = c.fits_between || "";
         const fbMatch = fb.match(/stop\s*(\d+)\s*[→\-\/]+\s*stop\s*(\d+)\s*(?:of\s*(\d+))?/i);
-        const prevIdx = fbMatch?.[1];
-        const nextIdx = fbMatch?.[2];
-        const totalIdx = fbMatch?.[3];
-        const lastName = (full?: string | null) => {
-          const s = (full || "").trim();
-          if (!s) return "";
-          const parts = s.split(/\s+/);
-          return parts[parts.length - 1];
-        };
-        const prevLast = lastName(c.prev_stop?.customer_name);
-        const nextLast = lastName(c.next_stop?.customer_name);
+        const kind = c.insertion_kind ?? "mid_route";
+        const prevIdx = c.prev_order ?? (fbMatch?.[1] ? parseInt(fbMatch[1], 10) : null);
+        const nextIdx = c.next_order ?? (fbMatch?.[2] ? parseInt(fbMatch[2], 10) : null);
+        const totalIdx = c.stops_total ?? (fbMatch?.[3] ? parseInt(fbMatch[3], 10) : null);
+        const prevName = (c.prev_stop?.customer_name || "").trim();
+        const nextName = (c.next_stop?.customer_name || "").trim();
+        const positionLabel =
+          kind === "first_stop" ? `New first stop · before Stop ${nextIdx ?? 1}${totalIdx ? ` of ${totalIdx}` : ""}`
+          : kind === "last_stop" ? `New last stop · after Stop ${prevIdx ?? totalIdx ?? "?"}${totalIdx ? ` of ${totalIdx}` : ""}`
+          : prevIdx != null && nextIdx != null ? `Insert between Stop ${prevIdx} and Stop ${nextIdx}${totalIdx ? ` of ${totalIdx}` : ""}`
+          : null;
+        const namesLabel =
+          kind === "first_stop" ? (nextName ? `→ ${nextName}` : "")
+          : kind === "last_stop" ? (prevName ? `${prevName} →` : "")
+          : (prevName || nextName) ? `${prevName || "—"} → ${nextName || "—"}` : "";
         return (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <div className={`inline-flex flex-wrap items-center gap-2 rounded-md px-3 py-2 shadow-sm ${tierPillClasses(c)}`}>
@@ -1756,15 +1887,12 @@ function SlotCard({
                 </span>
               )}
             </div>
-            {prevIdx && nextIdx && (
+            {positionLabel && (
               <div className="inline-flex flex-wrap items-center gap-2 rounded-md border-2 border-foreground/80 bg-background px-3 py-2 shadow-sm">
-                <span className="text-sm font-extrabold uppercase tracking-wide">
-                  Insert between Stop {prevIdx} and Stop {nextIdx}
-                  {totalIdx ? ` of ${totalIdx}` : ""}
-                </span>
-                {(prevLast || nextLast) && (
+                <span className="text-sm font-extrabold uppercase tracking-wide">{positionLabel}</span>
+                {namesLabel && (
                   <span className="text-sm font-bold text-foreground/80 border-l border-foreground/20 pl-2">
-                    {prevLast || "—"} → {nextLast || "—"}
+                    {namesLabel}
                   </span>
                 )}
               </div>
@@ -1784,6 +1912,12 @@ function SlotCard({
             {(c.push_delay_min ?? 0) >= 15 && (
               <Badge variant="outline" className="border-amber-500 text-amber-700 font-semibold">
                 pushes day ~{c.push_delay_min} min
+              </Badge>
+            )}
+            {(after?.windows_blown ?? 0) > 0 && (
+              <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold uppercase tracking-wide">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                {after!.windows_blown} later stop{after!.windows_blown === 1 ? "" : "s"} would miss their window
               </Badge>
             )}
           </div>
@@ -1806,8 +1940,11 @@ function SlotCard({
             <span aria-hidden>→</span>
           </span>
         );
-        const StopName = ({ st, clock, clockLabel }: { st?: Stop; clock?: number | null; clockLabel: string }) => (
+        const StopName = ({ st, clock, clockLabel, order }: { st?: Stop; clock?: number | null; clockLabel: string; order?: number | null }) => (
           <span>
+            {order != null && (
+              <span className="mr-1 inline-flex items-center rounded bg-foreground px-1 font-mono text-[11px] font-bold text-background">#{order}</span>
+            )}
             <span className="font-semibold text-foreground">{st?.customer_name ?? "?"}</span>
             {st?.city ? <span className="text-muted-foreground"> ({st.city}{clock != null ? `, ${clockLabel} ~${fmtTime(clock)}` : ""})</span> : null}
           </span>
@@ -1826,12 +1963,12 @@ function SlotCard({
                   <span className="text-muted-foreground">Day's first stop (on site 8:00 AM)</span>
                   <NewPill />
                   <Leg min={legB} />
-                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" />
+                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" order={c.next_order} />
                 </>
               ) : kind === "last_stop" ? (
                 <>
                   <span className="text-muted-foreground">Day's last stop, after</span>
-                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" />
+                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" order={c.prev_order} />
                   <Leg min={legA} />
                   <NewPill />
                   {legB != null && <span className="text-xs text-muted-foreground">· then {legB} min home</span>}
@@ -1839,12 +1976,12 @@ function SlotCard({
               ) : (
                 <>
                   <span className="text-muted-foreground">after</span>
-                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" />
+                  <StopName st={p} clock={p?.est_depart_min} clockLabel="done" order={c.prev_order} />
                   <Leg min={legA} />
                   <NewPill />
                   <Leg min={legB} />
                   <span className="text-muted-foreground">before</span>
-                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" />
+                  <StopName st={n} clock={n?.est_arrival_min} clockLabel="arrives" order={c.next_order} />
                 </>
               )}
               {(c.push_delay_min ?? 0) > 0 && (
@@ -1854,6 +1991,10 @@ function SlotCard({
           </div>
         );
       })()}
+
+      {c.day_plan && c.day_plan.length > 0 && (
+        <DayPlanList plan={c.day_plan} defaultOpen={!!isBestFit} techName={c.tech_name} />
+      )}
 
       {/* ── Day load after the insert: total stops + expected hours worked ── */}
       {after && (() => {
@@ -2114,13 +2255,29 @@ function CheckMode({
                         <span className="font-semibold">{c.tech_name}</span>
                         <span className="text-sm text-muted-foreground">{fmtWindow(c.next_stop?.start_time, c.next_stop?.end_time)} window</span>
                       </div>
-                      <DetourBadge c={c} />
+                      <span className="flex items-center gap-2">
+                        <DriveSourceBadge source={c.drive_source ?? (c.extra_sec_gmaps != null ? "google" : "estimate")} />
+                        <DetourBadge c={c} />
+                      </span>
                     </div>
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Between <span className="font-medium text-foreground">{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
-                      {" → "}
-                      <span className="font-medium text-foreground">{c.next_stop?.customer_name}</span> ({c.next_stop?.city})
+                      {(() => {
+                        const kind = c.insertion_kind ?? "mid_route";
+                        const tot = c.stops_total != null ? ` of ${c.stops_total}` : "";
+                        if (kind === "first_stop") {
+                          return <>New first stop (on site 8:00 AM) · before <span className="font-medium text-foreground">#{c.next_order ?? 1} {c.next_stop?.customer_name}</span> ({c.next_stop?.city}){tot}</>;
+                        }
+                        if (kind === "last_stop") {
+                          return <>New last stop · after <span className="font-medium text-foreground">#{c.prev_order ?? c.stops_total ?? "?"} {c.prev_stop?.customer_name}</span> ({c.prev_stop?.city}){tot}{c.est_min != null ? ` · ETA ~${fmtTime(c.est_min)}` : ""}</>;
+                        }
+                        return <>Between <span className="font-medium text-foreground">{c.prev_order != null ? `#${c.prev_order} ` : ""}{c.prev_stop?.customer_name}</span> ({c.prev_stop?.city})
+                          {" → "}
+                          <span className="font-medium text-foreground">{c.next_order != null ? `#${c.next_order} ` : ""}{c.next_stop?.customer_name}</span> ({c.next_stop?.city}){tot}{c.est_min != null ? ` · ETA ~${fmtTime(c.est_min)}` : ""}</>;
+                      })()}
                     </div>
+                    {c.day_plan && c.day_plan.length > 0 && (
+                      <DayPlanList plan={c.day_plan} defaultOpen={i === 0} techName={c.tech_name} />
+                    )}
                     {c.after_insert && (
                       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                         {c.after_insert.est_finish_min != null && (
