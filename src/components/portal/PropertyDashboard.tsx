@@ -57,6 +57,7 @@ import { ResidentContactCard } from "@/components/portal/ResidentContactCard";
 import { parseResidentContact } from "@/lib/residentContact";
 import { stableJson } from "@/lib/stableJson";
 import AppointmentReminderControls from "@/components/portal/AppointmentReminderControls";
+import { STANDARD_PRODUCTS, CATALOG_PRODUCTS } from "@/lib/productCatalog";
 
 // ─── Types ───
 interface PortalProperty {
