@@ -3,6 +3,14 @@
 // physical template Crest currently distributes, prefilled with as much
 // information as we have about the service.
 //
+// Two variants come out of the same template:
+//   • "general" — the all-pests certificate (default).
+//   • "bedbug"  — a bed-bug-specific certificate. Property managers routinely
+//                 need a document that names bed bugs explicitly (move-ins,
+//                 tenant disputes, habitability claims), so every unit that
+//                 qualifies for the general certificate can also produce this
+//                 one.
+//
 // Used wherever a unit's status renders as "Free and Clear" — admin
 // PropertyDashboard, PMPortalView, and the customer-facing ClientPortal.
 
@@ -38,7 +46,11 @@ const TECH_LICENSE: Record<string, string> = {
   "Brock Lyttle": "FR 62941",
 };
 
+export type FreeAndClearVariant = "general" | "bedbug";
+
 export interface FreeAndClearContext {
+  /** "bedbug" swaps in the bed-bug-specific wording, areas, and filename. */
+  variant?: FreeAndClearVariant;
   propertyName?: string | null;
   propertyAddress?: string | null;
   unitNumber?: string | null;
@@ -56,6 +68,16 @@ const DEFAULT_AREAS = [
   "Living/Common Areas",
 ];
 
+// Bed bug inspections follow the harborage, not the room — so the checklist
+// names the places a licensed inspector actually pulls apart.
+const BEDBUG_AREAS = [
+  "Beds, Mattresses & Box Springs (seams, tufts, folds)",
+  "Bed Frames, Headboards & Nightstands",
+  "Upholstered Furniture & Seating",
+  "Baseboards, Carpet Edges, Outlets & Wall Voids",
+  "Closets, Luggage & Personal Storage",
+];
+
 const formatDate = (iso?: string | null): string => {
   if (!iso) return "";
   // accept yyyy-mm-dd (most reports) and full ISO
@@ -71,11 +93,14 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   const margin = 54; // 0.75"
   let y = margin;
 
+  const isBedBug = ctx.variant === "bedbug";
+  const standardAreas = isBedBug ? BEDBUG_AREAS : DEFAULT_AREAS;
+
   const inspectorName = (ctx.inspectorName || "").trim();
   const inspectorLicense =
     (ctx.inspectorLicense || "").trim() || TECH_LICENSE[inspectorName] || "";
   const inspectionDate = formatDate(ctx.inspectionDate);
-  const areas = ctx.areasInspected && ctx.areasInspected.length ? ctx.areasInspected : DEFAULT_AREAS;
+  const areas = ctx.areasInspected && ctx.areasInspected.length ? ctx.areasInspected : standardAreas;
   const fullAddress = [ctx.propertyName, ctx.propertyAddress].filter(Boolean).join(" — ");
 
   // Branded header band
@@ -109,7 +134,7 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.text("PEST INSPECTION CERTIFICATION", W - margin, 38, { align: "right" });
   pdf.setTextColor(...BRAND_SAGE);
   pdf.setFont("helvetica", "normal").setFontSize(11);
-  pdf.text("Free and Clear", W - margin, 58, { align: "right" });
+  pdf.text(isBedBug ? "Bed Bug Free and Clear" : "Free and Clear", W - margin, 58, { align: "right" });
   pdf.setTextColor(...BRAND_BLACK);
 
   y = headerH + 28;
@@ -139,21 +164,33 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   // Section: Certification
   pdf.setTextColor(...BRAND_BLACK);
   pdf.setFont("helvetica", "bold").setFontSize(12);
-  pdf.text("CERTIFICATION OF NO PEST ACTIVITY", margin, y);
+  pdf.text(
+    isBedBug ? "CERTIFICATION OF NO BED BUG ACTIVITY" : "CERTIFICATION OF NO PEST ACTIVITY",
+    margin,
+    y,
+  );
   y += 16;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
-  const cert =
-    "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough inspection of the above-referenced dwelling unit. Based on this inspection, no evidence of pest activity was observed, including but not limited to:";
+  const cert = isBedBug
+    ? "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough bed bug inspection of the above-referenced dwelling unit. Based on this inspection, no evidence of bed bug activity (Cimex lectularius) was observed in any life stage, including but not limited to:"
+    : "This certifies that on the date indicated above, a licensed pest control professional conducted a thorough inspection of the above-referenced dwelling unit. Based on this inspection, no evidence of pest activity was observed, including but not limited to:";
   const certLines = pdf.splitTextToSize(cert, W - margin * 2);
   pdf.text(certLines, margin, y);
   y += certLines.length * 13 + 6;
 
-  const bullets = [
-    "Live or dead insects (cockroaches, ants, fleas, bed bugs, or other crawling insects)",
-    "Rodents (mice, rats) or signs thereof, including droppings, gnaw marks, or nesting materials",
-    "Flying insects (stored product pests, drain flies, or similar)",
-    "Any other pest conducive conditions or infestations",
-  ];
+  const bullets = isBedBug
+    ? [
+        "Live or dead bed bugs in any life stage (eggs, nymphs, or adults)",
+        "Eggs, egg casings, or shed skins (exuviae) in seams, tufts, folds, or joints",
+        "Fecal staining or blood spotting on mattresses, box springs, linens, or furniture",
+        "Active harborage or bed bug conducive conditions in furniture, frames, baseboards, or wall voids",
+      ]
+    : [
+        "Live or dead insects (cockroaches, ants, fleas, bed bugs, or other crawling insects)",
+        "Rodents (mice, rats) or signs thereof, including droppings, gnaw marks, or nesting materials",
+        "Flying insects (stored product pests, drain flies, or similar)",
+        "Any other pest conducive conditions or infestations",
+      ];
   bullets.forEach((b) => {
     pdf.text("•", margin + 6, y);
     const lines = pdf.splitTextToSize(b, W - margin * 2 - 18);
@@ -163,10 +200,10 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   y += 8;
 
   pdf.setFont("helvetica", "bold").setFontSize(11);
-  pdf.text("Areas Inspected:", margin, y);
+  pdf.text(isBedBug ? "Areas & Harborage Inspected:" : "Areas Inspected:", margin, y);
   y += 14;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
-  DEFAULT_AREAS.forEach((a) => {
+  standardAreas.forEach((a) => {
     const checked = areas.some((x) => x.toLowerCase().trim() === a.toLowerCase().trim());
     pdf.text(checked ? "[x]" : "[ ]", margin, y);
     pdf.text(a, margin + 22, y);
@@ -182,8 +219,9 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.text("INSPECTOR DECLARATION", margin, y);
   y += 16;
   pdf.setFont("helvetica", "normal").setFontSize(10.5);
-  const decl =
-    "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected in accordance with industry standards and that no active pest infestation or evidence of pest activity was identified at the time of inspection.";
+  const decl = isBedBug
+    ? "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected for bed bugs in accordance with industry standards and that no active bed bug infestation or evidence of bed bug activity was identified at the time of inspection."
+    : "I, the undersigned, am a licensed pest control professional in the State of California and hereby certify that the above unit was inspected in accordance with industry standards and that no active pest infestation or evidence of pest activity was identified at the time of inspection.";
   const declLines = pdf.splitTextToSize(decl, W - margin * 2);
   pdf.text(declLines, margin, y);
   y += declLines.length * 13 + 6;
@@ -215,10 +253,17 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.setDrawColor(...BRAND_BLACK).line(W - margin - 200, y, W - margin, y);
   pdf.text("Date", W - margin - 200, y + 14);
 
-  // Liability disclaimer
+  // Liability disclaimer. Measured before the page-break check so the block
+  // never lands under the footer band (the bed bug wording runs longer).
   y += 36;
-  const PH_check = pdf.internal.pageSize.getHeight();
-  if (y > PH_check - 110) {
+  pdf.setFont("helvetica", "italic").setFontSize(8);
+  const disclaimer = isBedBug
+    ? 'This report documents the observable bed bug conditions present in the above-referenced unit at the date and time of inspection only. A "bed bug free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Bed bugs are cryptic insects that conceal themselves in inaccessible harborage and are frequently reintroduced by human activity. Crest Pest Control expressly disclaims any and all liability for: (1) bed bug activity originating after the inspection date; (2) bed bugs concealed behind walls, under flooring, inside furniture or belongings, or in areas inaccessible at the time of inspection; (3) bed bugs migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or the introduction of infested luggage, secondhand furniture, or other items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently bed-bug-free environment.'
+    : 'This report documents the observable pest conditions present in the above-referenced unit at the date and time of inspection only. A "free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Crest Pest Control expressly disclaims any and all liability for: (1) pest activity originating after the inspection date; (2) conditions concealed behind walls, under flooring, or in areas inaccessible at the time of inspection; (3) infestation migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or introduction of infested items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently pest-free environment.';
+  const dLines = pdf.splitTextToSize(disclaimer, W - margin * 2);
+  const PH = pdf.internal.pageSize.getHeight();
+  const disclaimerH = 12 + dLines.length * 10;
+  if (y + disclaimerH > PH - 44) {
     pdf.addPage();
     y = margin;
   }
@@ -227,25 +272,26 @@ export const generateFreeAndClearCertificatePdf = async (ctx: FreeAndClearContex
   pdf.text("IMPORTANT DISCLAIMER", margin, y);
   y += 12;
   pdf.setFont("helvetica", "italic").setFontSize(8);
-  const disclaimer =
-    'This report documents the observable pest conditions present in the above-referenced unit at the date and time of inspection only. A "free and clear" designation is a professional opinion based on visual inspection conducted under accessible and observable conditions; it is not a guarantee, certification, or warranty of any kind. Crest Pest Control expressly disclaims any and all liability for: (1) pest activity originating after the inspection date; (2) conditions concealed behind walls, under flooring, or in areas inaccessible at the time of inspection; (3) infestation migrating from neighboring units, common areas, or the building exterior; and (4) re-infestation resulting from tenant activity or introduction of infested items. This report does not create a warranty of habitability and does not substitute for any representations made by the property owner or manager. All parties should be aware that pest control is an ongoing process, and no single inspection can guarantee a permanently pest-free environment.';
-  const dLines = pdf.splitTextToSize(disclaimer, W - margin * 2);
   pdf.text(dLines, margin, y);
   y += dLines.length * 10;
 
-  // Footer band
-  const PH = pdf.internal.pageSize.getHeight();
-  pdf.setFillColor(...BRAND_BLACK);
-  pdf.rect(0, PH - 28, W, 28, "F");
-  pdf.setFillColor(...BRAND_DARK_SAGE);
-  pdf.rect(0, PH - 32, W, 4, "F");
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont("helvetica", "normal").setFontSize(9);
-  pdf.text("Crest Pest Control  ·  CA License #9859  ·  949-424-5000", W / 2, PH - 11, { align: "center" });
+  // Footer band on every page (a long disclaimer can spill to page 2)
+  const pageCount = pdf.getNumberOfPages();
+  for (let page = 1; page <= pageCount; page++) {
+    pdf.setPage(page);
+    pdf.setFillColor(...BRAND_BLACK);
+    pdf.rect(0, PH - 28, W, 28, "F");
+    pdf.setFillColor(...BRAND_DARK_SAGE);
+    pdf.rect(0, PH - 32, W, 4, "F");
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont("helvetica", "normal").setFontSize(9);
+    pdf.text("Crest Pest Control  ·  CA License #9859  ·  949-424-5000", W / 2, PH - 11, { align: "center" });
+  }
 
   const safeUnit = (ctx.unitNumber || "Unit").replace(/[^a-z0-9-]+/gi, "-");
   const safeProp = (ctx.propertyName || "Property").replace(/[^a-z0-9-]+/gi, "-");
-  pdf.save(`Free-and-Clear-${safeProp}-${safeUnit}.pdf`);
+  const prefix = isBedBug ? "Bed-Bug-Free-and-Clear" : "Free-and-Clear";
+  pdf.save(`${prefix}-${safeProp}-${safeUnit}.pdf`);
 };
 
 /**

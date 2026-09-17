@@ -1331,25 +1331,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                           </Badge>
                         )}
                         {isFreeAndClearStatus(u.status) && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-[10px] px-2"
-                            data-visit-pdf-hide
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              generateFreeAndClearCertificatePdf({
-                                propertyName: property?.name,
-                                propertyAddress: property?.address,
-                                unitNumber: u.unit_number,
-                                inspectionDate: s.service_date,
-                                inspectorName: s.technician,
-                              });
-                            }}
-                          >
-                            <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
-                          </Button>
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-[10px] px-2"
+                              data-visit-pdf-hide
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                generateFreeAndClearCertificatePdf({
+                                  propertyName: property?.name,
+                                  propertyAddress: property?.address,
+                                  unitNumber: u.unit_number,
+                                  inspectionDate: s.service_date,
+                                  inspectorName: s.technician,
+                                });
+                              }}
+                            >
+                              <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-[10px] px-2"
+                              data-visit-pdf-hide
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                generateFreeAndClearCertificatePdf({
+                                  variant: "bedbug",
+                                  propertyName: property?.name,
+                                  propertyAddress: property?.address,
+                                  unitNumber: u.unit_number,
+                                  inspectionDate: s.service_date,
+                                  inspectorName: s.technician,
+                                });
+                              }}
+                            >
+                              <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
+                            </Button>
+                          </>
                         )}
                         <VisitPdfButton
                           filename={unitVisitPdfFilename(u.unit_number, s.service_date)}
@@ -2026,24 +2048,45 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                       </Badge>
                                     )}
                                     {unitDetail && isFreeAndClearStatus(unitDetail.status) && (
-                                      <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-6 text-[10px] px-2 ml-auto"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          generateFreeAndClearCertificatePdf({
-                                            propertyName: property?.name,
-                                            propertyAddress: property?.address,
-                                            unitNumber: unitDetail.unit_number,
-                                            inspectionDate: service.service_date,
-                                            inspectorName: service.technician,
-                                          });
-                                        }}
-                                      >
-                                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
-                                      </Button>
+                                      <>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-[10px] px-2 ml-auto"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            generateFreeAndClearCertificatePdf({
+                                              propertyName: property?.name,
+                                              propertyAddress: property?.address,
+                                              unitNumber: unitDetail.unit_number,
+                                              inspectionDate: service.service_date,
+                                              inspectorName: service.technician,
+                                            });
+                                          }}
+                                        >
+                                          <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-6 text-[10px] px-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            generateFreeAndClearCertificatePdf({
+                                              variant: "bedbug",
+                                              propertyName: property?.name,
+                                              propertyAddress: property?.address,
+                                              unitNumber: unitDetail.unit_number,
+                                              inspectionDate: service.service_date,
+                                              inspectorName: service.technician,
+                                            });
+                                          }}
+                                        >
+                                          <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
+                                        </Button>
+                                      </>
                                     )}
                                     {unitDetail && (
                                       <VisitPdfButton

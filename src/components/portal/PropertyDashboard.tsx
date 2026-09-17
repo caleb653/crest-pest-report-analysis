@@ -3066,25 +3066,47 @@ const PropertyDashboard = ({
                       </Badge>
                     )}
                     {isFreeAndClearStatus(unit.status) && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-[10px] px-2"
-                        data-visit-pdf-hide
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          generateFreeAndClearCertificatePdf({
-                            propertyName: property.name,
-                            propertyAddress: property.address,
-                            unitNumber: unit.unit_number,
-                            inspectionDate: s.service_date,
-                            inspectorName: s.technician,
-                          });
-                        }}
-                      >
-                        <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
-                      </Button>
+                      <>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] px-2"
+                          data-visit-pdf-hide
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateFreeAndClearCertificatePdf({
+                              propertyName: property.name,
+                              propertyAddress: property.address,
+                              unitNumber: unit.unit_number,
+                              inspectionDate: s.service_date,
+                              inspectorName: s.technician,
+                            });
+                          }}
+                        >
+                          <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[10px] px-2"
+                          data-visit-pdf-hide
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            generateFreeAndClearCertificatePdf({
+                              variant: "bedbug",
+                              propertyName: property.name,
+                              propertyAddress: property.address,
+                              unitNumber: unit.unit_number,
+                              inspectionDate: s.service_date,
+                              inspectorName: s.technician,
+                            });
+                          }}
+                        >
+                          <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
+                        </Button>
+                      </>
                     )}
                     <VisitPdfButton
                       filename={unitVisitPdfFilename(unit.unit_number, s.service_date)}
