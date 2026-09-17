@@ -87,6 +87,8 @@ const RAW_CATALOG: Array<[string, string, string, string, string?]> = [
   ["ProFoam Platinum", "Rockwell Labs", "fl oz", "gal", "None"],
   ["Invade Bio Cleaner", "Rockwell Labs", "fl oz", "gal", "None"],
   ["Take Down II Soft Bait", "Liphatech", "grams", "grams", "7173-355"],
+  ["Shockwave", "MGK", "fl oz", "gal", "1021-1798"],
+  ["Niban Granular Bait", "Nisus", "lbs", "lbs", "64405-2"],
 ];
 
 export const CATALOG_PRODUCTS: CatalogProduct[] = RAW_CATALOG.map(([name, manufacturer, conc, dil, epa]) => ({
