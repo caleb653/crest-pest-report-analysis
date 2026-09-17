@@ -401,14 +401,39 @@ const formatScheduleChip = (date: Date, isHighFreq: boolean) => {
 
 type ScheduleChipData = { label: string; isFirst: boolean; isFollowUp: boolean };
 
+// Optional per-option start month, stored as "YYYY-MM". Left blank, every
+// schedule still counts forward from today exactly as it always has.
+const parseFirstServiceMonth = (value?: string | null): Date | null => {
+  const m = /^(\d{4})-(\d{2})$/.exec(String(value ?? "").trim());
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (month < 1 || month > 12) return null;
+  return new Date(year, month - 1, 1);
+};
+
+const formatFirstServiceMonth = (value?: string | null): string => {
+  const d = parseFirstServiceMonth(value);
+  return d ? d.toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "";
+};
+
 // Single source of truth for a service row's schedule chips (screen grid,
 // print table, and PDF all consume this). When the 30-day follow-up box is
 // checked, a "Follow-Up" chip is inserted one month after the initial service
 // — but only when the regular schedule doesn't already put us there (one-time
 // services and frequencies longer than 30 days).
-const buildScheduleChipData = (frequency: number, followUp30?: boolean): ScheduleChipData[] => {
-  const today = new Date();
+//
+// `startMonth` ("YYYY-MM") moves the whole schedule to that month; without it
+// the first chip is the current month.
+const buildScheduleChipData = (frequency: number, followUp30?: boolean, startMonth?: string | null): ScheduleChipData[] => {
   const isHighFreq = frequency === 7 || frequency === 14;
+  const startOfMonth = parseFirstServiceMonth(startMonth);
+  // Anchor a chosen month mid-month for the monthly-ish cadences: counting 30
+  // days from the 1st lands on the 31st, which would print "Oct" twice and
+  // swallow a month. Weekly / bi-weekly keep the 1st so the first chip is W1.
+  const today = startOfMonth
+    ? (isHighFreq ? startOfMonth : new Date(startOfMonth.getFullYear(), startOfMonth.getMonth(), 15))
+    : new Date();
   const chips: ScheduleChipData[] = [];
   if (frequency > 0) {
     const count = isHighFreq ? 8 : 6;
@@ -473,6 +498,9 @@ interface Proposal {
   name: string;
   services: ServiceItem[];
   recurringLabel?: string;
+  /** Optional "YYYY-MM" start month. Blank = schedule counts from today and
+   *  nothing about a start month appears on the customer's proposal. */
+  firstServiceMonth?: string;
 }
 
 const PROPOSAL_NAMES = ["Option A", "Option B", "Option C", "Option D"];
@@ -635,6 +663,14 @@ const Report = () => {
     setProposals((prev) => {
       const updated = [...prev];
       updated[proposalIndex] = { ...updated[proposalIndex], recurringLabel: value };
+      return updated;
+    });
+  };
+
+  const setProposalFirstServiceMonth = (proposalIndex: number, value: string) => {
+    setProposals((prev) => {
+      const updated = [...prev];
+      updated[proposalIndex] = { ...updated[proposalIndex], firstServiceMonth: value || undefined };
       return updated;
     });
   };
@@ -1908,6 +1944,7 @@ const Report = () => {
         name: proposal.name.trim() || PROPOSAL_NAMES[i] || `Option ${i + 1}`,
         recommended: proposals.length > 1 && recommendedProposal === i,
         recurringLabel: resolveRecurringLabel(proposal),
+        firstServiceLabel: formatFirstServiceMonth(proposal.firstServiceMonth) || null,
         services: proposal.services
           .filter((s) => s.serviceType)
           .map((s) => ({
@@ -1915,7 +1952,7 @@ const Report = () => {
             initial: parseFloat(s.initialPrice) || 0,
             recurring: parseFloat(s.recurringPrice) || 0,
             frequencyLabel: FREQUENCY_OPTIONS.find((o) => o.days === s.frequency)?.label || "One-Time",
-            scheduleChips: buildScheduleChipData(s.frequency, s.followUp30).map((c) => c.label),
+            scheduleChips: buildScheduleChipData(s.frequency, s.followUp30, proposal.firstServiceMonth).map((c) => c.label),
           })),
         mapImage: mapForOption(i),
         servicesHtml: servicesHtmlForOption(i),
@@ -2487,6 +2524,41 @@ Crest Pest Control`;
                 </>
               )}
             </div>
+            {/* Optional first service month. Blank leaves every schedule
+                counting from today and puts nothing on the customer's copy;
+                filled in, it moves this option's whole schedule to that month. */}
+            {!isReadOnly && (
+              <div className="proposal-first-service-editor no-print flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-muted/40 px-2 py-1">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">1st Service</span>
+                <input
+                  type="month"
+                  value={proposal.firstServiceMonth || ""}
+                  onChange={(e) => setProposalFirstServiceMonth(proposalIndex, e.target.value)}
+                  className="h-7 rounded border border-dashed border-border/60 bg-transparent px-1 text-xs focus:border-primary focus:outline-none"
+                  title="Optional — the month the first service happens. Leave blank to count from today and show nothing on the proposal."
+                />
+                {proposal.firstServiceMonth && (
+                  <button
+                    type="button"
+                    onClick={() => setProposalFirstServiceMonth(proposalIndex, "")}
+                    className="text-muted-foreground hover:text-destructive"
+                    title="Clear — schedule goes back to counting from today"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            )}
+            {proposal.firstServiceMonth && (
+              <span
+                className={cn(
+                  "proposal-first-service shrink-0 rounded-md border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-foreground",
+                  isReadOnly ? "" : "hidden print:inline-block",
+                )}
+              >
+                First service: {formatFirstServiceMonth(proposal.firstServiceMonth)}
+              </span>
+            )}
             {isRecommended && (
               <span className="proposal-recommended-tag shrink-0 rounded-md bg-foreground px-3 py-1 text-xs font-bold uppercase tracking-[0.15em] text-background">
                 ★ Recommended
@@ -2601,7 +2673,7 @@ Crest Pest Control`;
               <div className="min-w-0 bg-white/80 rounded-lg px-1 py-0.5 col-span-2 md:col-span-1">
                 <span className="md:hidden block pl-0.5 pt-0.5 text-[9px] font-bold uppercase text-muted-foreground">Schedule</span>
                 {(() => {
-                  const chips = buildScheduleChipData(service.frequency, service.followUp30);
+                  const chips = buildScheduleChipData(service.frequency, service.followUp30, proposal.firstServiceMonth);
                   if (chips.length === 0) {
                     return <span className="text-[10px] text-muted-foreground">One-time</span>;
                   }
@@ -2680,7 +2752,7 @@ Crest Pest Control`;
                 <td className="text-center">{FREQUENCY_OPTIONS.find((o) => o.days === service.frequency)?.label || "—"}</td>
                 <td>
                   {(() => {
-                    const chips = buildScheduleChipData(service.frequency, service.followUp30);
+                    const chips = buildScheduleChipData(service.frequency, service.followUp30, proposal.firstServiceMonth);
                     if (chips.length === 0) {
                       return <span className="text-muted-foreground">One-time</span>;
                     }

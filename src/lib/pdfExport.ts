@@ -550,6 +550,19 @@ async function captureElement(el: HTMLElement): Promise<string> {
              line-height: 1.2 !important;
              letter-spacing: 0.04em !important;
            }
+           /* Optional first service month — only present when the rep set one. */
+           .pdf-export-root .proposal-first-service {
+             display: inline-flex !important;
+             align-items: center !important;
+             border: 1px solid ${BRAND.border} !important;
+             background-color: #ffffff !important;
+             color: ${BRAND.black} !important;
+             padding: 6px 12px !important;
+             border-radius: 8px !important;
+             font-size: 12px !important;
+             font-weight: 700 !important;
+             white-space: nowrap !important;
+           }
            .pdf-export-root .proposal-recommended-tag {
              display: inline-flex !important;
              align-items: center !important;

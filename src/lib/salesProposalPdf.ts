@@ -28,6 +28,8 @@ export interface SalesPdfOption {
   name: string;
   recommended: boolean;
   recurringLabel: string;
+  /** "October 2026" when the option has a first service month; null hides it. */
+  firstServiceLabel?: string | null;
   services: SalesPdfServiceRow[];
   /** Data URL or fetchable URL for this option's (annotated) property map. */
   mapImage?: string | null;
@@ -637,7 +639,20 @@ export async function buildSalesProposalPdf(
     }
     setFont(11.5, "bold", C.white);
     const nameMax = CONTENT_W - 24 - (pillW ? pillW + 20 : 0);
-    pdf.text(pdf.splitTextToSize(opt.name, nameMax)[0], MARGIN + 12, y + 15, { charSpace: 0.3 });
+    const nameText: string = pdf.splitTextToSize(opt.name, nameMax)[0];
+    const nameW = pdf.getTextWidth(nameText) + 0.3 * Math.max(0, nameText.length - 1);
+    pdf.text(nameText, MARGIN + 12, y + 15, { charSpace: 0.3 });
+    // First service month, when the rep set one — sits beside the option name
+    // on the same bar, and is simply absent when they left it blank.
+    if (opt.firstServiceLabel) {
+      const note = `First service: ${opt.firstServiceLabel}`;
+      setFont(8, "normal", C.white);
+      const noteX = MARGIN + 12 + nameW + 12;
+      const noteRightLimit = MARGIN + CONTENT_W - (pillW ? pillW + 16 : 12);
+      if (noteX + pdf.getTextWidth(note) <= noteRightLimit) {
+        pdf.text(note, noteX, y + 15);
+      }
+    }
     y += barH;
 
     // Column headers.
