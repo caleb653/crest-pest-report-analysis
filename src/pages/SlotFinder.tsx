@@ -139,6 +139,9 @@ type SlotCandidate = {
   /** 'google' = detour/ETA/push built from real Google road times at this
       slot's clock; 'google_partial'; 'estimate' = calibrated model. */
   drive_source?: string;
+  /** The Route Manager's day is already modeled to run past 7:30 PM — the
+      slot is ranked last on purpose, not merely penalised. */
+  day_unworkable?: boolean;
   day_plan?: DayPlanRow[];
   prev_stop: Stop;
   next_stop: Stop;
@@ -198,13 +201,18 @@ type CheckResult = {
 
 // ── Formatting helpers ──────────────────────────────────────────────────────
 
+// Over-booked days model past midnight. Say so rather than silently wrapping
+// a 1:01 AM finish into a reassuring-looking "1:01 PM".
 function fmtTime(minSinceMidnight: number | null | undefined): string {
   if (minSinceMidnight === null || minSinceMidnight === undefined) return "?";
-  const h24 = Math.floor(minSinceMidnight / 60);
-  const m = minSinceMidnight % 60;
+  const total = Math.floor(minSinceMidnight);
+  const nextDay = total >= 24 * 60;
+  const minOfDay = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const h24 = Math.floor(minOfDay / 60);
+  const m = minOfDay % 60;
   const h12 = h24 % 12 || 12;
   const ampm = h24 < 12 ? "AM" : "PM";
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
+  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}${nextDay ? " next day" : ""}`;
 }
 
 function fmtHHMMSS(s: string | null | undefined): string {
@@ -1912,6 +1920,12 @@ function SlotCard({
             {(c.push_delay_min ?? 0) >= 15 && (
               <Badge variant="outline" className="border-amber-500 text-amber-700 font-semibold">
                 pushes day ~{c.push_delay_min} min
+              </Badge>
+            )}
+            {c.day_unworkable && (
+              <Badge className="bg-red-700 hover:bg-red-700 text-white font-bold uppercase tracking-wide">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                {c.tech_name.split(" ")[0]}'s day already can't be finished as booked
               </Badge>
             )}
             {(after?.windows_blown ?? 0) > 0 && (
