@@ -33,7 +33,8 @@ import { PRESET_NOTES } from "@/lib/presetNotes";
 import { computeUpcomingUnits, getOpenGeneralRequests, getCadenceVisitLabel, buildMergedMostRecentPast } from "@/lib/upcomingUnits";
 import { VisitUnitsAtAGlance, glanceUnitsFromUpcoming, glanceUnitsFromPast } from "@/components/portal/VisitUnitsAtAGlance";
 import { friendlyUnitStatus, promoteStatusOnCompletion } from "@/lib/unitStatus";
-import { generateFreeAndClearCertificatePdf, isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { FreeAndClearCertificateButton } from "@/components/portal/FreeAndClearCertificateButton";
 import {
   DEFAULT_PEST_SURVEY_QUESTIONS,
   DEFAULT_SURVEY_INTRO,
@@ -3064,49 +3065,18 @@ const PropertyDashboard = ({
                       </Badge>
                     )}
                     {isFreeAndClearStatus(unit.status) && (
-                      <>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-[10px] px-2"
-                          data-visit-pdf-hide
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            generateFreeAndClearCertificatePdf({
-                              propertyName: property.name,
-                              propertyAddress: property.address,
-                              unitNumber: unit.unit_number,
-                              inspectionDate: s.service_date,
-                              inspectorName: s.technician,
-                            });
-                          }}
-                        >
-                          <Download className="w-3 h-3 mr-1" /> Free & Clear PDF
-                        </Button>
-                        {isBedBugFreeAndClear(unit) && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-[10px] px-2"
-                          data-visit-pdf-hide
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            generateFreeAndClearCertificatePdf({
-                              variant: "bedbug",
-                              propertyName: property.name,
-                              propertyAddress: property.address,
-                              unitNumber: unit.unit_number,
-                              inspectionDate: s.service_date,
-                              inspectorName: s.technician,
-                            });
-                          }}
-                        >
-                          <Download className="w-3 h-3 mr-1" /> Bed Bug Free & Clear PDF
-                        </Button>
-                        )}
-                      </>
+                      <FreeAndClearCertificateButton
+                        hideInVisitPdf
+                        allowBedBug={isBedBugFreeAndClear(unit)}
+                        className="h-7 text-[10px] px-2"
+                        context={{
+                          propertyName: property.name,
+                          propertyAddress: property.address,
+                          unitNumber: unit.unit_number,
+                          inspectionDate: s.service_date,
+                          inspectorName: s.technician,
+                        }}
+                      />
                     )}
                     <VisitPdfButton
                       filename={unitVisitPdfFilename(unit.unit_number, s.service_date)}

@@ -11,7 +11,8 @@ import { Calendar, ClipboardList, MessageSquare, Phone, Mail, ChevronRight, Chev
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
-import { generateFreeAndClearCertificatePdf, isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
+import { FreeAndClearCertificateButton } from "@/components/portal/FreeAndClearCertificateButton";
 import crestLogo from "@/assets/crest-logo.png";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import CommercialPMView from "@/components/portal/CommercialPMView";
@@ -198,47 +199,18 @@ const ServiceSnapshot = ({ service, isExpanded, onToggle, onViewFull, isAdmin, u
                           </Badge>
                         )}
                         {isFreeAndClearStatus(unit.status) && (
-                          <div className="flex items-center gap-2 flex-wrap ml-auto">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-[10px] px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                generateFreeAndClearCertificatePdf({
-                                  propertyName: property?.name,
-                                  propertyAddress: property?.address,
-                                  unitNumber: unit.unit_number,
-                                  inspectionDate: service.service_date,
-                                  inspectorName: service.technician,
-                                });
-                              }}
-                            >
-                              Download Free & Clear Certificate
-                            </Button>
-                            {isBedBugFreeAndClear(unit) && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-[10px] px-2"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                generateFreeAndClearCertificatePdf({
-                                  variant: "bedbug",
-                                  propertyName: property?.name,
-                                  propertyAddress: property?.address,
-                                  unitNumber: unit.unit_number,
-                                  inspectionDate: service.service_date,
-                                  inspectorName: service.technician,
-                                });
-                              }}
-                            >
-                              Download Bed Bug Free & Clear Certificate
-                            </Button>
-                            )}
-                          </div>
+                          <FreeAndClearCertificateButton
+                            allowBedBug={isBedBugFreeAndClear(unit)}
+                            label="Free & Clear Certificate"
+                            className="h-7 text-[10px] px-2"
+                            context={{
+                              propertyName: property?.name,
+                              propertyAddress: property?.address,
+                              unitNumber: unit.unit_number,
+                              inspectionDate: service.service_date,
+                              inspectorName: service.technician,
+                            }}
+                          />
                         )}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
