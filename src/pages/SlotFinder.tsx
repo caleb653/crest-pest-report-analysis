@@ -1044,6 +1044,254 @@ function DayMultiSelect({
   );
 }
 
+// ── Openings calendar ────────────────────────────────────────────────────────
+// A calendar view across the days being searched: one column per day, each
+// day's best openings drawn as colored blocks at the time we'd book them.
+// Bright green = on route, yellow/orange/red = a real detour — so the office
+// can see at a glance that Monday has a great spot at 9 AM while Tuesday only
+// has one orange one at 3 PM. Columns follow the days selected in the search
+// (next 3 working days by default).
+
+const CAL_HOUR_PX = 46;     // pixels per hour of the grid
+const CAL_DAY_MIN_PX = 132; // min column width before the strip scrolls
+
+/** Where a slot sits on the calendar: the window we'd actually promise the
+    customer (tightened when the office narrowed the width, else the route's
+    own block), falling back to an hour either side of the estimated arrival. */
+function slotBlockRange(c: SlotCandidate, widthHours: number): { lo: number; hi: number } {
+  const bw = bookWindowMinutes(c, widthHours);
+  if (bw) return bw;
+  const key = (c.after_insert?.new_stop_window as string | null) ?? null;
+  const bucket = key ? BUCKET_BOUNDS[key] : undefined;
+  if (bucket) return { lo: bucket[0], hi: bucket[1] };
+  const s = hhmmToMin(c.next_stop?.start_time);
+  const e = hhmmToMin(c.next_stop?.end_time);
+  if (s != null && e != null && e > s) return { lo: s, hi: e };
+  const est = c.est_min ?? 12 * 60;
+  return { lo: est - 60, hi: est + 60 };
+}
+
+// Same five-step scale as DetourBadge / tierBorder, as a solid block fill.
+function tierBlockClasses(c: SlotCandidate): string {
+  switch (driveTier(c)) {
+    case "very_long": return "bg-red-600 text-white border-red-700";
+    case "long":      return "bg-orange-500 text-white border-orange-600";
+    case "edge":      return "bg-yellow-400 text-black border-yellow-500";
+    case "near":      return "bg-green-500 text-white border-green-600";
+    case "on_route":  return "bg-emerald-500 text-white border-emerald-600";
+  }
+}
+function tierWord(c: SlotCandidate): string {
+  switch (driveTier(c)) {
+    case "very_long": return "Very long drive";
+    case "long":      return "Long drive";
+    case "edge":      return "Bit out of the way";
+    case "near":      return "Near the route";
+    case "on_route":  return "On route";
+  }
+}
+// Rank used to pick the best slot of a day (lower = better).
+const TIER_RANK: Record<DriveTier, number> = {
+  on_route: 0, near: 1, edge: 2, long: 3, very_long: 4,
+};
+
+type CalBlock = { c: SlotCandidate; idx: number; lo: number; hi: number; lane: number; lanes: number };
+
+// Greedy lane packing so two openings at the same hour sit side by side.
+function layoutBlocks(slots: SlotCandidate[], widthHours: number): CalBlock[] {
+  const raw = slots
+    .map((c, idx) => ({ c, idx, ...slotBlockRange(c, widthHours) }))
+    .sort((a, b) => a.lo - b.lo || a.hi - b.hi);
+  const laneEnds: number[] = [];
+  const placed = raw.map((b) => {
+    let lane = laneEnds.findIndex((end) => end <= b.lo);
+    if (lane === -1) { lane = laneEnds.length; laneEnds.push(b.hi); }
+    else laneEnds[lane] = b.hi;
+    return { ...b, lane, lanes: 1 };
+  });
+  const lanes = Math.max(1, laneEnds.length);
+  return placed.map((b) => ({ ...b, lanes }));
+}
+
+function OpeningsCalendar({
+  title, subtitle, dates, byDay, dayRoutes, windowWidth, loading, searched,
+}: {
+  title: string;
+  subtitle?: string;
+  /** Column set — the days the office asked about, in order. */
+  dates: string[];
+  /** Openings per day from the search (empty before a search has run). */
+  byDay: DayGroup[];
+  /** Booked routes for those days (free sentinel fetch) — used for the
+      "N stops booked" line and to say when a day has no route at all. */
+  dayRoutes: DayRoute[];
+  windowWidth: number;
+  loading?: boolean;
+  /** A search has run — days with no blocks genuinely have no opening. */
+  searched: boolean;
+}) {
+  const cols = useMemo(() => {
+    const groups = new Map(byDay.map((d) => [d.date, d]));
+    return dates.map((iso) => {
+      const g = groups.get(iso);
+      const slots = g?.slots ?? [];
+      const blocks = layoutBlocks(slots, windowWidth);
+      const routes = dayRoutes.filter((r) => r.date === iso);
+      const best = slots.reduce<SlotCandidate | null>(
+        (acc, c) => (!acc || TIER_RANK[driveTier(c)] < TIER_RANK[driveTier(acc)] ? c : acc), null);
+      return {
+        iso,
+        weekday: g?.weekday ?? new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { weekday: "short" }),
+        blocks,
+        best,
+        routeCount: routes.length,
+        stopCount: routes.reduce((n, r) => n + (r.stop_count ?? 0), 0),
+      };
+    });
+  }, [dates, byDay, dayRoutes, windowWidth]);
+
+  // Grid bounds follow the blocks, clamped to a sane working day.
+  const { startMin, endMin } = useMemo(() => {
+    let lo = 8 * 60, hi = 17 * 60;
+    for (const col of cols) for (const b of col.blocks) { lo = Math.min(lo, b.lo); hi = Math.max(hi, b.hi); }
+    return {
+      startMin: Math.max(6 * 60, Math.floor(lo / 60) * 60),
+      endMin: Math.min(20 * 60, Math.ceil(hi / 60) * 60),
+    };
+  }, [cols]);
+  const hours: number[] = [];
+  for (let h = startMin; h <= endMin - 60; h += 60) hours.push(h);
+  const gridPx = ((endMin - startMin) / 60) * CAL_HOUR_PX;
+
+  const jumpToSlot = (iso: string, idx: number) => {
+    const el = document.getElementById(`slot-${iso}-${idx}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-4", "ring-primary");
+    globalThis.setTimeout(() => el.classList.remove("ring-4", "ring-primary"), 1800);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base flex items-center gap-2">
+          <CalendarClock className="w-4 h-4" /> {title}
+        </CardTitle>
+        <CardDescription>
+          {subtitle ?? "One column per day you're searching. Each block is an opening, at the time we'd book it — bright green is on route, orange and red mean a real detour."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
+          {([
+            ["bg-emerald-500", "On route (<5 min)"],
+            ["bg-green-500", "Near (5–10)"],
+            ["bg-yellow-400", "10–15"],
+            ["bg-orange-500", "15–20"],
+            ["bg-red-600", "20+ min out of the way"],
+          ] as const).map(([bg, label]) => (
+            <span key={label} className="inline-flex items-center gap-1">
+              <span className={`inline-block h-2.5 w-2.5 rounded-sm ${bg}`} aria-hidden />{label}
+            </span>
+          ))}
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="flex min-w-full gap-px">
+            {/* Hour gutter */}
+            <div className="shrink-0 pt-[3.4rem] pr-1 text-right" style={{ width: "3.6rem" }}>
+              {hours.map((h) => (
+                <div key={h} className="text-[10px] font-medium text-muted-foreground" style={{ height: CAL_HOUR_PX }}>
+                  {fmtTime(h).replace(":00", "")}
+                </div>
+              ))}
+            </div>
+
+            {cols.map((col) => (
+              <div key={col.iso} className="flex-1 min-w-0" style={{ minWidth: CAL_DAY_MIN_PX }}>
+                {/* Day header */}
+                <div className={`flex h-[3.4rem] flex-col justify-center rounded-t-md border border-b-0 px-2 py-1 text-center ${
+                  col.best ? "border-border bg-muted/50" : "border-border bg-muted/20"}`}>
+                  <div className="text-xs font-bold leading-tight">{col.weekday}</div>
+                  <div className="text-[11px] text-muted-foreground leading-tight">
+                    {new Date(`${col.iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </div>
+                  <div className="mt-0.5 text-[10px] leading-tight">
+                    {col.best ? (
+                      <span className={`inline-block rounded px-1 py-px font-bold ${tierBlockClasses(col.best)}`}>
+                        {tierWord(col.best)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        {searched
+                          ? (col.routeCount === 0 ? "No routes" : "No opening")
+                          : (col.routeCount > 0 ? `${col.stopCount} booked` : "—")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hour grid + blocks */}
+                <div className="relative rounded-b-md border border-border bg-background" style={{ height: gridPx }}>
+                  {hours.map((h, i) => (
+                    <div key={h} className={`absolute inset-x-0 border-t ${i === 0 ? "border-transparent" : "border-border/60"}`}
+                         style={{ top: i * CAL_HOUR_PX }} />
+                  ))}
+                  {!searched && (
+                    <div className="absolute inset-0 flex items-center justify-center px-1 text-center text-[10px] italic text-muted-foreground">
+                      {loading ? "Searching…" : "Run a search to fill this in"}
+                    </div>
+                  )}
+                  {searched && col.blocks.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center px-1 text-center text-[10px] italic text-muted-foreground">
+                      {col.routeCount === 0 ? "No Route Manager working" : "Nothing workable"}
+                    </div>
+                  )}
+                  {col.blocks.map((b) => {
+                    const top = ((Math.max(b.lo, startMin) - startMin) / 60) * CAL_HOUR_PX;
+                    const height = Math.max(34, ((Math.min(b.hi, endMin) - Math.max(b.lo, startMin)) / 60) * CAL_HOUR_PX);
+                    const widthPct = 100 / b.lanes;
+                    return (
+                      <button
+                        key={b.idx}
+                        type="button"
+                        onClick={() => jumpToSlot(col.iso, b.idx)}
+                        title={`${b.c.tech_name} · ${fmtTime(b.lo)} – ${fmtTime(b.hi)} · +${detourMinutes(b.c)} min / +${detourMiles(b.c)} mi — ${tierWord(b.c)}`}
+                        className={`absolute overflow-hidden rounded border px-1 py-0.5 text-left leading-tight shadow-sm transition-transform hover:z-10 hover:scale-[1.02] ${tierBlockClasses(b.c)}`}
+                        style={{
+                          top, height,
+                          left: `calc(${b.lane * widthPct}% + 2px)`,
+                          width: `calc(${widthPct}% - 4px)`,
+                        }}
+                      >
+                        <div className="truncate text-[10px] font-bold">
+                          {fmtTime(b.lo).replace(":00", "")} – {fmtTime(b.hi).replace(":00", "")}
+                        </div>
+                        <div className="truncate text-[10px] font-semibold opacity-95">
+                          {b.c.tech_name.split(" ")[0]} · +{detourMinutes(b.c)}m
+                        </div>
+                        {b.c.est_min != null && height >= 50 && (
+                          <div className="truncate text-[10px] opacity-90">~{fmtTime(b.c.est_min)}</div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {searched && (
+          <p className="text-[11px] text-muted-foreground">
+            Tap a block to jump to that opening's card.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 // ── Mode A: Find open slots ───────────────────────────────────────────────────
 
 function FindMode({
@@ -1223,7 +1471,7 @@ function FindMode({
 
   // The routes map. Rendered under the Best Fit card once a single-visit search
   // has results, and on its own at the bottom of the page otherwise.
-  const routesMapNode = (() => {
+  const mergedRoutes = useMemo(() => {
     const seen = new Set<string>();
     const merged: DayRoute[] = [];
     for (const r of [...(result?.day_routes ?? []), ...(followUp?.day_routes ?? []), ...(defaultRoutes ?? []), ...extraRoutes]) {
@@ -1231,6 +1479,11 @@ function FindMode({
       if (seen.has(k)) continue;
       seen.add(k); merged.push(r);
     }
+    return merged;
+  }, [result, followUp, defaultRoutes, extraRoutes]);
+
+  const routesMapNode = (() => {
+    const merged = mergedRoutes;
     const searchedDates = [
       ...(result?.by_day ?? []).map((d) => d.date),
       ...(followUp?.by_day ?? []).map((d) => d.date),
@@ -1251,9 +1504,34 @@ function FindMode({
     );
   })();
 
+  // Calendar columns follow the days picked in the search (next 3 working days
+  // by default), so the strip grows as the office widens the search.
+  const calendarDates = useMemo(() => [...selectedDates].sort(), [selectedDates]);
+
   return (
     <>
-      <Card>
+      <OpeningsCalendar
+        title={planInfo ? "Visit 1 — best opening each day" : "Best opening each day"}
+        dates={calendarDates}
+        byDay={result?.by_day ?? []}
+        dayRoutes={mergedRoutes}
+        windowWidth={Number(windowWidth)}
+        loading={loading}
+        searched={!!result}
+      />
+      {planInfo && followUp && (
+        <OpeningsCalendar
+          title={`${planInfo.label} — best opening each day`}
+          subtitle={`The follow-up band: ${planInfo.lo}–${planInfo.hi} days after Visit 1.`}
+          dates={(followUp.by_day ?? []).map((d) => d.date)}
+          byDay={followUp.by_day ?? []}
+          dayRoutes={mergedRoutes}
+          windowWidth={Number(windowWidth)}
+          loading={followUpLoading}
+          searched
+        />
+      )}
+      <Card className="mt-6">
         <CardHeader className={formOpen ? undefined : "py-3"}>
           <button
             type="button"
@@ -1400,8 +1678,25 @@ function FindMode({
 
             <div className="space-y-2">
               <Label>{planInfo ? "Days to search for Visit 1" : "Days to search"}</Label>
-              <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
-              <p className="text-xs text-muted-foreground">Next 3 working days are selected by default.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
+                {[3, 5, 10].map((n) => (
+                  <Button
+                    key={n}
+                    type="button"
+                    size="sm"
+                    variant={selectedDates.length === n
+                      && selectedDates.every((d, i) => d === dayOptions[i]?.iso) ? "default" : "outline"}
+                    onClick={() => setSelectedDates(dayOptions.slice(0, n).map((o) => o.iso))}
+                  >
+                    Next {n} days
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Next 3 working days are selected by default. The calendar at the top of the page
+                shows one column per day you pick here.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-4">
@@ -1916,7 +2211,10 @@ function SlotCard({
   };
 
   return (
-    <div className={`rounded-md p-3 ${tierBorder(c)} ${isBestFit ? "ring-2 ring-emerald-500 ring-offset-1" : ""}`}>
+    <div
+      id={date ? `slot-${date}-${rank - 1}` : undefined}
+      className={`scroll-mt-24 rounded-md p-3 transition-shadow ${tierBorder(c)} ${isBestFit ? "ring-2 ring-emerald-500 ring-offset-1" : ""}`}
+    >
       {/* ── Top row: rank + tech + drive tier ─────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
