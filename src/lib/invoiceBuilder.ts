@@ -22,6 +22,8 @@ import { glanceUnitsFromPast, glanceUnitsToText } from "@/components/portal/Visi
 export type BillingMode = "per_service" | "cadence" | "manual";
 export type Cadence = "4_weeks" | "monthly" | "quarterly";
 export type BasePriceBasis = "per_visit" | "per_period";
+/** How treated units are priced on the invoice. */
+export type UnitLineStyle = "summary" | "itemized" | "flat";
 export type LineType = "base" | "units" | "ad_hoc" | "credit" | "discount" | "custom";
 
 export interface BillingSettings {
@@ -30,6 +32,7 @@ export interface BillingSettings {
   cadence: Cadence | null;
   cadence_anchor: string | null;
   base_price_basis: BasePriceBasis;
+  unit_line_style: UnitLineStyle;
   payment_terms_days: number;
   tax_rate: number;
   default_po_number: string | null;
@@ -113,6 +116,86 @@ export function billingPeriod(
   return { start: iso(start), end: iso(new Date(start.getTime() + 28 * dayMs)) };
 }
 
+
+/**
+ * Emit the invoice line(s) for one visit's units, in the property's chosen
+ * style. The unit list is carried on every style — only whether money is
+ * attached to each unit changes.
+ */
+function pushUnitLines(
+  push: (l: Omit<DraftLine, "sort_order" | "amount">) => void,
+  style: UnitLineStyle,
+  visit: { id: string; service_type?: string | null; service_date: string | null },
+  ov: ReturnType<typeof computeOverage>,
+  glance: { unit_number: string; service: string }[],
+  totalUnits: number,
+  /** Used by 'flat': the hand-set price for the day. */
+  flatAmount?: number
+) {
+  const snapshot = {
+    units: glance,
+    total: totalUnits,
+    included: ov.includedUnits,
+    waived: ov.waived,
+  };
+
+  if (style === "flat") {
+    push({
+      line_type: "units",
+      service_id: visit.id,
+      description: `${visit.service_type || "Service"} — ${fmtDate(visit.service_date)}`,
+      detail:
+        `${totalUnits} unit${totalUnits === 1 ? "" : "s"} treated` +
+        (glance.length ? `\n${glanceUnitsToText(glance)}` : ""),
+      service_date: visit.service_date,
+      quantity: 1,
+      unit_price: money(flatAmount ?? 0),
+      taxable: false,
+      units_snapshot: snapshot,
+      fr_entry_required: null,
+    });
+    return;
+  }
+
+  if (style === "itemized") {
+    // Only the units beyond the plan carry a charge; the rest are shown at $0
+    // so the invoice still proves every unit we entered.
+    const over = ov.unitsOver;
+    glance.forEach((u, i) => {
+      const chargeable = i >= glance.length - over;
+      push({
+        line_type: "units",
+        service_id: visit.id,
+        description: `Unit ${u.unit_number} — ${fmtDate(visit.service_date)}`,
+        detail: u.service || null,
+        service_date: visit.service_date,
+        quantity: 1,
+        unit_price: chargeable && !ov.waived ? ov.pricePerUnit : 0,
+        taxable: false,
+        units_snapshot: i === 0 ? snapshot : null,
+        fr_entry_required: null,
+      });
+    });
+    return;
+  }
+
+  // summary
+  push({
+    line_type: "units",
+    service_id: visit.id,
+    description: `Additional units treated — ${fmtDate(visit.service_date)}`,
+    detail:
+      `${totalUnits} units treated, ${ov.includedUnits} included` +
+      (glance.length ? `\n${glanceUnitsToText(glance)}` : ""),
+    service_date: visit.service_date,
+    quantity: ov.unitsOver,
+    unit_price: ov.waived ? 0 : ov.pricePerUnit,
+    taxable: false,
+    units_snapshot: snapshot,
+    fr_entry_required: null,
+  });
+}
+
 /**
  * Build a draft invoice for a property.
  *
@@ -145,6 +228,7 @@ export async function buildDraftInvoice(
     cadence: null,
     cadence_anchor: null,
     base_price_basis: "per_period",
+    unit_line_style: "summary",
     payment_terms_days: 30,
     tax_rate: 0,
     default_po_number: null,
@@ -252,22 +336,11 @@ export async function buildDraftInvoice(
       warnings.push(`${fmtDate(v.service_date)}: ${ov.unitsOver} unit(s) over, waived — shown at $0.`);
     }
 
-    if (ov.unitsOver > 0) {
-      push({
-        line_type: "units",
-        service_id: v.id,
-        description: `Additional units treated — ${fmtDate(v.service_date)}`,
-        detail:
-          `${unitRows.length} units treated, ${ov.includedUnits} included` +
-          (glance.length ? `\n${glanceUnitsToText(glance)}` : ""),
-        service_date: v.service_date,
-        quantity: ov.unitsOver,
-        unit_price: ov.waived ? 0 : ov.pricePerUnit,
-        taxable: false,
-        // Frozen: editing the visit later can never change what this invoice claimed.
-        units_snapshot: { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived },
-        fr_entry_required: null,
-      });
+    const style = settings.unit_line_style ?? "summary";
+    // 'flat' and 'itemized' print the unit list even when nothing is over the
+    // plan; 'summary' has nothing to say unless there is an overage.
+    if (ov.unitsOver > 0 || style === "itemized" || (style === "flat" && Number(v.billing_amount) > 0)) {
+      pushUnitLines(push, style, v, ov, glance, unitRows.length, Number(v.billing_amount) || 0);
     }
   }
 
@@ -459,6 +532,8 @@ export async function buildOneTimeInvoice(
     customLines?: CustomLine[];
     /** Per-visit price typed by hand, overriding whatever the plan implies. */
     amountOverrides?: Record<string, number>;
+    /** Default true: a hand-priced visit is recorded as a paid service. */
+    markAsPaidService?: boolean;
   } = {}
 ): Promise<DraftInvoice> {
   const { data: property, error: pErr } = await supabase
@@ -471,9 +546,11 @@ export async function buildOneTimeInvoice(
 
   const { data: settingsRow } = await supabase
     .from("portal_billing_settings")
-    .select("tax_rate, default_po_number")
+    .select("tax_rate, default_po_number, unit_line_style")
     .eq("property_id", propertyId)
     .maybeSingle();
+
+  const style = (settingsRow?.unit_line_style ?? "summary") as UnitLineStyle;
 
   const planCfg = readUnitPlanConfig(property.customer_preferences);
   const warnings: string[] = [];
@@ -506,18 +583,33 @@ export async function buildOneTimeInvoice(
       const override = opts.amountOverrides?.[v.id];
       if (override !== undefined && override !== null) {
         // A hand-typed price wins over everything the plan would have said.
-        push({
-          line_type: "ad_hoc",
-          service_id: v.id,
-          description: `${v.service_type} — ${fmtDate(v.service_date)}`,
-          detail: v.po_number ? `PO ${v.po_number}` : null,
-          service_date: v.service_date,
-          quantity: 1,
-          unit_price: money(override),
-          taxable: false,
-          units_snapshot: glance.length ? { units: glance, total: unitRows.length, included: ov.includedUnits } : null,
-          fr_entry_required: null,
-        });
+        // Charging a day as a whole is exactly the 'flat' shape, so it reuses
+        // it — the unit list still prints, just without per-unit money.
+        if (unitRows.length > 0) {
+          pushUnitLines(push, style === "itemized" ? "itemized" : "flat", v, ov, glance, unitRows.length, override);
+        } else {
+          push({
+            line_type: "ad_hoc",
+            service_id: v.id,
+            description: `${v.service_type} — ${fmtDate(v.service_date)}`,
+            detail: v.po_number ? `PO ${v.po_number}` : null,
+            service_date: v.service_date,
+            quantity: 1,
+            unit_price: money(override),
+            taxable: false,
+            units_snapshot: null,
+            fr_entry_required: null,
+          });
+        }
+
+        // Pricing a visit by hand makes it a PAID service for good, not just on
+        // this one invoice — so it reads correctly everywhere afterwards.
+        if (opts.markAsPaidService !== false) {
+          await supabase
+            .from("portal_services")
+            .update({ billing_type: "billable", billing_amount: money(override) })
+            .eq("id", v.id);
+        }
       } else if (v.billing_type === "billable") {
         const amount = Number(v.billing_amount || 0);
         if (amount <= 0) warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: no amount set.`);
@@ -534,19 +626,7 @@ export async function buildOneTimeInvoice(
           fr_entry_required: null,
         });
       } else if (ov.unitsOver > 0) {
-        push({
-          line_type: "units",
-          service_id: v.id,
-          description: `Additional units treated — ${fmtDate(v.service_date)}`,
-          detail: `${unitRows.length} units treated, ${ov.includedUnits} included` +
-            (glance.length ? `\n${glanceUnitsToText(glance)}` : ""),
-          service_date: v.service_date,
-          quantity: ov.unitsOver,
-          unit_price: ov.waived ? 0 : ov.pricePerUnit,
-          taxable: false,
-          units_snapshot: { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived },
-          fr_entry_required: null,
-        });
+        pushUnitLines(push, style, v, ov, glance, unitRows.length);
       } else {
         warnings.push(
           `${fmtDate(v.service_date)} — ${v.service_type}: nothing chargeable (covered by the plan). Add a custom line if you meant to bill it.`

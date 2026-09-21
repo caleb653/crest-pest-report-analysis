@@ -434,6 +434,21 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
           </div>
 
           <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">Units on the invoice</Label>
+            <Select value={settings?.unit_line_style ?? "summary"} onValueChange={(v) => saveSetting({ unit_line_style: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="summary">One line per visit — qty × per-unit price</SelectItem>
+                <SelectItem value="itemized">A priced line for every unit</SelectItem>
+                <SelectItem value="flat">One price for the day — units listed only</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">
+              Every unit treated is listed either way — this only decides whether money is attached to each one.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <Label className="text-xs font-semibold">Payment terms (days)</Label>
             <Input
               type="number"
@@ -616,7 +631,8 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                 <div>
                   <Label className="text-xs font-semibold">Visits not yet invoiced</Label>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Tick one to price it — a visit covered by the plan bills at $0 unless you type an amount.
+                    Tick one to price it. Typing an amount charges that day as a paid service — the units treated
+                    still print on the invoice, just without a price on each one.
                   </p>
                   {billable.length === 0 ? (
                     <p className="text-sm text-muted-foreground mt-2">
