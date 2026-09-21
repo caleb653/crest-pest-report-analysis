@@ -1,0 +1,1 @@
+ALTER VIEW public.portal_front_desk_billing_tasks SET (security_invoker = on);

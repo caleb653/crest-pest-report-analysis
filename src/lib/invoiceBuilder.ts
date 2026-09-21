@@ -369,7 +369,7 @@ export async function saveDraftInvoice(draft: DraftInvoice, actor?: string): Pro
         quantity: l.quantity,
         unit_price: l.unit_price,
         taxable: l.taxable,
-        units_snapshot: l.units_snapshot,
+        units_snapshot: (l.units_snapshot ?? null) as never,
         fr_entry_required: l.fr_entry_required,
       }))
     );

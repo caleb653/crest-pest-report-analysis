@@ -161,6 +161,92 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_billing_settings: {
+        Row: {
+          auto_send: boolean
+          base_price_basis: string
+          billing_contact_email: string | null
+          billing_contact_name: string | null
+          billing_mode: string
+          cadence: string | null
+          cadence_anchor: string | null
+          created_at: string
+          crest_cc: Json
+          default_po_number: string | null
+          footer_note: string | null
+          invoice_cc: Json
+          invoice_to: Json
+          last_sent_period: unknown
+          next_send_date: string | null
+          payment_terms_days: number
+          property_id: string
+          send_dates: string[] | null
+          send_days: number[] | null
+          send_mode: string
+          tax_rate: number
+          test_recipients: Json
+          updated_at: string
+        }
+        Insert: {
+          auto_send?: boolean
+          base_price_basis?: string
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_mode?: string
+          cadence?: string | null
+          cadence_anchor?: string | null
+          created_at?: string
+          crest_cc?: Json
+          default_po_number?: string | null
+          footer_note?: string | null
+          invoice_cc?: Json
+          invoice_to?: Json
+          last_sent_period?: unknown
+          next_send_date?: string | null
+          payment_terms_days?: number
+          property_id: string
+          send_dates?: string[] | null
+          send_days?: number[] | null
+          send_mode?: string
+          tax_rate?: number
+          test_recipients?: Json
+          updated_at?: string
+        }
+        Update: {
+          auto_send?: boolean
+          base_price_basis?: string
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_mode?: string
+          cadence?: string | null
+          cadence_anchor?: string | null
+          created_at?: string
+          crest_cc?: Json
+          default_po_number?: string | null
+          footer_note?: string | null
+          invoice_cc?: Json
+          invoice_to?: Json
+          last_sent_period?: unknown
+          next_send_date?: string | null
+          payment_terms_days?: number
+          property_id?: string
+          send_dates?: string[] | null
+          send_days?: number[] | null
+          send_mode?: string
+          tax_rate?: number
+          test_recipients?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_billing_settings_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: true
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_clients: {
         Row: {
           auto_generate_reports: boolean
@@ -320,6 +406,423 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_invoice_events: {
+        Row: {
+          actor: string | null
+          created_at: string
+          detail: Json | null
+          event: string
+          id: string
+          invoice_id: string
+        }
+        Insert: {
+          actor?: string | null
+          created_at?: string
+          detail?: Json | null
+          event: string
+          id?: string
+          invoice_id: string
+        }
+        Update: {
+          actor?: string | null
+          created_at?: string
+          detail?: Json | null
+          event?: string
+          id?: string
+          invoice_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoice_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_events_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_invoice_lines: {
+        Row: {
+          amount: number | null
+          created_at: string
+          description: string
+          detail: string | null
+          fr_entry_required: boolean | null
+          id: string
+          invoice_id: string
+          line_type: string
+          quantity: number
+          service_date: string | null
+          service_id: string | null
+          sort_order: number
+          taxable: boolean
+          unit_price: number
+          units_snapshot: Json | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          description: string
+          detail?: string | null
+          fr_entry_required?: boolean | null
+          id?: string
+          invoice_id: string
+          line_type?: string
+          quantity?: number
+          service_date?: string | null
+          service_id?: string | null
+          sort_order?: number
+          taxable?: boolean
+          unit_price?: number
+          units_snapshot?: Json | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          description?: string
+          detail?: string | null
+          fr_entry_required?: boolean | null
+          id?: string
+          invoice_id?: string
+          line_type?: string
+          quantity?: number
+          service_date?: string | null
+          service_id?: string | null
+          sort_order?: number
+          taxable?: boolean
+          unit_price?: number
+          units_snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_lines_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_lines_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "portal_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_invoice_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          method: string | null
+          note: string | null
+          paid_on: string
+          reference: string | null
+          source: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          method?: string | null
+          note?: string | null
+          paid_on?: string
+          reference?: string | null
+          source?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          method?: string | null
+          note?: string | null
+          paid_on?: string
+          reference?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_invoice_revisions: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          invoice_id: string
+          revision: number
+          snapshot: Json
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          invoice_id: string
+          revision: number
+          snapshot: Json
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          revision?: number
+          snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoice_revisions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_revisions_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_invoice_sends: {
+        Row: {
+          actor: string | null
+          cc_emails: Json
+          created_at: string
+          error: string | null
+          id: string
+          invoice_id: string
+          mode: string
+          ok: boolean
+          subject: string | null
+          to_emails: Json
+        }
+        Insert: {
+          actor?: string | null
+          cc_emails?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id: string
+          mode: string
+          ok?: boolean
+          subject?: string | null
+          to_emails?: Json
+        }
+        Update: {
+          actor?: string | null
+          cc_emails?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          invoice_id?: string
+          mode?: string
+          ok?: boolean
+          subject?: string | null
+          to_emails?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoice_sends_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoice_sends_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_invoices: {
+        Row: {
+          amount_paid: number
+          balance: number | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_note: string | null
+          due_date: string | null
+          edit_unlocked_by: string | null
+          edit_unlocked_until: string | null
+          fieldroutes_matched_at: string | null
+          fieldroutes_status: string
+          fieldroutes_ticket_id: string | null
+          fieldroutes_variance: number | null
+          front_desk_note: string | null
+          id: string
+          internal_note: string | null
+          invoice_number: string
+          issue_date: string
+          kind: string
+          pdf_path: string | null
+          period_end: string | null
+          period_start: string | null
+          po_number: string | null
+          property_id: string
+          reference_numbers: Json
+          revision: number
+          send_error: string | null
+          sent_at: string | null
+          sent_to: Json | null
+          status: string
+          subtotal: number
+          supersedes_id: string | null
+          tax_amount: number
+          tax_rate: number
+          total: number
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+        }
+        Insert: {
+          amount_paid?: number
+          balance?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_note?: string | null
+          due_date?: string | null
+          edit_unlocked_by?: string | null
+          edit_unlocked_until?: string | null
+          fieldroutes_matched_at?: string | null
+          fieldroutes_status?: string
+          fieldroutes_ticket_id?: string | null
+          fieldroutes_variance?: number | null
+          front_desk_note?: string | null
+          id?: string
+          internal_note?: string | null
+          invoice_number?: string
+          issue_date?: string
+          kind?: string
+          pdf_path?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          po_number?: string | null
+          property_id: string
+          reference_numbers?: Json
+          revision?: number
+          send_error?: string | null
+          sent_at?: string | null
+          sent_to?: Json | null
+          status?: string
+          subtotal?: number
+          supersedes_id?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+        }
+        Update: {
+          amount_paid?: number
+          balance?: number | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_note?: string | null
+          due_date?: string | null
+          edit_unlocked_by?: string | null
+          edit_unlocked_until?: string | null
+          fieldroutes_matched_at?: string | null
+          fieldroutes_status?: string
+          fieldroutes_ticket_id?: string | null
+          fieldroutes_variance?: number | null
+          front_desk_note?: string | null
+          id?: string
+          internal_note?: string | null
+          invoice_number?: string
+          issue_date?: string
+          kind?: string
+          pdf_path?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          po_number?: string | null
+          property_id?: string
+          reference_numbers?: Json
+          revision?: number
+          send_error?: string | null
+          sent_at?: string | null
+          sent_to?: Json | null
+          status?: string
+          subtotal?: number
+          supersedes_id?: string | null
+          tax_amount?: number
+          tax_rate?: number
+          total?: number
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "portal_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_invoices_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_invoices_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "portal_front_desk_billing_tasks"
+            referencedColumns: ["invoice_id"]
+          },
+          {
+            foreignKeyName: "portal_invoices_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "portal_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portal_links: {
         Row: {
           assigned_property_ids: Json | null
@@ -468,6 +971,7 @@ export type Database = {
           created_at: string
           customer_preferences: Json | null
           equipment: Json | null
+          fieldroutes_customer_id: string | null
           id: string
           image_url: string | null
           map_data: Json | null
@@ -484,6 +988,7 @@ export type Database = {
           created_at?: string
           customer_preferences?: Json | null
           equipment?: Json | null
+          fieldroutes_customer_id?: string | null
           id?: string
           image_url?: string | null
           map_data?: Json | null
@@ -500,6 +1005,7 @@ export type Database = {
           created_at?: string
           customer_preferences?: Json | null
           equipment?: Json | null
+          fieldroutes_customer_id?: string | null
           id?: string
           image_url?: string | null
           map_data?: Json | null
@@ -671,15 +1177,19 @@ export type Database = {
         Row: {
           appointment_service: string | null
           attachments: Json
+          billing_amount: number | null
+          billing_type: string | null
           created_at: string
           findings: string | null
           follow_up_notes: string | null
           follow_up_recommended: boolean | null
           frequency_days: number | null
           id: string
+          invoiced_at: string | null
           notes: string | null
           office_notes: string | null
           photos: Json | null
+          po_number: string | null
           prep_notes: string | null
           prep_required: boolean | null
           products_used: Json | null
@@ -700,15 +1210,19 @@ export type Database = {
         Insert: {
           appointment_service?: string | null
           attachments?: Json
+          billing_amount?: number | null
+          billing_type?: string | null
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
           follow_up_recommended?: boolean | null
           frequency_days?: number | null
           id?: string
+          invoiced_at?: string | null
           notes?: string | null
           office_notes?: string | null
           photos?: Json | null
+          po_number?: string | null
           prep_notes?: string | null
           prep_required?: boolean | null
           products_used?: Json | null
@@ -729,15 +1243,19 @@ export type Database = {
         Update: {
           appointment_service?: string | null
           attachments?: Json
+          billing_amount?: number | null
+          billing_type?: string | null
           created_at?: string
           findings?: string | null
           follow_up_notes?: string | null
           follow_up_recommended?: boolean | null
           frequency_days?: number | null
           id?: string
+          invoiced_at?: string | null
           notes?: string | null
           office_notes?: string | null
           photos?: Json | null
+          po_number?: string | null
           prep_notes?: string | null
           prep_required?: boolean | null
           products_used?: Json | null
@@ -1108,7 +1626,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      portal_front_desk_billing_tasks: {
+        Row: {
+          amount_to_key_into_fr: number | null
+          crest_total: number | null
+          fieldroutes_customer_id: string | null
+          fieldroutes_status: string | null
+          fieldroutes_variance: number | null
+          front_desk_note: string | null
+          invoice_id: string | null
+          invoice_number: string | null
+          issue_date: string | null
+          line_summary: string | null
+          lines_to_key_into_fr: string | null
+          period_end: string | null
+          period_start: string | null
+          po_number: string | null
+          property_name: string | null
+          units_over_billed: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
@@ -1134,6 +1672,39 @@ export type Database = {
           technician_name: string
         }[]
       }
+      portal_billing_period_bounds: {
+        Args: { p_asof: string; p_property: string }
+        Returns: unknown
+      }
+      portal_invoice_mark_sent: {
+        Args: { p_actor?: string; p_invoice: string; p_to: Json }
+        Returns: undefined
+      }
+      portal_invoice_recalc: { Args: { p_invoice: string }; Returns: undefined }
+      portal_invoice_relock: {
+        Args: { p_actor?: string; p_invoice: string }
+        Returns: undefined
+      }
+      portal_invoice_set_paid: {
+        Args: {
+          p_actor?: string
+          p_invoice: string
+          p_method?: string
+          p_paid: boolean
+          p_paid_on?: string
+          p_reference?: string
+        }
+        Returns: string
+      }
+      portal_invoice_snapshot: {
+        Args: { p_actor: string; p_invoice: string }
+        Returns: undefined
+      }
+      portal_invoice_unlock: {
+        Args: { p_actor?: string; p_invoice: string; p_minutes?: number }
+        Returns: string
+      }
+      portal_next_invoice_number: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "technician"
