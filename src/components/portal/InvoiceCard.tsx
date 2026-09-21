@@ -8,7 +8,7 @@
  * always recoverable.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -524,8 +524,8 @@ export function InvoiceCard({
                 className="h-7 text-xs"
                 onClick={refreshFromPlan}
                 disabled={refreshing}
-              >
-                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update from plan
+                ...
+                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update based on service edits
               </Button>
             )}
 
