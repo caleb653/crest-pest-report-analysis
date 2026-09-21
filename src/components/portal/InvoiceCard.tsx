@@ -300,7 +300,15 @@ export function InvoiceCard({
       .eq("id", invoice.id);
     setSaving(false);
     if (error) {
-      toast({ title: "Could not save", description: error.message, variant: "destructive" });
+      const duplicate =
+        error.code === "23505" || /duplicate|unique/i.test(error.message ?? "");
+      toast({
+        title: duplicate ? "That invoice number is already used" : "Could not save",
+        description: duplicate
+          ? `${nextNumber} belongs to another invoice. Invoice numbers must be unique across every customer.`
+          : error.message,
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Saved" });
