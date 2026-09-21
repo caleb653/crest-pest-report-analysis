@@ -1008,7 +1008,11 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
   let updated = 0;
 
   for (const l of lines ?? []) {
+    // Any line tied to a visit refreshes its unit facts — including the ad-hoc
+    // / flat visit lines, which used to be skipped and went stale.
     if (!l.service_id) continue;
+    if (l.line_type !== "units" && !(l as any).units_snapshot) continue;
+
 
     const { data: v } = await supabase
       .from("portal_services")
