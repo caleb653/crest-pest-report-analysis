@@ -536,7 +536,7 @@ export function InvoiceCard({
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs"
-                onClick={refreshFromPlan}
+                onClick={() => refreshFromPlan(false)}
                 disabled={refreshing}
                 title="Recalculate unit lines from the current visit data"
               >
