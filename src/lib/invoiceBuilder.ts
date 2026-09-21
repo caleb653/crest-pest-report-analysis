@@ -983,13 +983,18 @@ export async function addVisitsToInvoice(
 export async function refreshDraftFromPlan(invoiceId: string, actor?: string): Promise<number> {
   const { data: invoice, error: iErr } = await supabase
     .from("portal_invoices")
-    .select("id, status, property_id, portal_properties(customer_preferences)")
+    .select(
+      "id, status, property_id, edit_unlocked_until, portal_properties(customer_preferences)",
+    )
     .eq("id", invoiceId)
     .maybeSingle();
   if (iErr) throw iErr;
   if (!invoice) throw new Error("Invoice not found.");
-  if (!["draft", "ready"].includes(invoice.status)) {
-    throw new Error("Only a draft can be refreshed. Unlock a sent invoice and edit it instead.");
+  const unlockedNow =
+    !!(invoice as any).edit_unlocked_until &&
+    new Date((invoice as any).edit_unlocked_until).getTime() > Date.now();
+  if (!["draft", "ready"].includes(invoice.status) && !(unlockedNow && invoice.status !== "void")) {
+    throw new Error("Unlock this invoice for editing first, then refresh it.");
   }
 
   const planCfg = readUnitPlanConfig((invoice as any).portal_properties?.customer_preferences);
