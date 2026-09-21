@@ -527,14 +527,14 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Base price is charged</Label>
-            <Select value={settings?.base_price_basis ?? "per_period"} onValueChange={(v) => saveSetting({ base_price_basis: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="per_period">Once per invoice</SelectItem>
-                <SelectItem value="per_visit">Once per visit</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-semibold">Recurring price</Label>
+            <div className="h-10 flex items-center rounded-md border bg-muted/40 px-3 text-sm">
+              Once per billing period
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Covers every visit in the period, however many there are — two fortnightly visits in a month are still
+              one charge.
+            </p>
           </div>
 
           <div className="space-y-1.5">

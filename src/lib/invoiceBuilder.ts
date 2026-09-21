@@ -21,6 +21,12 @@ import { glanceUnitsFromPast, glanceUnitsToText } from "@/components/portal/Visi
 
 export type BillingMode = "per_service" | "cadence" | "manual";
 export type Cadence = "4_weeks" | "monthly" | "quarterly";
+/**
+ * per_period — the recurring price covers the whole billing period, however
+ * many visits fall in it. This is the only behaviour now selectable; a monthly
+ * property visited fortnightly is charged once, not twice.
+ * per_visit is honoured for old rows only.
+ */
 export type BasePriceBasis = "per_visit" | "per_period";
 /** How treated units are priced on the invoice. */
 export type UnitLineStyle = "summary" | "itemized" | "flat";
@@ -346,7 +352,7 @@ export async function buildDraftInvoice(
         line_type: "base",
         service_id: null,
         description: "Recurring pest control service",
-        detail: `${span} · ${recurringVisits.length} visit${recurringVisits.length === 1 ? "" : "s"}`,
+        detail: `${span} · covers ${recurringVisits.length} visit${recurringVisits.length === 1 ? "" : "s"}`,
         service_date: recurringVisits[0]?.service_date ?? null,
         quantity: 1,
         unit_price: basePrice,
