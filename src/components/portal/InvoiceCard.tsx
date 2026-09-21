@@ -77,6 +77,7 @@ export function InvoiceCard({
   const canEdit = isAdmin && (!isSent || unlocked);
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
+  const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
   const [note, setNote] = useState<string>(invoice.customer_note ?? "");
   const [refs, setRefs] = useState<RefNumber[]>(
     Array.isArray(invoice.reference_numbers) ? invoice.reference_numbers : []
