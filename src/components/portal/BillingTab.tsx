@@ -23,6 +23,11 @@ import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X } 
 import { buildDraftInvoice, saveDraftInvoice, type DraftInvoice } from "@/lib/invoiceBuilder";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
+/** jsonb email list <-> the comma-separated text the inputs show. */
+const emailList = (v: unknown): string => (Array.isArray(v) ? v : []).map((e: any) => (typeof e === "string" ? e : e?.email)).filter(Boolean).join(", ");
+const parseEmails = (s: string): string[] =>
+  s.split(/[,;\s]+/).map((e) => e.trim()).filter((e) => e.includes("@"));
+
 const money = (n: number | null | undefined) =>
   `$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -233,6 +238,80 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                 <SelectItem value="live">Live — reaches the customer</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </CardContent>
+
+        {/* Billing contact — deliberately separate from the property contact:
+            whoever books the service is rarely whoever pays the bill. */}
+        <CardContent className="pt-0 pb-4 border-t mt-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-4 pb-3">
+            Who the invoice goes to
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Billing contact name</Label>
+              <Input
+                defaultValue={settings?.billing_contact_name ?? ""}
+                placeholder="e.g. Accounts Payable"
+                onBlur={(e) =>
+                  e.target.value !== (settings?.billing_contact_name ?? "") &&
+                  saveSetting({ billing_contact_name: e.target.value.trim() || null })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Billing email</Label>
+              <Input
+                type="email"
+                defaultValue={settings?.billing_contact_email ?? ""}
+                placeholder="ap@property.com"
+                onBlur={(e) =>
+                  e.target.value !== (settings?.billing_contact_email ?? "") &&
+                  saveSetting({ billing_contact_email: e.target.value.trim() || null })
+                }
+              />
+              <p className="text-[11px] text-muted-foreground">Can be different from the property's main contact.</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Also CC (customer side)</Label>
+              <Input
+                defaultValue={emailList(settings?.invoice_cc)}
+                placeholder="manager@property.com, owner@property.com"
+                onBlur={(e) =>
+                  e.target.value !== emailList(settings?.invoice_cc) &&
+                  saveSetting({ invoice_cc: parseEmails(e.target.value) })
+                }
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Crest team CC</Label>
+              <Input
+                defaultValue={emailList(settings?.crest_cc)}
+                placeholder="office@crestpestcontrol.com, caleb@crestpestco.com"
+                onBlur={(e) =>
+                  e.target.value !== emailList(settings?.crest_cc) &&
+                  saveSetting({ crest_cc: parseEmails(e.target.value) })
+                }
+              />
+              <p className="text-[11px] text-muted-foreground">Copied on every live invoice for this property.</p>
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-xs font-semibold">Test sends go to</Label>
+              <Input
+                defaultValue={emailList(settings?.test_recipients)}
+                placeholder="office@crestpestcontrol.com, caleb@crestpestco.com (default)"
+                onBlur={(e) =>
+                  e.target.value !== emailList(settings?.test_recipients) &&
+                  saveSetting({ test_recipients: parseEmails(e.target.value) })
+                }
+              />
+              <p className="text-[11px] text-muted-foreground">
+                While this property is in test mode these are the only recipients — no customer CC, ever.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

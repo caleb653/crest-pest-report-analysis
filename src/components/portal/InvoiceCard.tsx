@@ -16,8 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X } from "lucide-react";
-import { buildInvoicePdf, invoicePdfFilename, type InvoicePdfLine } from "@/lib/invoicePdf";
+import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send } from "lucide-react";
+import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
 
 const EDIT_PASSWORD = "18444";
 
@@ -58,6 +58,8 @@ export function InvoiceCard({
   const [unlocking, setUnlocking] = useState(false);
   const [pw, setPw] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [confirmSend, setConfirmSend] = useState(false);
 
   const lines: any[] = [...(invoice.portal_invoice_lines ?? [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -74,7 +76,7 @@ export function InvoiceCard({
     Array.isArray(invoice.reference_numbers) ? invoice.reference_numbers : []
   );
 
-  const download = () => {
+  const pdfData = (): InvoicePdfData => {
     const pdfLines: InvoicePdfLine[] = lines.map((l) => ({
       line_type: l.line_type,
       description: l.description,
@@ -86,7 +88,7 @@ export function InvoiceCard({
       units_snapshot: l.units_snapshot,
     }));
 
-    const pdf = buildInvoicePdf({
+    return {
       invoiceNumber: invoice.invoice_number,
       issueDate: invoice.issue_date,
       dueDate: invoice.due_date,
@@ -108,8 +110,42 @@ export function InvoiceCard({
       customerNote: invoice.customer_note,
       // A draft must never be mistaken for a real invoice on someone's desk.
       watermark: invoice.status === "draft" ? "DRAFT" : invoice.status === "void" ? "VOID" : null,
-    });
-    pdf.save(invoicePdfFilename({ invoiceNumber: invoice.invoice_number, propertyName: property.name }));
+    };
+  };
+
+  const download = () =>
+    buildInvoicePdf(pdfData()).save(
+      invoicePdfFilename({ invoiceNumber: invoice.invoice_number, propertyName: property.name })
+    );
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-invoice-email", {
+        body: {
+          invoiceId: invoice.id,
+          pdfBase64: invoicePdfBase64(pdfData()),
+          pdfFilename: invoicePdfFilename({ invoiceNumber: invoice.invoice_number, propertyName: property.name }),
+          actor: "admin",
+        },
+      });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "Send failed");
+
+      toast({
+        title: data.mode === "test" ? "Test sent" : "Invoice sent",
+        description:
+          data.mode === "test"
+            ? `Internal only — ${(data.to ?? []).join(", ")}. The customer received nothing.`
+            : `To ${(data.to ?? []).join(", ")}`,
+      });
+      onChanged();
+    } catch (e: any) {
+      toast({ title: "Could not send", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setSending(false);
+      setConfirmSend(false);
+    }
   };
 
   const unlock = async () => {
@@ -307,9 +343,29 @@ export function InvoiceCard({
             </div>
           )}
 
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
-            <Download className="w-3 h-3 mr-1" /> Download PDF
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
+              <Download className="w-3 h-3 mr-1" /> Download PDF
+            </Button>
+
+            {isAdmin && invoice.status !== "void" && (
+              !confirmSend ? (
+                <Button size="sm" className="h-7 text-xs" onClick={() => setConfirmSend(true)}>
+                  <Send className="w-3 h-3 mr-1" /> Send invoice
+                </Button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Send this now?</span>
+                  <Button size="sm" className="h-7 text-xs" onClick={send} disabled={sending}>
+                    {sending ? "Sending…" : "Yes, send"}
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setConfirmSend(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              )
+            )}
+          </div>
         </div>
       )}
     </div>

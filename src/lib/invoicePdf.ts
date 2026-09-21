@@ -366,3 +366,9 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
 
 export const invoicePdfFilename = (data: Pick<InvoicePdfData, "invoiceNumber" | "propertyName">) =>
   `${data.invoiceNumber} — ${data.propertyName}`.replace(/[^\w\s—.-]/g, "").trim() + ".pdf";
+
+/** Base64 (no data-URI prefix) — what the send function attaches to the email. */
+export function invoicePdfBase64(data: InvoicePdfData): string {
+  const uri = buildInvoicePdf(data).output("datauristring");
+  return uri.slice(uri.indexOf(",") + 1);
+}
