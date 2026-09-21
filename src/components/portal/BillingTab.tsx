@@ -27,9 +27,13 @@ import {
   saveDraftInvoice,
   listBillableVisits,
   recentPeriods,
+  setVisitPrice,
+  listOpenInvoices,
+  addVisitsToInvoice,
   type DraftInvoice,
   type BillableVisit,
   type CustomLine,
+  type OpenInvoice,
 } from "@/lib/invoiceBuilder";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
@@ -228,7 +232,11 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const [pickedPeriod, setPickedPeriod] = useState<string>("");
 
   // Hand-typed price for a picked visit, keyed by service id.
-  const [visitAmounts, setVisitAmounts] = useState<Record<string, number>>({});
+  const [visitAmounts, setVisitAmounts] = useState<Record<string, number | "">>({});
+
+  // Invoices a picked visit can be dropped onto, and which one is chosen.
+  const [openInvoices, setOpenInvoices] = useState<OpenInvoice[]>([]);
+  const [destination, setDestination] = useState<string>("new_one_time");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -245,9 +253,12 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     setInvoices(inv ?? []);
     if (isAdmin) {
       try {
-        setBillable(await listBillableVisits(propertyId));
+        const [b, o] = await Promise.all([listBillableVisits(propertyId), listOpenInvoices(propertyId)]);
+        setBillable(b);
+        setOpenInvoices(o);
       } catch {
         setBillable([]);
+        setOpenInvoices([]);
       }
     }
     setLoading(false);
@@ -289,6 +300,56 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     }
   };
 
+  /** Price sticks to the visit as soon as the field loses focus. */
+  const savePrice = async (serviceId: string, raw: string) => {
+    const amount = raw.trim() === "" ? null : Number(raw);
+    if (amount !== null && !Number.isFinite(amount)) return;
+    try {
+      await setVisitPrice(serviceId, amount);
+      setBillable((prev) =>
+        prev.map((v) =>
+          v.id === serviceId
+            ? { ...v, billing_type: amount === null ? "plan" : "billable", suggested_amount: amount ?? 0 }
+            : v
+        )
+      );
+    } catch (e: any) {
+      toast({ title: "Could not save that price", description: e?.message ?? String(e), variant: "destructive" });
+    }
+  };
+
+  /** Put the picked visits on an existing invoice, or start a new one-time bill. */
+  const placeVisits = async () => {
+    if (destination === "new_one_time") {
+      await buildOneTime();
+      return;
+    }
+    setBuilding("one_time");
+    try {
+      const { added, skipped } = await addVisitsToInvoice(destination, pickedVisits, "admin");
+      const target = openInvoices.find((i) => i.id === destination);
+      if (added === 0) {
+        toast({
+          title: "Nothing was added",
+          description: skipped.join(" · ") || "Those visits had nothing chargeable on them.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: `Added to ${target?.invoice_number ?? "the invoice"}`,
+          description:
+            `${added} line${added === 1 ? "" : "s"} added.` + (skipped.length ? ` Skipped: ${skipped.join(" · ")}` : ""),
+        });
+        setPickedVisits([]);
+      }
+      await load();
+    } catch (e: any) {
+      toast({ title: "Could not add to that invoice", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setBuilding(null);
+    }
+  };
+
   const buildOneTime = async () => {
     setBuilding("one_time");
     try {
@@ -296,7 +357,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
         await buildOneTimeInvoice(propertyId, {
           serviceIds: pickedVisits,
           customLines,
-          amountOverrides: visitAmounts,
+          amountOverrides: Object.fromEntries(
+            Object.entries(visitAmounts).filter(([, v]) => v !== "" && Number.isFinite(Number(v)))
+          ) as Record<string, number>,
         })
       );
     } catch (e: any) {
@@ -601,28 +664,20 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
         </Card>
       )}
 
-      {/* ═══════════ ONE-TIME BILL ═══════════ */}
+      {/* ═══════════ PRICE & BILL VISITS ═══════════ */}
       {isAdmin && (
         <Card className="shadow-sm">
-          <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                One-time bill
-              </CardTitle>
-              <p className="text-xs text-muted-foreground mt-1">
-                A standalone charge — no cycle, no recurring line.
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant={settings?.billing_mode === "cadence" ? "outline" : "default"}
-              onClick={buildOneTime}
-              disabled={building !== null || (pickedVisits.length === 0 && customLines.length === 0)}
-            >
-              {building === "one_time" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build this bill"}
-            </Button>
+          <CardHeader className="pb-3 pt-4 border-b">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" />
+              Price &amp; bill visits
+            </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Give a visit a price, then put it on whichever invoice you want — an open draft for a past period,
+              or a fresh one-time bill.
+            </p>
           </CardHeader>
+
           <CardContent className="pt-4 space-y-4">
             {draft?.kind === "one_time" ? (
               <DraftPreview draft={draft} onChange={setDraft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
@@ -630,56 +685,87 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
               <>
                 <div>
                   <Label className="text-xs font-semibold">Visits not yet invoiced</Label>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Tick one to price it. Typing an amount charges that day as a paid service — the units treated
-                    still print on the invoice, just without a price on each one.
-                  </p>
                   {billable.length === 0 ? (
                     <p className="text-sm text-muted-foreground mt-2">
                       Every completed visit here has already been invoiced.
                     </p>
                   ) : (
-                    <div className="mt-2 border rounded-lg divide-y max-h-64 overflow-y-auto">
-                      {billable.map((v) => (
-                        <label key={v.id} className="flex items-center gap-3 p-2.5 cursor-pointer hover:bg-muted/40">
-                          <Checkbox
-                            checked={pickedVisits.includes(v.id)}
-                            onCheckedChange={(c) =>
-                              setPickedVisits((prev) => (c ? [...prev, v.id] : prev.filter((x) => x !== v.id)))
-                            }
-                          />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium">
-                              <span className="text-muted-foreground mr-2">{shortDate(v.service_date)}</span>
-                              {v.service_type}
+                    <div className="mt-2 border rounded-lg divide-y max-h-80 overflow-y-auto">
+                      {billable.map((v) => {
+                        const priced = visitAmounts[v.id] ?? (v.suggested_amount > 0 ? v.suggested_amount : "");
+                        return (
+                          <div key={v.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/40">
+                            <Checkbox
+                              checked={pickedVisits.includes(v.id)}
+                              onCheckedChange={(c) =>
+                                setPickedVisits((prev) => (c ? [...prev, v.id] : prev.filter((x) => x !== v.id)))
+                              }
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium">
+                                <span className="text-muted-foreground mr-2">{shortDate(v.service_date)}</span>
+                                {v.service_type}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground">
+                                {v.units_total > 0 && <>{v.units_total} units treated</>}
+                                {v.units_over > 0 && <> · {v.units_over} over the plan</>}
+                                {v.billing_type === "billable" && <> · priced</>}
+                              </div>
                             </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {v.units_total > 0 && <>{v.units_total} units treated</>}
-                              {v.units_over > 0 && <> · {v.units_over} over the plan</>}
-                              {v.billing_type && v.billing_type !== "plan" && <> · {v.billing_type.replace("_", " ")}</>}
-                            </div>
-                          </div>
-                          <div className="shrink-0 w-32 flex justify-end" onClick={(e) => e.preventDefault()}>
-                            {pickedVisits.includes(v.id) ? (
+                            <div className="shrink-0 flex items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">$</span>
                               <Input
-                                className="h-8 text-right"
+                                className="h-8 w-24 text-right"
                                 type="number"
-                                value={visitAmounts[v.id] ?? v.suggested_amount}
+                                placeholder="Plan"
+                                value={priced}
                                 onChange={(e) =>
-                                  setVisitAmounts({ ...visitAmounts, [v.id]: Number(e.target.value) || 0 })
+                                  setVisitAmounts({
+                                    ...visitAmounts,
+                                    [v.id]: e.target.value === "" ? ("" as any) : Number(e.target.value),
+                                  })
                                 }
+                                onBlur={(e) => savePrice(v.id, e.target.value)}
                               />
-                            ) : v.suggested_amount > 0 ? (
-                              <span className="text-sm font-semibold tabular-nums">{money(v.suggested_amount)}</span>
-                            ) : (
-                              <span className="text-[11px] text-muted-foreground">Covered by plan</span>
-                            )}
+                            </div>
                           </div>
-                        </label>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    A price saves to the visit itself the moment you leave the box — it becomes a paid service whether
+                    or not you bill it today. Leave it blank for "covered by the plan".
+                  </p>
                 </div>
+
+                {/* where the picked visits go */}
+                {pickedVisits.length > 0 && (
+                  <div className="rounded-lg border-2 border-primary/30 bg-primary/[0.03] p-3 space-y-2">
+                    <Label className="text-xs font-semibold">
+                      Put {pickedVisits.length} visit{pickedVisits.length === 1 ? "" : "s"} on
+                    </Label>
+                    <div className="flex flex-wrap gap-2">
+                      <Select value={destination} onValueChange={setDestination}>
+                        <SelectTrigger className="w-72 h-9"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new_one_time">A new one-time bill</SelectItem>
+                          {openInvoices.map((inv) => (
+                            <SelectItem key={inv.id} value={inv.id}>{inv.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button size="sm" onClick={placeVisits} disabled={building !== null}>
+                        {building === "one_time" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Add"}
+                      </Button>
+                    </div>
+                    {openInvoices.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        No open invoices to add to — build one above, or unlock a sent invoice to reopen it.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <Label className="text-xs font-semibold">Anything else to charge</Label>
@@ -717,14 +803,21 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                         </Button>
                       </div>
                     ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs"
-                      onClick={() => setCustomLines([...customLines, { description: "", quantity: 1, unit_price: 0 }])}
-                    >
-                      <Plus className="w-3 h-3 mr-1" /> Add a line
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => setCustomLines([...customLines, { description: "", quantity: 1, unit_price: 0 }])}
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Add a line
+                      </Button>
+                      {customLines.length > 0 && (
+                        <Button size="sm" className="h-7 text-xs" onClick={buildOneTime} disabled={building !== null}>
+                          Build one-time bill
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </>

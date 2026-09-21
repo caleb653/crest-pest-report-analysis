@@ -713,3 +713,192 @@ export function recentPeriods(
   }
   return out;
 }
+
+// ─── Pricing a visit, and putting it on an invoice ──────────────────────
+//
+// Two separate jobs that used to be tangled together:
+//   1. deciding what a visit is worth  — setVisitPrice
+//   2. deciding which bill it lands on — addVisitsToInvoice
+// Pricing sticks to the visit itself, so it survives whether or not you bill
+// it today, and reads correctly everywhere else in the portal.
+
+/**
+ * Set (or clear) what a visit costs. Writes to the visit, not to an invoice.
+ * `null` puts it back to being covered by the plan.
+ */
+export async function setVisitPrice(serviceId: string, amount: number | null): Promise<void> {
+  const { error } = await supabase
+    .from("portal_services")
+    .update(
+      amount === null
+        ? { billing_type: "plan", billing_amount: null }
+        : { billing_type: "billable", billing_amount: money(amount) }
+    )
+    .eq("id", serviceId);
+  if (error) throw error;
+}
+
+export interface OpenInvoice {
+  id: string;
+  invoice_number: string;
+  kind: string;
+  status: string;
+  period_start: string | null;
+  period_end: string | null;
+  total: number;
+  label: string;
+}
+
+/**
+ * Invoices a visit could be added to: anything still open, plus sent invoices
+ * that are currently unlocked (the database refuses a locked one, so they are
+ * left out rather than offered and then rejected).
+ */
+export async function listOpenInvoices(propertyId: string): Promise<OpenInvoice[]> {
+  const { data, error } = await supabase
+    .from("portal_invoices")
+    .select("id, invoice_number, kind, status, period_start, period_end, total, edit_unlocked_until")
+    .eq("property_id", propertyId)
+    .in("status", ["draft", "ready", "sent", "partial"])
+    .order("issue_date", { ascending: false });
+  if (error) throw error;
+
+  const fmt = (d: string | null) =>
+    d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+
+  return (data ?? [])
+    .filter((i: any) => {
+      const open = i.status === "draft" || i.status === "ready";
+      const unlocked = i.edit_unlocked_until && new Date(i.edit_unlocked_until).getTime() > Date.now();
+      return open || unlocked;
+    })
+    .map((i: any) => ({
+      id: i.id,
+      invoice_number: i.invoice_number,
+      kind: i.kind,
+      status: i.status,
+      period_start: i.period_start,
+      period_end: i.period_end,
+      total: Number(i.total),
+      label:
+        (i.period_start
+          ? `${fmt(i.period_start)} – ${fmt(
+              new Date(new Date(`${i.period_end}T00:00:00`).getTime() - 86400000).toISOString().slice(0, 10)
+            )}`
+          : "One-time") + ` · ${i.invoice_number}${i.status === "sent" ? " (sent, unlocked)" : ""}`,
+    }));
+}
+
+/**
+ * Append visits to an invoice that already exists.
+ *
+ * Lines are built the same way the builders do it, so a visit added by hand is
+ * indistinguishable from one swept up automatically. A visit already invoiced
+ * is skipped rather than billed twice.
+ */
+export async function addVisitsToInvoice(
+  invoiceId: string,
+  serviceIds: string[],
+  actor?: string
+): Promise<{ added: number; skipped: string[] }> {
+  if (!serviceIds.length) return { added: 0, skipped: [] };
+
+  const { data: invoice, error: iErr } = await supabase
+    .from("portal_invoices")
+    .select("id, property_id, portal_properties(customer_preferences)")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (iErr) throw iErr;
+  if (!invoice) throw new Error("Invoice not found.");
+
+  const [{ data: settingsRow }, { data: existing }] = await Promise.all([
+    supabase
+      .from("portal_billing_settings")
+      .select("unit_line_style")
+      .eq("property_id", invoice.property_id)
+      .maybeSingle(),
+    supabase.from("portal_invoice_lines").select("sort_order").eq("invoice_id", invoiceId),
+  ]);
+
+  const style = (settingsRow?.unit_line_style ?? "summary") as UnitLineStyle;
+  const planCfg = readUnitPlanConfig((invoice as any).portal_properties?.customer_preferences);
+
+  const { data: visits, error: vErr } = await supabase
+    .from("portal_services")
+    .select("id, service_type, service_date, unit_details, report_data, billing_type, billing_amount, po_number, invoiced_at")
+    .in("id", serviceIds)
+    .order("service_date", { ascending: true });
+  if (vErr) throw vErr;
+
+  let sort = Math.max(0, ...(existing ?? []).map((l: any) => Number(l.sort_order) || 0)) + 1;
+  const pending: Omit<DraftLine, "amount">[] = [];
+  const skipped: string[] = [];
+
+  const push = (l: Omit<DraftLine, "sort_order" | "amount">) => {
+    pending.push({ ...l, sort_order: sort++ });
+  };
+
+  for (const v of visits ?? []) {
+    if (v.invoiced_at) {
+      skipped.push(`${fmtDate(v.service_date)} — already invoiced`);
+      continue;
+    }
+
+    const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
+    const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
+    const glance = glanceUnitsFromPast(unitRows);
+    const priced = Number(v.billing_amount) || 0;
+
+    if (v.billing_type === "billable" && priced > 0) {
+      if (unitRows.length > 0) {
+        pushUnitLines(push, style === "itemized" ? "itemized" : "flat", v, ov, glance, unitRows.length, priced);
+      } else {
+        push({
+          line_type: "ad_hoc",
+          service_id: v.id,
+          description: `${v.service_type || "Service"} — ${fmtDate(v.service_date)}`,
+          detail: v.po_number ? `PO ${v.po_number}` : null,
+          service_date: v.service_date,
+          quantity: 1,
+          unit_price: money(priced),
+          taxable: false,
+          units_snapshot: null,
+          fr_entry_required: null,
+        });
+      }
+    } else if (ov.unitsOver > 0 || style === "itemized") {
+      pushUnitLines(push, style, v, ov, glance, unitRows.length);
+    } else {
+      skipped.push(`${fmtDate(v.service_date)} — covered by the plan, give it a price first`);
+    }
+  }
+
+  if (pending.length) {
+    const { error } = await supabase.from("portal_invoice_lines").insert(
+      pending.map((l) => ({
+        invoice_id: invoiceId,
+        sort_order: l.sort_order,
+        line_type: l.line_type,
+        service_id: l.service_id,
+        description: l.description,
+        detail: l.detail,
+        service_date: l.service_date,
+        quantity: l.quantity,
+        unit_price: l.unit_price,
+        taxable: l.taxable,
+        units_snapshot: (l.units_snapshot ?? null) as never,
+        fr_entry_required: l.fr_entry_required,
+      }))
+    );
+    if (error) throw error;
+
+    await supabase.from("portal_invoice_events").insert({
+      invoice_id: invoiceId,
+      event: "lines_added",
+      actor: actor ?? null,
+      detail: { visits: serviceIds.length, lines: pending.length, skipped } as never,
+    });
+  }
+
+  return { added: pending.length, skipped };
+}
