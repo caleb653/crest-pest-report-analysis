@@ -475,6 +475,20 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   return (
     <div className="space-y-5">
       {/* ─────────────── test-mode banner ─────────────── */}
+      {isAdmin && settings?.send_mode === "live" && (
+        <div className="flex items-start gap-3 rounded-lg border-2 border-emerald-300 bg-emerald-50 p-4">
+          <AlertTriangle className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+          <div className="text-sm text-emerald-900">
+            <div className="font-semibold">
+              Live billing — invoices email the customer with the PDF attached.
+            </div>
+            {settings?.billing_contact_email
+              ? <>Sends to <strong>{settings.billing_contact_email}</strong>.</>
+              : <>Add a billing email below first — a live invoice can't send without one.</>}
+          </div>
+        </div>
+      )}
+
       {isAdmin && settings?.send_mode !== "live" && (
         <div className="flex items-start gap-3 rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
           <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
