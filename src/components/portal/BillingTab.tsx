@@ -464,7 +464,7 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
 
   // Grouped by the month the period falls in (or the issue date for a one-off),
   // newest month first, so a year of billing reads at a glance.
-  const byMonth = Object.entries(
+  const byMonth = Object.entries<any[]>(
     visible.reduce((acc: Record<string, any[]>, inv) => {
       const key = periodMonthKey(inv.period_start ?? inv.issue_date);
       (acc[key] ||= []).push(inv);

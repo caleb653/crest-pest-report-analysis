@@ -63,7 +63,7 @@ export function glanceUnitsFromPast(unitDetails: any[]): GlanceUnit[] {
     .filter((u) => u.unit_number);
 }
 
-export function glanceUnitsToText(units: GlanceUnit[]): string {
+export function glanceUnitsToText(units: Pick<GlanceUnit, "unit_number" | "service">[]): string {
   return units.map((u) => `Unit ${u.unit_number} — ${u.service}`).join("\n");
 }
 
