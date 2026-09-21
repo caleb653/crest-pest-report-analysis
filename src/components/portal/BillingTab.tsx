@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X } from "lucide-react";
 import { buildDraftInvoice, saveDraftInvoice, type DraftInvoice } from "@/lib/invoiceBuilder";
+import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
 const money = (n: number | null | undefined) =>
   `$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -39,11 +40,14 @@ const STATUS_TONE: Record<string, string> = {
 
 interface Props {
   propertyId: string;
-  /** customer_preferences of the property — the plan prices live here. */
+  propertyName: string;
+  propertyAddress?: string | null;
+  clientName?: string | null;
+  /** Tenant / PM view: invoice history only, no setup, no drafts, no money buttons. */
   isAdmin?: boolean;
 }
 
-export function BillingTab({ propertyId, isAdmin = true }: Props) {
+export function BillingTab({ propertyId, propertyName, propertyAddress, clientName, isAdmin = true }: Props) {
   const [settings, setSettings] = useState<any>(null);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +61,7 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
       supabase.from("portal_billing_settings").select("*").eq("property_id", propertyId).maybeSingle(),
       supabase
         .from("portal_invoices")
-        .select("*, portal_invoice_lines(id, sort_order, line_type, description, detail, service_date, quantity, unit_price, amount, fr_entry_required)")
+        .select("*, portal_invoice_lines(id, sort_order, line_type, description, detail, service_date, quantity, unit_price, amount, fr_entry_required, units_snapshot)")
         .eq("property_id", propertyId)
         .order("issue_date", { ascending: false })
         .limit(50),
@@ -132,10 +136,13 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
     (i) => ["sent", "paid", "partial"].includes(i.status) && i.fieldroutes_status === "pending"
   );
 
+  // A PM should never see a draft or a voided invoice — only what we issued.
+  const visible = isAdmin ? invoices : invoices.filter((i) => ["sent", "paid", "partial"].includes(i.status));
+
   return (
     <div className="space-y-5">
       {/* ─────────────── test-mode banner ─────────────── */}
-      {settings?.send_mode !== "live" && (
+      {isAdmin && settings?.send_mode !== "live" && (
         <div className="flex items-start gap-3 rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
           <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div className="text-sm text-amber-900">
@@ -147,6 +154,7 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
       )}
 
       {/* ─────────────── settings ─────────────── */}
+      {isAdmin && (
       <Card className="shadow-sm border-primary/20">
         <CardHeader className="pb-3 pt-4 border-b bg-primary/[0.06]">
           <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -228,8 +236,10 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* ─────────────── build a draft ─────────────── */}
+      {isAdmin && (
       <Card className="shadow-sm">
         <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -297,9 +307,10 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* ─────────────── front desk checklist ─────────────── */}
-      {toKeyIn.length > 0 && (
+      {isAdmin && toKeyIn.length > 0 && (
         <Card className="shadow-sm border-blue-300">
           <CardHeader className="pb-3 pt-4 border-b bg-blue-50">
             <CardTitle className="text-base font-bold flex items-center gap-2">
@@ -352,40 +363,37 @@ export function BillingTab({ propertyId, isAdmin = true }: Props) {
       {/* ─────────────── invoice list ─────────────── */}
       <Card className="shadow-sm">
         <CardHeader className="pb-3 pt-4 border-b">
-          <CardTitle className="text-base font-bold">Invoices</CardTitle>
+          <CardTitle className="text-base font-bold">
+            {isAdmin ? "Invoices" : "Invoice history"}
+          </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          {invoices.length === 0 ? (
+        <CardContent className="pt-4">
+          {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">No invoices yet.</p>
           ) : (
-            <div className="divide-y">
-              {invoices.map((inv) => (
-                <div key={inv.id} className="py-3 flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold flex items-center gap-2">
-                      {inv.invoice_number}
-                      <Badge className={`text-[10px] ${STATUS_TONE[inv.status] ?? ""}`}>{inv.status}</Badge>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {inv.period_start ? `${shortDate(inv.period_start)} – ${shortDate(inv.period_end)}` : shortDate(inv.issue_date)}
-                      {inv.po_number && <> · PO {inv.po_number}</>}
-                      {Number(inv.balance) > 0 && inv.status !== "draft" && <> · {money(inv.balance)} outstanding</>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm font-bold tabular-nums">{money(inv.total)}</span>
-                    {isAdmin && inv.status !== "draft" && inv.status !== "void" && (
-                      inv.status === "paid" ? (
+            <div className="space-y-2">
+              {visible.map((inv) => (
+                <div key={inv.id} className="space-y-1">
+                  <InvoiceCard
+                    invoice={inv}
+                    property={{ name: propertyName, address: propertyAddress }}
+                    clientName={clientName}
+                    isAdmin={isAdmin}
+                    onChanged={load}
+                  />
+                  {isAdmin && inv.status !== "draft" && inv.status !== "void" && (
+                    <div className="flex justify-end">
+                      {inv.status === "paid" ? (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPaid(inv.id, false)}>
-                          <X className="w-3 h-3 mr-1" /> Not paid
+                          <X className="w-3 h-3 mr-1" /> Mark not paid
                         </Button>
                       ) : (
                         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setPaid(inv.id, true)}>
                           <Check className="w-3 h-3 mr-1" /> Mark paid
                         </Button>
-                      )
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

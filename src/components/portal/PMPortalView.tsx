@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ClipboardList, Send, Wrench, Shield, MapPin, FileText, Download, Copy,
   Eye, Clock, CheckCircle, AlertCircle, Phone, Mail, ChevronDown, Calendar, FileDown, Image as ImageIcon, Bug,
-  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat, ExternalLink, Video, Upload, X,
+  ClipboardCheck, BarChart3, Plus, Trash2, User, Repeat, ExternalLink, Video, Upload, X, Receipt,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -27,6 +27,9 @@ import { friendlyUnitStatus } from "@/lib/unitStatus";
 import { isBedBugFreeAndClear, isFreeAndClearStatus } from "@/lib/freeAndClearCertificate";
 import { FreeAndClearCertificateButton } from "@/components/portal/FreeAndClearCertificateButton";
 import { readUnitPlanConfig, formatOverageMoney } from "@/lib/unitOverage";
+import { basePriceLabel } from "@/lib/billingCadence";
+import { useBillingSettings } from "@/hooks/useBillingSettings";
+import { BillingTab } from "@/components/portal/BillingTab";
 import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import crestLogo from "@/assets/crest-logo.png";
 import {
@@ -151,6 +154,7 @@ const addDaysISO = (isoDate: string, days: number): string => {
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map" }: PMPortalViewProps) => {
+  const billingSettings = useBillingSettings(propertyId);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [property, setProperty] = useState<PropertyData | null>(null);
@@ -1465,7 +1469,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-7xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
@@ -1498,7 +1502,21 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               <span>Video Reviews</span>
             </TabsTrigger>
           )}
+          <TabsTrigger value="billing" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+            <Receipt className="w-5 h-5" />
+            <span>Invoices</span>
+          </TabsTrigger>
         </TabsList>
+
+        {/* ════════ TAB: INVOICES (read-only) ════════ */}
+        <TabsContent value="billing" className="mt-0">
+          <BillingTab
+            propertyId={propertyId}
+            propertyName={property?.name ?? ""}
+            propertyAddress={property?.address}
+            isAdmin={false}
+          />
+        </TabsContent>
 
         {/* ════════ TAB 1: PROPERTY / MAP ════════ */}
         <TabsContent value="map" className="mt-0 space-y-5">
@@ -1580,7 +1598,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                       </div>
                       <div className="rounded-lg border border-border bg-background p-2.5">
                         <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                          Base Price / Every 4 Weeks
+                          {basePriceLabel(billingSettings)}
                         </p>
                         <p className="text-base font-bold mt-0.5">
                           {cfg.base_service_price ? formatOverageMoney(cfg.base_service_price!) : "—"}

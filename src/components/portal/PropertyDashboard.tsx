@@ -49,6 +49,8 @@ import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPrevi
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney, isOverageWaived } from "@/lib/unitOverage";
+import { basePriceLabel } from "@/lib/billingCadence";
+import { useBillingSettings } from "@/hooks/useBillingSettings";
 import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
 import { STAFF_NAMES } from "@/lib/staffRoster";
 import { PesticideNotice } from "@/components/portal/PesticideNotice";
@@ -262,6 +264,7 @@ const PropertyDashboard = ({
   onCopyLink, onOpenPortal, onAddUpcomingService,
   propertyType = "apartments",
 }: Props) => {
+  const billingSettings = useBillingSettings(property?.id);
   const isHOA = propertyType === "hoa";
   // For apartments: "date" / "unit" toggle. HOA shows only "date".
   const [pastViewMode, setPastViewMode] = useState<"date" | "unit">("date");
@@ -5315,7 +5318,13 @@ const PropertyDashboard = ({
 
       {/* ══════════ TAB: BILLING ══════════ */}
       <TabsContent value="billing" className="mt-0">
-        <BillingTab propertyId={property.id} isAdmin />
+        <BillingTab
+          propertyId={property.id}
+          propertyName={property.name}
+          propertyAddress={property.address}
+          clientName={clientName}
+          isAdmin
+        />
       </TabsContent>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
@@ -5419,7 +5428,7 @@ const PropertyDashboard = ({
                 </div>)}
                 <div>
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 block">
-                    Base Price / Every 4 Weeks
+                    {basePriceLabel(billingSettings)}
                   </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
