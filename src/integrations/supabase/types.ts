@@ -185,6 +185,7 @@ export type Database = {
           send_mode: string
           tax_rate: number
           test_recipients: Json
+          unit_line_style: string
           updated_at: string
         }
         Insert: {
@@ -210,6 +211,7 @@ export type Database = {
           send_mode?: string
           tax_rate?: number
           test_recipients?: Json
+          unit_line_style?: string
           updated_at?: string
         }
         Update: {
@@ -235,6 +237,7 @@ export type Database = {
           send_mode?: string
           tax_rate?: number
           test_recipients?: Json
+          unit_line_style?: string
           updated_at?: string
         }
         Relationships: [
