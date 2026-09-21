@@ -153,10 +153,21 @@ const addDaysISO = (isoDate: string, days: number): string => {
 };
 const todayISO = () => new Date().toISOString().split("T")[0];
 
+/**
+ * Invoices are not shown to property managers yet (Caleb, 2026-09-21) — billing
+ * is still being proved out internally. The tab and everything behind it are
+ * built and working; flip this to true to show it.
+ */
+const SHOW_TENANT_BILLING = false;
+
 const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map" }: PMPortalViewProps) => {
   const billingSettings = useBillingSettings(propertyId);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
+  // A link straight to the invoices tab must not land on a blank page while
+  // billing is hidden from property managers.
+  const [activeTab, setActiveTab] = useState<string>(
+    initialTab === "billing" && !SHOW_TENANT_BILLING ? "map" : initialTab
+  );
   const [property, setProperty] = useState<PropertyData | null>(null);
   const [services, setServices] = useState<ServiceData[]>([]);
   const [scopeOfWork, setScopeOfWork] = useState<string[]>([]);
@@ -1469,7 +1480,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const content = (
     <div className="max-w-7xl mx-auto px-4 py-5">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-7 gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5">
+        <TabsList className={`w-full h-auto p-1.5 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 ${SHOW_TENANT_BILLING ? "lg:grid-cols-7" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
           <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <MapPin className="w-5 h-5" />
             <span>{isHOA ? "Community Overview" : "Site Map and Plan"}</span>
@@ -1502,21 +1513,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
               <span>Video Reviews</span>
             </TabsTrigger>
           )}
-          <TabsTrigger value="billing" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
-            <Receipt className="w-5 h-5" />
-            <span>Invoices</span>
-          </TabsTrigger>
+          {SHOW_TENANT_BILLING && (
+            <TabsTrigger value="billing" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+              <Receipt className="w-5 h-5" />
+              <span>Invoices</span>
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* ════════ TAB: INVOICES (read-only) ════════ */}
-        <TabsContent value="billing" className="mt-0">
-          <BillingTab
-            propertyId={propertyId}
-            propertyName={property?.name ?? ""}
-            propertyAddress={property?.address}
-            isAdmin={false}
-          />
-        </TabsContent>
+        {SHOW_TENANT_BILLING && (
+          <TabsContent value="billing" className="mt-0">
+            <BillingTab
+              propertyId={propertyId}
+              propertyName={property?.name ?? ""}
+              propertyAddress={property?.address}
+              isAdmin={false}
+            />
+          </TabsContent>
+        )}
 
         {/* ════════ TAB 1: PROPERTY / MAP ════════ */}
         <TabsContent value="map" className="mt-0 space-y-5">
