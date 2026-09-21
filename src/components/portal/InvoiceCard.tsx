@@ -8,7 +8,7 @@
  * always recoverable.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -182,23 +182,37 @@ export function InvoiceCard({
     }
   };
 
-  const refreshFromPlan = async () => {
+  const refreshFromPlan = async (silent = false) => {
     setRefreshing(true);
     try {
       const n = await refreshDraftFromPlan(invoice.id, "admin");
-      toast({
-        title: n ? "Updated from the plan" : "Nothing to update",
-        description: n
-          ? `${n} unit line${n === 1 ? "" : "s"} recalculated against the current included-units and per-unit price.`
-          : "No unit lines on this invoice.",
-      });
-      onChanged();
+      if (!silent) {
+        toast({
+          title: n ? "Updated from the plan" : "Nothing to update",
+          description: n
+            ? `${n} unit line${n === 1 ? "" : "s"} recalculated against the current included-units and per-unit price.`
+            : "No unit lines on this invoice.",
+        });
+      }
+      if (n) onChanged();
     } catch (e: any) {
-      toast({ title: "Could not refresh", description: e?.message ?? String(e), variant: "destructive" });
+      if (!silent) toast({ title: "Could not refresh", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setRefreshing(false);
     }
   };
+
+  // Drafts auto-refresh against the latest visit/service edits whenever the card is opened,
+  // so the numbers always match what was last edited without anyone pressing a button.
+  const [autoRefreshed, setAutoRefreshed] = useState(false);
+  useEffect(() => {
+    if (open && !autoRefreshed && isAdmin && !isSent && lines.some((l: any) => l.line_type === "units")) {
+      setAutoRefreshed(true);
+      refreshFromPlan(true);
+    }
+    if (!open) setAutoRefreshed(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   /** Issue it to the portal without emailing anyone — it stops being a draft
       and the customer can see it straight away. */
@@ -522,10 +536,11 @@ export function InvoiceCard({
                 variant="outline"
                 size="sm"
                 className="h-7 text-xs"
-                onClick={refreshFromPlan}
+                onClick={() => refreshFromPlan(false)}
                 disabled={refreshing}
+                title="Recalculate unit lines from the current visit data"
               >
-                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update from plan
+                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update based on service edits
               </Button>
             )}
 
