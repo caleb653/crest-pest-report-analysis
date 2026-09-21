@@ -525,6 +525,7 @@ export function InvoiceCard({
                 onClick={refreshFromPlan}
                 disabled={refreshing}
                 title="Recalculate unit lines from the current visit data"
+              >
                 <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update based on service edits
               </Button>
             )}
