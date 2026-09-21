@@ -967,3 +967,77 @@ export async function addVisitsToInvoice(
 
   return { added: pending.length, skipped };
 }
+
+/**
+ * Recompute a DRAFT's unit snapshots and overage from the property's current
+ * plan.
+ *
+ * Lines are frozen on purpose so a sent invoice can never change under the
+ * customer — but a draft that has gone nowhere should follow the plan. Change
+ * included_units from 0 to 4 and the draft still claiming "0 included" is just
+ * stale, not evidence of anything.
+ *
+ * Refuses anything already sent: those are corrected by unlocking and editing,
+ * which leaves a revision behind.
+ */
+export async function refreshDraftFromPlan(invoiceId: string, actor?: string): Promise<number> {
+  const { data: invoice, error: iErr } = await supabase
+    .from("portal_invoices")
+    .select("id, status, property_id, portal_properties(customer_preferences)")
+    .eq("id", invoiceId)
+    .maybeSingle();
+  if (iErr) throw iErr;
+  if (!invoice) throw new Error("Invoice not found.");
+  if (!["draft", "ready"].includes(invoice.status)) {
+    throw new Error("Only a draft can be refreshed. Unlock a sent invoice and edit it instead.");
+  }
+
+  const planCfg = readUnitPlanConfig((invoice as any).portal_properties?.customer_preferences);
+
+  const { data: lines, error: lErr } = await supabase
+    .from("portal_invoice_lines")
+    .select("id, line_type, service_id, quantity, unit_price, units_snapshot")
+    .eq("invoice_id", invoiceId)
+    .eq("line_type", "units");
+  if (lErr) throw lErr;
+
+  let updated = 0;
+
+  for (const l of lines ?? []) {
+    if (!l.service_id) continue;
+
+    const { data: v } = await supabase
+      .from("portal_services")
+      .select("id, unit_details, report_data, billing_type, billing_amount")
+      .eq("id", l.service_id)
+      .maybeSingle();
+    if (!v) continue;
+
+    const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
+    const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
+    const glance = glanceUnitsFromPast(unitRows);
+    const snapshot = { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived };
+
+    // A line priced by hand keeps its price — only the unit facts refresh.
+    const handPriced = v.billing_type === "billable" && Number(v.billing_amount) > 0;
+    const patch: Record<string, unknown> = { units_snapshot: snapshot as never };
+    if (!handPriced) {
+      patch.quantity = ov.unitsOver;
+      patch.unit_price = ov.waived ? 0 : ov.pricePerUnit;
+    }
+
+    const { error } = await supabase.from("portal_invoice_lines").update(patch).eq("id", l.id);
+    if (!error) updated++;
+  }
+
+  if (updated) {
+    await supabase.from("portal_invoice_events").insert({
+      invoice_id: invoiceId,
+      event: "refreshed_from_plan",
+      actor: actor ?? null,
+      detail: { lines: updated, included_units: planCfg.included_units } as never,
+    });
+  }
+
+  return updated;
+}

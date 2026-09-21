@@ -16,8 +16,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban } from "lucide-react";
+import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
+import { refreshDraftFromPlan } from "@/lib/invoiceBuilder";
 
 const EDIT_PASSWORD = "18444";
 
@@ -64,6 +65,7 @@ export function InvoiceCard({
   const [confirmRemove, setConfirmRemove] = useState<null | "void" | "delete">(null);
   const [removePw, setRemovePw] = useState("");
   const [removing, setRemoving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const lines: any[] = [...(invoice.portal_invoice_lines ?? [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -177,6 +179,24 @@ export function InvoiceCard({
       setRemoving(false);
       setConfirmRemove(null);
       setRemovePw("");
+    }
+  };
+
+  const refreshFromPlan = async () => {
+    setRefreshing(true);
+    try {
+      const n = await refreshDraftFromPlan(invoice.id, "admin");
+      toast({
+        title: n ? "Updated from the plan" : "Nothing to update",
+        description: n
+          ? `${n} unit line${n === 1 ? "" : "s"} recalculated against the current included-units and per-unit price.`
+          : "No unit lines on this invoice.",
+      });
+      onChanged();
+    } catch (e: any) {
+      toast({ title: "Could not refresh", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -469,6 +489,18 @@ export function InvoiceCard({
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
               <Download className="w-3 h-3 mr-1" /> Download PDF
             </Button>
+
+            {isAdmin && !isSent && lines.some((l: any) => l.line_type === "units") && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={refreshFromPlan}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update from plan
+              </Button>
+            )}
 
             {isAdmin && !confirmRemove && (
               <>
