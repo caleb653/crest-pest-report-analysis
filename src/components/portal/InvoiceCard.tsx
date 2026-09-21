@@ -440,6 +440,14 @@ export function InvoiceCard({
             <div className="space-y-3 border-t pt-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Invoice number</Label>
+                  <Input
+                    value={invNo}
+                    onChange={(e) => setInvNo(e.target.value)}
+                    placeholder="CR-2026-01000"
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs font-semibold">PO number (optional)</Label>
                   <Input value={po} onChange={(e) => setPo(e.target.value)} placeholder="Leave blank if not needed" />
                 </div>
