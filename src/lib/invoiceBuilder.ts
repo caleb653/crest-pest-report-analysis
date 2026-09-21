@@ -1029,7 +1029,16 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
     // A line priced by hand keeps its price — only the unit facts refresh.
     const handPriced = v.billing_type === "billable" && Number(v.billing_amount) > 0;
     const patch: Record<string, unknown> = { units_snapshot: snapshot as never };
-    if (!handPriced) {
+
+    // The printed unit list lives in `detail` too — rebuild it under whatever
+    // heading the line already had so the text matches the snapshot.
+    const oldDetail = String((l as any).detail ?? "");
+    if (oldDetail.includes("Unit ")) {
+      const head = oldDetail.split("\n")[0];
+      patch.detail = glance.length ? `${head}\n${glanceUnitsToText(glance)}` : head;
+    }
+
+    if (l.line_type === "units" && !handPriced) {
       patch.quantity = ov.unitsOver;
       patch.unit_price = ov.waived ? 0 : ov.pricePerUnit;
     }
