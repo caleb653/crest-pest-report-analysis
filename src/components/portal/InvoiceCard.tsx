@@ -200,6 +200,27 @@ export function InvoiceCard({
     }
   };
 
+  /** Issue it to the portal without emailing anyone — it stops being a draft
+      and the customer can see it straight away. */
+  const [issuing, setIssuing] = useState(false);
+  const issueWithoutEmail = async () => {
+    setIssuing(true);
+    try {
+      const { error } = await supabase.rpc("portal_invoice_mark_sent", {
+        p_invoice: invoice.id,
+        p_to: [] as never,
+        p_actor: "admin",
+      });
+      if (error) throw error;
+      toast({ title: "Invoice issued", description: "It is now visible in the customer portal. No email was sent." });
+      onChanged();
+    } catch (e: any) {
+      toast({ title: "Could not issue it", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setIssuing(false);
+    }
+  };
+
   const unlock = async () => {
     if (pw.trim() !== EDIT_PASSWORD) {
       toast({ title: "Wrong password", variant: "destructive" });
@@ -489,6 +510,12 @@ export function InvoiceCard({
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
               <Download className="w-3 h-3 mr-1" /> Download PDF
             </Button>
+
+            {isAdmin && !isSent && (
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={issueWithoutEmail} disabled={issuing}>
+                <Check className="w-3 h-3 mr-1" /> {issuing ? "Issuing…" : "Issue to portal (no email)"}
+              </Button>
+            )}
 
             {isAdmin && !isSent && lines.some((l: any) => l.line_type === "units") && (
               <Button
