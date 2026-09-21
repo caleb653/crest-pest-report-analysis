@@ -30,6 +30,9 @@ import {
   setVisitPrice,
   listOpenInvoices,
   addVisitsToInvoice,
+  firstCompletedServiceDate,
+  periodMonthKey,
+  monthLabel,
   type DraftInvoice,
   type BillableVisit,
   type CustomLine,
@@ -238,6 +241,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const [openInvoices, setOpenInvoices] = useState<OpenInvoice[]>([]);
   const [destination, setDestination] = useState<string>("new_one_time");
 
+  // The day the first service was completed — where a cycle naturally starts.
+  const [firstService, setFirstService] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: s }, { data: inv }] = await Promise.all([
@@ -253,9 +259,14 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     setInvoices(inv ?? []);
     if (isAdmin) {
       try {
-        const [b, o] = await Promise.all([listBillableVisits(propertyId), listOpenInvoices(propertyId)]);
+        const [b, o, f] = await Promise.all([
+          listBillableVisits(propertyId),
+          listOpenInvoices(propertyId),
+          firstCompletedServiceDate(propertyId),
+        ]);
         setBillable(b);
         setOpenInvoices(o);
+        setFirstService(f);
       } catch {
         setBillable([]);
         setOpenInvoices([]);
@@ -267,6 +278,16 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   useEffect(() => {
     load();
   }, [load]);
+
+  // A recurring property with no cycle start gets one from its first completed
+  // service — billing then runs from the day service actually began, instead of
+  // opening with a stub part-month. Adjustable afterwards like everything else.
+  useEffect(() => {
+    if (!isAdmin || !settings || settings.billing_mode !== "cadence") return;
+    if (settings.cadence_anchor || !firstService) return;
+    saveSetting({ cadence_anchor: firstService });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, settings?.billing_mode, settings?.cadence_anchor, firstService]);
 
   // Default to the current period once the cycle is known; leave a manual pick alone.
   useEffect(() => {
@@ -420,6 +441,16 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   // A PM should never see a draft or a voided invoice — only what we issued.
   const visible = isAdmin ? invoices : invoices.filter((i) => ["sent", "paid", "partial"].includes(i.status));
 
+  // Grouped by the month the period falls in (or the issue date for a one-off),
+  // newest month first, so a year of billing reads at a glance.
+  const byMonth = Object.entries(
+    visible.reduce((acc: Record<string, any[]>, inv) => {
+      const key = periodMonthKey(inv.period_start ?? inv.issue_date);
+      (acc[key] ||= []).push(inv);
+      return acc;
+    }, {})
+  ).sort((a, b) => b[0].localeCompare(a[0]));
+
   return (
     <div className="space-y-5">
       {/* ─────────────── test-mode banner ─────────────── */}
@@ -471,17 +502,27 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
             </div>
           )}
 
-          {settings?.billing_mode === "cadence" && settings?.cadence === "4_weeks" && (
+          {settings?.billing_mode === "cadence" && (
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">First period started</Label>
+              <Label className="text-xs font-semibold">Cycle starts</Label>
               <Input
+                key={settings?.cadence_anchor ?? "none"}
                 type="date"
                 defaultValue={settings?.cadence_anchor ?? ""}
-                onBlur={(e) => e.target.value !== (settings?.cadence_anchor ?? "") && saveSetting({ cadence_anchor: e.target.value || null })}
+                onBlur={(e) =>
+                  e.target.value !== (settings?.cadence_anchor ?? "") &&
+                  saveSetting({ cadence_anchor: e.target.value || null })
+                }
               />
-              {!settings?.cadence_anchor && (
-                <p className="text-[11px] text-amber-700 font-medium">Required — a 4-week cycle needs a start date.</p>
-              )}
+              <p className="text-[11px] text-muted-foreground">
+                {settings?.cadence_anchor
+                  ? firstService === settings.cadence_anchor
+                    ? "Set from the first completed service. Change it if you want."
+                    : "Set by hand."
+                  : settings?.cadence === "4_weeks"
+                  ? "Required — a 4-week cycle needs a start date."
+                  : "Blank bills on plain calendar months."}
+              </p>
             </div>
           )}
 
@@ -888,8 +929,20 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
           {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">No invoices yet.</p>
           ) : (
-            <div className="space-y-2">
-              {visible.map((inv) => (
+            <div className="space-y-5">
+              {byMonth.map(([key, group]) => (
+                <div key={key}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      {monthLabel(key)}
+                    </h4>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {group.length} invoice{group.length === 1 ? "" : "s"} ·{" "}
+                      {money(group.reduce((t, i) => t + Number(i.total || 0), 0))}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+              {group.map((inv) => (
                 <div key={inv.id} className="space-y-1">
                   <InvoiceCard
                     invoice={inv}
@@ -911,6 +964,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                       )}
                     </div>
                   )}
+                </div>
+              ))}
+                  </div>
                 </div>
               ))}
             </div>

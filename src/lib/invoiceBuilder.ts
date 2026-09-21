@@ -92,28 +92,69 @@ export function billingPeriod(
   if (settings.billing_mode !== "cadence" || !settings.cadence) return null;
 
   const iso = (d: Date) => d.toISOString().slice(0, 10);
+  const anchor = settings.cadence_anchor ? new Date(`${settings.cadence_anchor}T00:00:00`) : null;
 
-  if (settings.cadence === "monthly") {
-    const s = new Date(asOf.getFullYear(), asOf.getMonth(), 1);
-    return { start: iso(s), end: iso(new Date(asOf.getFullYear(), asOf.getMonth() + 1, 1)) };
+  // 4-week cycles have no calendar meaning without a starting point.
+  if (settings.cadence === "4_weeks") {
+    if (!anchor) {
+      throw new Error(
+        "This property is billed every 4 weeks but the cycle has no start date. Set one in billing settings — it normally starts at the first completed service."
+      );
+    }
+    const dayMs = 86400000;
+    const periods = Math.floor((asOf.getTime() - anchor.getTime()) / (28 * dayMs));
+    const start = new Date(anchor.getTime() + periods * 28 * dayMs);
+    return { start: iso(start), end: iso(new Date(start.getTime() + 28 * dayMs)) };
   }
 
+  const step = settings.cadence === "quarterly" ? 3 : 1;
+
+  // Anchored: the cycle runs from the day the first service landed, so a
+  // property that started mid-month is billed the 12th-to-the-12th rather than
+  // getting a stub first invoice.
+  if (anchor) {
+    const months =
+      (asOf.getFullYear() - anchor.getFullYear()) * 12 + (asOf.getMonth() - anchor.getMonth());
+    let n = Math.floor(months / step);
+    if (addMonths(anchor, n * step) > asOf) n -= 1;
+    const start = addMonths(anchor, n * step);
+    return { start: iso(start), end: iso(addMonths(anchor, (n + 1) * step)) };
+  }
+
+  // No anchor: plain calendar months / quarters.
   if (settings.cadence === "quarterly") {
     const q = Math.floor(asOf.getMonth() / 3) * 3;
     return { start: iso(new Date(asOf.getFullYear(), q, 1)), end: iso(new Date(asOf.getFullYear(), q + 3, 1)) };
   }
+  return {
+    start: iso(new Date(asOf.getFullYear(), asOf.getMonth(), 1)),
+    end: iso(new Date(asOf.getFullYear(), asOf.getMonth() + 1, 1)),
+  };
+}
 
-  // 4_weeks
-  if (!settings.cadence_anchor) {
-    throw new Error(
-      "This property is billed every 4 weeks but has no first-period start date set. Set it in billing settings before invoicing."
-    );
-  }
-  const anchor = new Date(`${settings.cadence_anchor}T00:00:00`);
-  const dayMs = 86400000;
-  const periods = Math.floor((asOf.getTime() - anchor.getTime()) / (28 * dayMs));
-  const start = new Date(anchor.getTime() + periods * 28 * dayMs);
-  return { start: iso(start), end: iso(new Date(start.getTime() + 28 * dayMs)) };
+/** Add months keeping the day of the month, clamping short months (Jan 31 -> Feb 28). */
+function addMonths(d: Date, n: number): Date {
+  const day = d.getDate();
+  const out = new Date(d.getFullYear(), d.getMonth() + n, 1);
+  out.setDate(Math.min(day, new Date(out.getFullYear(), out.getMonth() + 1, 0).getDate()));
+  return out;
+}
+
+/**
+ * The day the billing cycle should start: the first completed service at this
+ * property. Returns null when nothing has been serviced yet.
+ */
+export async function firstCompletedServiceDate(propertyId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("portal_services")
+    .select("service_date")
+    .eq("property_id", propertyId)
+    .eq("status", "completed")
+    .not("service_date", "is", null)
+    .order("service_date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.service_date as string | null) ?? null;
 }
 
 
@@ -680,39 +721,57 @@ export function recentPeriods(
   if (settings.billing_mode !== "cadence" || !settings.cadence) return [];
 
   const out: { start: string; end: string; label: string }[] = [];
+  const anchored = !!settings.cadence_anchor;
+
   const label = (start: string, end: string) => {
     const s = new Date(`${start}T00:00:00`);
     const e = new Date(new Date(`${end}T00:00:00`).getTime() - 86400000);
-    const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-    const sameYear = s.getFullYear() === new Date().getFullYear();
-    const yr = sameYear ? "" : ` ${e.getFullYear()}`;
-    if (settings.cadence === "monthly") {
-      return s.toLocaleDateString(undefined, { month: "long", year: sameYear ? undefined : "numeric" });
+    const thisYear = new Date().getFullYear();
+    // A cycle that sits inside one calendar month reads best as just the month.
+    if (!anchored && settings.cadence === "monthly") {
+      return s.toLocaleDateString(undefined, {
+        month: "long",
+        ...(s.getFullYear() === thisYear ? {} : { year: "numeric" }),
+      });
     }
-    return `${s.toLocaleDateString(undefined, opts)} – ${e.toLocaleDateString(undefined, opts)}${yr}`;
+    const o: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+    const yr = e.getFullYear() === thisYear ? "" : ` ${e.getFullYear()}`;
+    return `${s.toLocaleDateString(undefined, o)} – ${e.toLocaleDateString(undefined, o)}${yr}`;
   };
 
   try {
+    let cursor = asOf;
     for (let i = 0; i < count; i++) {
-      let cursor: Date;
-      if (settings.cadence === "monthly") {
-        cursor = new Date(asOf.getFullYear(), asOf.getMonth() - i, 15);
-      } else if (settings.cadence === "quarterly") {
-        cursor = new Date(asOf.getFullYear(), asOf.getMonth() - i * 3, 15);
-      } else {
-        cursor = new Date(asOf.getTime() - i * 28 * 86400000);
-      }
       const p = billingPeriod(settings, cursor);
       if (!p) break;
-      // A 4-week cadence walks back past its anchor eventually; stop there.
       if (settings.cadence_anchor && p.start < settings.cadence_anchor) break;
       if (!out.some((x) => x.start === p.start)) out.push({ ...p, label: label(p.start, p.end) });
+      // Step back one day before this period began to land in the previous one.
+      cursor = new Date(new Date(`${p.start}T00:00:00`).getTime() - 86400000);
+      if (settings.cadence_anchor && cursor < new Date(`${settings.cadence_anchor}T00:00:00`)) break;
     }
   } catch {
     return [];
   }
   return out;
 }
+
+/** The calendar month a period belongs to — how the invoice list is grouped. */
+export function periodMonthKey(d: string | null | undefined): string {
+  if (!d) return "";
+  return String(d).slice(0, 7);
+}
+
+export function monthLabel(key: string): string {
+  if (!key) return "No period";
+  const [y, m] = key.split("-").map(Number);
+  const d = new Date(y, (m || 1) - 1, 1);
+  return d.toLocaleDateString(undefined, {
+    month: "long",
+    ...(y === new Date().getFullYear() ? {} : { year: "numeric" }),
+  });
+}
+
 
 // ─── Pricing a visit, and putting it on an invoice ──────────────────────
 //
