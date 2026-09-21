@@ -175,7 +175,7 @@ export function InvoiceCard({
       .update({
         po_number: po.trim() || null,
         customer_note: note.trim() || null,
-        reference_numbers: refs.filter((r) => r.label.trim() && r.value.trim()),
+        reference_numbers: refs.filter((r) => r.label.trim() && r.value.trim()) as never,
       })
       .eq("id", invoice.id);
     setSaving(false);
