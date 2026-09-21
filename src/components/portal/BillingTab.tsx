@@ -252,7 +252,7 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       supabase.from("portal_billing_settings").select("*").eq("property_id", propertyId).maybeSingle(),
       supabase
         .from("portal_invoices")
-        .select("*, portal_invoice_lines(id, sort_order, line_type, description, detail, service_date, quantity, unit_price, amount, fr_entry_required, units_snapshot)")
+        .select("*, portal_invoice_lines(id, sort_order, line_type, service_id, description, detail, service_date, quantity, unit_price, amount, fr_entry_required, units_snapshot)")
         .eq("property_id", propertyId)
         .order("issue_date", { ascending: false })
         .limit(50),
