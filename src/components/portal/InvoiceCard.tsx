@@ -520,7 +520,7 @@ export function InvoiceCard({
               </Button>
             )}
 
-            {isAdmin && !isSent && lines.some((l: any) => l.line_type === "units") && (
+            {isAdmin && (canEdit || !isSent) && lines.some((l: any) => l.line_type === "units") && (
               <Button
                 variant="default"
                 size="sm"
