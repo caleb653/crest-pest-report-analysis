@@ -1001,15 +1001,18 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
 
   const { data: lines, error: lErr } = await supabase
     .from("portal_invoice_lines")
-    .select("id, line_type, service_id, quantity, unit_price, units_snapshot")
-    .eq("invoice_id", invoiceId)
-    .eq("line_type", "units");
+    .select("id, line_type, service_id, quantity, unit_price, units_snapshot, detail")
+    .eq("invoice_id", invoiceId);
   if (lErr) throw lErr;
 
   let updated = 0;
 
   for (const l of lines ?? []) {
+    // Any line tied to a visit refreshes its unit facts — including the ad-hoc
+    // / flat visit lines, which used to be skipped and went stale.
     if (!l.service_id) continue;
+    if (l.line_type !== "units" && !(l as any).units_snapshot) continue;
+
 
     const { data: v } = await supabase
       .from("portal_services")
@@ -1026,7 +1029,16 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
     // A line priced by hand keeps its price — only the unit facts refresh.
     const handPriced = v.billing_type === "billable" && Number(v.billing_amount) > 0;
     const patch: Record<string, unknown> = { units_snapshot: snapshot as never };
-    if (!handPriced) {
+
+    // The printed unit list lives in `detail` too — rebuild it under whatever
+    // heading the line already had so the text matches the snapshot.
+    const oldDetail = String((l as any).detail ?? "");
+    if (oldDetail.includes("Unit ")) {
+      const head = oldDetail.split("\n")[0];
+      patch.detail = glance.length ? `${head}\n${glanceUnitsToText(glance)}` : head;
+    }
+
+    if (l.line_type === "units" && !handPriced) {
       patch.quantity = ov.unitsOver;
       patch.unit_price = ov.waived ? 0 : ov.pricePerUnit;
     }
