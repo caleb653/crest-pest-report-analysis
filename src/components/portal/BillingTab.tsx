@@ -19,8 +19,18 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X } from "lucide-react";
-import { buildDraftInvoice, saveDraftInvoice, type DraftInvoice } from "@/lib/invoiceBuilder";
+import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X, Repeat, Plus, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  buildDraftInvoice,
+  buildOneTimeInvoice,
+  saveDraftInvoice,
+  listBillableVisits,
+  billingPeriod,
+  type DraftInvoice,
+  type BillableVisit,
+  type CustomLine,
+} from "@/lib/invoiceBuilder";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
 /** jsonb email list <-> the comma-separated text the inputs show. */
@@ -43,6 +53,65 @@ const STATUS_TONE: Record<string, string> = {
   void: "bg-neutral-200 text-neutral-600 line-through",
 };
 
+
+/** Shared preview of a built draft — identical for a recurring and a one-time bill. */
+function DraftPreview({
+  draft,
+  onDiscard,
+  onSave,
+  saving,
+}: {
+  draft: DraftInvoice;
+  onDiscard: () => void;
+  onSave: () => void;
+  saving: boolean;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        {draft.period_start ? `${shortDate(draft.period_start)} – ${shortDate(draft.period_end)}` : "One-time bill"}
+        {draft.po_number && <> · PO {draft.po_number}</>}
+      </div>
+
+      {draft.warnings.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-1">
+          {draft.warnings.map((w, i) => (
+            <div key={i} className="text-xs text-amber-900 flex gap-2">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              {w}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="border rounded-lg divide-y">
+        {draft.lines.map((l, i) => (
+          <div key={i} className="p-3 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <div className="text-sm font-medium">{l.description}</div>
+              {l.detail && <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{l.detail}</div>}
+            </div>
+            <div className="text-sm font-semibold tabular-nums shrink-0">{money(l.amount)}</div>
+          </div>
+        ))}
+        {draft.lines.length === 0 && (
+          <div className="p-4 text-sm text-muted-foreground text-center">Nothing to bill.</div>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div className="text-base font-bold">Total {money(draft.subtotal)}</div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onDiscard}>Discard</Button>
+          <Button size="sm" onClick={onSave} disabled={saving || draft.lines.length === 0}>
+            {saving ? "Saving…" : "Save as draft"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface Props {
   propertyId: string;
   propertyName: string;
@@ -57,8 +126,13 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<DraftInvoice | null>(null);
-  const [building, setBuilding] = useState(false);
+  const [building, setBuilding] = useState<"cadence" | "one_time" | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // One-time bill: what the user has picked, and the free-typed lines.
+  const [billable, setBillable] = useState<BillableVisit[]>([]);
+  const [pickedVisits, setPickedVisits] = useState<string[]>([]);
+  const [customLines, setCustomLines] = useState<CustomLine[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -73,8 +147,15 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     ]);
     setSettings(s ?? null);
     setInvoices(inv ?? []);
+    if (isAdmin) {
+      try {
+        setBillable(await listBillableVisits(propertyId));
+      } catch {
+        setBillable([]);
+      }
+    }
     setLoading(false);
-  }, [propertyId]);
+  }, [propertyId, isAdmin]);
 
   useEffect(() => {
     load();
@@ -91,17 +172,27 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     setSettings((prev: any) => ({ ...(prev ?? { property_id: propertyId }), ...patch }));
   };
 
-  const build = async () => {
-    setBuilding(true);
+  const buildCadence = async () => {
+    setBuilding("cadence");
     try {
-      const d = await buildDraftInvoice(propertyId);
-      setDraft(d);
+      setDraft(await buildDraftInvoice(propertyId));
     } catch (e: any) {
       // A 4-week property with no anchor lands here by design — it refuses to
       // guess the window rather than bill the wrong visits.
-      toast({ title: "Can't build an invoice yet", description: e?.message ?? String(e), variant: "destructive" });
+      toast({ title: "Can't build this period yet", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
-      setBuilding(false);
+      setBuilding(null);
+    }
+  };
+
+  const buildOneTime = async () => {
+    setBuilding("one_time");
+    try {
+      setDraft(await buildOneTimeInvoice(propertyId, { serviceIds: pickedVisits, customLines }));
+    } catch (e: any) {
+      toast({ title: "Can't build this bill", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setBuilding(null);
     }
   };
 
@@ -112,6 +203,8 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       await saveDraftInvoice(draft);
       toast({ title: "Draft saved", description: "Nothing has been sent — review it, then send a test." });
       setDraft(null);
+      setPickedVisits([]);
+      setCustomLines([]);
       await load();
     } catch (e: any) {
       toast({ title: "Could not save draft", description: e?.message ?? String(e), variant: "destructive" });
@@ -140,6 +233,19 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const toKeyIn = invoices.filter(
     (i) => ["sent", "paid", "partial"].includes(i.status) && i.fieldroutes_status === "pending"
   );
+
+  // The window a cadence invoice would cover right now. A 4-week property with
+  // no anchor throws rather than guessing, so the label just stays empty.
+  let periodLabel = "";
+  try {
+    const p = settings ? billingPeriod(settings as any) : null;
+    if (p) {
+      const endShown = new Date(new Date(`${p.end}T00:00:00`).getTime() - 86400000).toISOString().slice(0, 10);
+      periodLabel = `${shortDate(p.start)} – ${shortDate(endShown)}`;
+    }
+  } catch {
+    periodLabel = "";
+  }
 
   // A PM should never see a draft or a voided invoice — only what we issued.
   const visible = isAdmin ? invoices : invoices.filter((i) => ["sent", "paid", "partial"].includes(i.status));
@@ -173,9 +279,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
             <Select value={settings?.billing_mode ?? "per_service"} onValueChange={(v) => saveSetting({ billing_mode: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="cadence">On a cycle</SelectItem>
+                <SelectItem value="cadence">On a recurring cycle</SelectItem>
                 <SelectItem value="per_service">After each service</SelectItem>
-                <SelectItem value="manual">Manually only</SelectItem>
+                <SelectItem value="manual">One-time bills only</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -317,75 +423,151 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       </Card>
       )}
 
-      {/* ─────────────── build a draft ─────────────── */}
-      {isAdmin && (
-      <Card className="shadow-sm">
-        <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
-          <CardTitle className="text-base font-bold flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
-            Build an invoice
-          </CardTitle>
-          <Button size="sm" onClick={build} disabled={building}>
-            {building ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build from completed visits"}
-          </Button>
-        </CardHeader>
-        <CardContent className="pt-4">
-          {!draft && (
-            <p className="text-sm text-muted-foreground">
-              Pulls every completed visit in this billing period that hasn't been invoiced yet, with the units treated on each.
-            </p>
-          )}
-
-          {draft && (
-            <div className="space-y-4">
-              <div className="text-sm text-muted-foreground">
-                {draft.period_start
-                  ? `${shortDate(draft.period_start)} – ${shortDate(draft.period_end)}`
-                  : "All uninvoiced visits"}
-                {draft.po_number && <> · PO {draft.po_number}</>}
-              </div>
-
-              {draft.warnings.length > 0 && (
-                <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-1">
-                  {draft.warnings.map((w, i) => (
-                    <div key={i} className="text-xs text-amber-900 flex gap-2">
-                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      {w}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="border rounded-lg divide-y">
-                {draft.lines.map((l, i) => (
-                  <div key={i} className="p-3 flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium">{l.description}</div>
-                      {l.detail && (
-                        <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{l.detail}</div>
-                      )}
-                    </div>
-                    <div className="text-sm font-semibold tabular-nums shrink-0">{money(l.amount)}</div>
-                  </div>
-                ))}
-                {draft.lines.length === 0 && (
-                  <div className="p-4 text-sm text-muted-foreground text-center">Nothing to bill in this period.</div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="text-base font-bold">Total {money(draft.subtotal)}</div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setDraft(null)}>Discard</Button>
-                  <Button size="sm" onClick={save} disabled={saving || draft.lines.length === 0}>
-                    {saving ? "Saving…" : "Save as draft"}
-                  </Button>
-                </div>
-              </div>
+      {/* ═══════════ RECURRING BILLING ═══════════ */}
+      {isAdmin && settings?.billing_mode === "cadence" && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <Repeat className="w-5 h-5 text-primary" />
+                Recurring bill
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                {periodLabel
+                  ? `This period: ${periodLabel}`
+                  : "Set the billing cycle above to open a period."}
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <Button size="sm" onClick={buildCadence} disabled={building !== null}>
+              {building === "cadence" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build this period"}
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {draft?.kind === "cadence" ? (
+              <DraftPreview draft={draft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Sweeps up every completed visit in this billing period that hasn't been invoiced — the recurring
+                charge plus any units over the plan.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ═══════════ ONE-TIME BILL ═══════════ */}
+      {isAdmin && (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                One-time bill
+              </CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">
+                A standalone charge — no cycle, no recurring line.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={settings?.billing_mode === "cadence" ? "outline" : "default"}
+              onClick={buildOneTime}
+              disabled={building !== null || (pickedVisits.length === 0 && customLines.length === 0)}
+            >
+              {building === "one_time" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build this bill"}
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4 space-y-4">
+            {draft?.kind === "one_time" ? (
+              <DraftPreview draft={draft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
+            ) : (
+              <>
+                <div>
+                  <Label className="text-xs font-semibold">Visits not yet invoiced</Label>
+                  {billable.length === 0 ? (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Every completed visit here has already been invoiced.
+                    </p>
+                  ) : (
+                    <div className="mt-2 border rounded-lg divide-y max-h-64 overflow-y-auto">
+                      {billable.map((v) => (
+                        <label key={v.id} className="flex items-center gap-3 p-2.5 cursor-pointer hover:bg-muted/40">
+                          <Checkbox
+                            checked={pickedVisits.includes(v.id)}
+                            onCheckedChange={(c) =>
+                              setPickedVisits((prev) => (c ? [...prev, v.id] : prev.filter((x) => x !== v.id)))
+                            }
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-medium">
+                              <span className="text-muted-foreground mr-2">{shortDate(v.service_date)}</span>
+                              {v.service_type}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {v.units_total > 0 && <>{v.units_total} units treated</>}
+                              {v.units_over > 0 && <> · {v.units_over} over the plan</>}
+                              {v.billing_type && v.billing_type !== "plan" && <> · {v.billing_type.replace("_", " ")}</>}
+                            </div>
+                          </div>
+                          <span className="text-sm font-semibold tabular-nums shrink-0">
+                            {money(v.suggested_amount)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold">Anything else to charge</Label>
+                  <div className="mt-2 space-y-2">
+                    {customLines.map((c, i) => (
+                      <div key={i} className="flex gap-2">
+                        <Input
+                          className="flex-1"
+                          placeholder="Description"
+                          value={c.description}
+                          onChange={(e) =>
+                            setCustomLines(customLines.map((x, j) => (j === i ? { ...x, description: e.target.value } : x)))
+                          }
+                        />
+                        <Input
+                          className="w-20"
+                          type="number"
+                          placeholder="Qty"
+                          value={c.quantity}
+                          onChange={(e) =>
+                            setCustomLines(customLines.map((x, j) => (j === i ? { ...x, quantity: Number(e.target.value) || 1 } : x)))
+                          }
+                        />
+                        <Input
+                          className="w-28"
+                          type="number"
+                          placeholder="Price"
+                          value={c.unit_price}
+                          onChange={(e) =>
+                            setCustomLines(customLines.map((x, j) => (j === i ? { ...x, unit_price: Number(e.target.value) || 0 } : x)))
+                          }
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => setCustomLines(customLines.filter((_, j) => j !== i))}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setCustomLines([...customLines, { description: "", quantity: 1, unit_price: 0 }])}
+                    >
+                      <Plus className="w-3 h-3 mr-1" /> Add a line
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* ─────────────── front desk checklist ─────────────── */}

@@ -202,6 +202,9 @@ export function InvoiceCard({
                 <LockOpen className="w-3 h-3" /> unlocked
               </Badge>
             )}
+            {invoice.kind === "one_time" && (
+              <Badge variant="outline" className="text-[10px]">one-time</Badge>
+            )}
             {invoice.revision > 1 && (
               <span className="text-[10px] text-muted-foreground">rev {invoice.revision}</span>
             )}

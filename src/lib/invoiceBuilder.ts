@@ -54,8 +54,12 @@ export interface DraftLine {
   amount: number;
 }
 
+export type InvoiceKind = "cadence" | "one_time";
+
 export interface DraftInvoice {
   property_id: string;
+  /** cadence = this billing period; one_time = a standalone bill. */
+  kind: InvoiceKind;
   period_start: string | null;
   period_end: string | null;
   po_number: string | null;
@@ -313,6 +317,7 @@ export async function buildDraftInvoice(
 
   return {
     property_id: propertyId,
+    kind: "cadence",
     period_start: periodStart,
     period_end: periodEnd,
     po_number: visitPo || settings.default_po_number || null,
@@ -340,6 +345,7 @@ export async function saveDraftInvoice(draft: DraftInvoice, actor?: string): Pro
     .insert({
       property_id: draft.property_id,
       client_id: property?.client_id ?? null,
+      kind: draft.kind,
       period_start: draft.period_start,
       period_end: draft.period_end,
       po_number: draft.po_number,
@@ -378,4 +384,185 @@ export async function saveDraftInvoice(draft: DraftInvoice, actor?: string): Pro
   });
 
   return invoice.id;
+}
+
+
+/** A visit that could go on a one-time bill. */
+export interface BillableVisit {
+  id: string;
+  service_date: string | null;
+  service_type: string;
+  billing_type: string | null;
+  suggested_amount: number;
+  units_total: number;
+  units_over: number;
+}
+
+/**
+ * Completed visits at this property that have never been invoiced — the menu a
+ * one-time bill is built from. Unlike the cadence builder this ignores billing
+ * periods entirely: a one-off is billed because someone decided to bill it.
+ */
+export async function listBillableVisits(propertyId: string): Promise<BillableVisit[]> {
+  const { data: property } = await supabase
+    .from("portal_properties")
+    .select("customer_preferences")
+    .eq("id", propertyId)
+    .maybeSingle();
+
+  const { data, error } = await supabase
+    .from("portal_services")
+    .select("id, service_type, service_date, unit_details, report_data, billing_type, billing_amount")
+    .eq("property_id", propertyId)
+    .eq("status", "completed")
+    .is("invoiced_at", null)
+    .order("service_date", { ascending: false });
+  if (error) throw error;
+
+  const planCfg = readUnitPlanConfig(property?.customer_preferences);
+
+  return (data ?? []).map((v) => {
+    const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
+    const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
+    return {
+      id: v.id,
+      service_date: v.service_date,
+      service_type: v.service_type || "Service",
+      billing_type: v.billing_type,
+      // What we'd charge if this visit were billed on its own: its own price
+      // when it is one-off work, otherwise just the units over the plan.
+      suggested_amount:
+        v.billing_type === "billable" ? Number(v.billing_amount || 0) : money(ov.billableCost),
+      units_total: unitRows.length,
+      units_over: ov.unitsOver,
+    };
+  });
+}
+
+export interface CustomLine {
+  description: string;
+  detail?: string;
+  quantity: number;
+  unit_price: number;
+}
+
+/**
+ * Build a standalone bill from chosen visits and/or free-typed lines.
+ *
+ * No period, no cadence, no base-price line — a one-time bill charges exactly
+ * what is put on it, so it can never quietly duplicate the recurring invoice.
+ */
+export async function buildOneTimeInvoice(
+  propertyId: string,
+  opts: { serviceIds?: string[]; customLines?: CustomLine[] } = {}
+): Promise<DraftInvoice> {
+  const { data: property, error: pErr } = await supabase
+    .from("portal_properties")
+    .select("id, customer_preferences")
+    .eq("id", propertyId)
+    .maybeSingle();
+  if (pErr) throw pErr;
+  if (!property) throw new Error("Property not found.");
+
+  const { data: settingsRow } = await supabase
+    .from("portal_billing_settings")
+    .select("tax_rate, default_po_number")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  const planCfg = readUnitPlanConfig(property.customer_preferences);
+  const warnings: string[] = [];
+  const lines: DraftLine[] = [];
+  const serviceIds: string[] = [];
+  let sort = 0;
+
+  const push = (l: Omit<DraftLine, "sort_order" | "amount">) =>
+    lines.push({ ...l, sort_order: sort++, amount: money(l.quantity * l.unit_price) });
+
+  if (opts.serviceIds?.length) {
+    const { data: visits, error } = await supabase
+      .from("portal_services")
+      .select("id, service_type, service_date, unit_details, report_data, billing_type, billing_amount, po_number, invoiced_at")
+      .in("id", opts.serviceIds)
+      .order("service_date", { ascending: true });
+    if (error) throw error;
+
+    for (const v of visits ?? []) {
+      if (v.invoiced_at) {
+        warnings.push(`${fmtDate(v.service_date)} — ${v.service_type} has already been invoiced and was skipped.`);
+        continue;
+      }
+      serviceIds.push(v.id);
+
+      const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
+      const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
+      const glance = glanceUnitsFromPast(unitRows);
+
+      if (v.billing_type === "billable") {
+        const amount = Number(v.billing_amount || 0);
+        if (amount <= 0) warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: no amount set.`);
+        push({
+          line_type: "ad_hoc",
+          service_id: v.id,
+          description: `${v.service_type} — ${fmtDate(v.service_date)}`,
+          detail: v.po_number ? `PO ${v.po_number}` : null,
+          service_date: v.service_date,
+          quantity: 1,
+          unit_price: money(amount),
+          taxable: false,
+          units_snapshot: glance.length ? { units: glance, total: unitRows.length, included: ov.includedUnits } : null,
+          fr_entry_required: null,
+        });
+      } else if (ov.unitsOver > 0) {
+        push({
+          line_type: "units",
+          service_id: v.id,
+          description: `Additional units treated — ${fmtDate(v.service_date)}`,
+          detail: `${unitRows.length} units treated, ${ov.includedUnits} included` +
+            (glance.length ? `\n${glanceUnitsToText(glance)}` : ""),
+          service_date: v.service_date,
+          quantity: ov.unitsOver,
+          unit_price: ov.waived ? 0 : ov.pricePerUnit,
+          taxable: false,
+          units_snapshot: { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived },
+          fr_entry_required: null,
+        });
+      } else {
+        warnings.push(
+          `${fmtDate(v.service_date)} — ${v.service_type}: nothing chargeable (covered by the plan). Add a custom line if you meant to bill it.`
+        );
+      }
+    }
+  }
+
+  for (const c of opts.customLines ?? []) {
+    if (!c.description.trim()) continue;
+    push({
+      line_type: "custom",
+      service_id: null,
+      description: c.description.trim(),
+      detail: c.detail?.trim() || null,
+      service_date: null,
+      quantity: Number(c.quantity) || 1,
+      unit_price: money(Number(c.unit_price) || 0),
+      taxable: false,
+      units_snapshot: null,
+      fr_entry_required: null,
+    });
+  }
+
+  if (lines.length === 0) warnings.push("Nothing on this bill yet — pick a visit or add a line.");
+
+  return {
+    property_id: propertyId,
+    kind: "one_time",
+    period_start: null,
+    period_end: null,
+    po_number: settingsRow?.default_po_number ?? null,
+    tax_rate: Number(settingsRow?.tax_rate || 0),
+    lines,
+    service_ids: serviceIds,
+    warnings,
+    subtotal: money(lines.reduce((s, l) => s + l.amount, 0)),
+  };
 }
