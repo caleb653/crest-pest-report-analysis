@@ -1001,9 +1001,8 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
 
   const { data: lines, error: lErr } = await supabase
     .from("portal_invoice_lines")
-    .select("id, line_type, service_id, quantity, unit_price, units_snapshot")
-    .eq("invoice_id", invoiceId)
-    .eq("line_type", "units");
+    .select("id, line_type, service_id, quantity, unit_price, units_snapshot, detail")
+    .eq("invoice_id", invoiceId);
   if (lErr) throw lErr;
 
   let updated = 0;
