@@ -454,7 +454,12 @@ export interface CustomLine {
  */
 export async function buildOneTimeInvoice(
   propertyId: string,
-  opts: { serviceIds?: string[]; customLines?: CustomLine[] } = {}
+  opts: {
+    serviceIds?: string[];
+    customLines?: CustomLine[];
+    /** Per-visit price typed by hand, overriding whatever the plan implies. */
+    amountOverrides?: Record<string, number>;
+  } = {}
 ): Promise<DraftInvoice> {
   const { data: property, error: pErr } = await supabase
     .from("portal_properties")
@@ -498,7 +503,22 @@ export async function buildOneTimeInvoice(
       const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
       const glance = glanceUnitsFromPast(unitRows);
 
-      if (v.billing_type === "billable") {
+      const override = opts.amountOverrides?.[v.id];
+      if (override !== undefined && override !== null) {
+        // A hand-typed price wins over everything the plan would have said.
+        push({
+          line_type: "ad_hoc",
+          service_id: v.id,
+          description: `${v.service_type} — ${fmtDate(v.service_date)}`,
+          detail: v.po_number ? `PO ${v.po_number}` : null,
+          service_date: v.service_date,
+          quantity: 1,
+          unit_price: money(override),
+          taxable: false,
+          units_snapshot: glance.length ? { units: glance, total: unitRows.length, included: ov.includedUnits } : null,
+          fr_entry_required: null,
+        });
+      } else if (v.billing_type === "billable") {
         const amount = Number(v.billing_amount || 0);
         if (amount <= 0) warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: no amount set.`);
         push({
@@ -565,4 +585,51 @@ export async function buildOneTimeInvoice(
     warnings,
     subtotal: money(lines.reduce((s, l) => s + l.amount, 0)),
   };
+}
+
+/**
+ * The last `count` billing periods, newest first — so a recurring bill can be
+ * built for a period that has already closed, not just the current one.
+ * Returns [] when the property isn't on a cycle (or a 4-week one has no anchor).
+ */
+export function recentPeriods(
+  settings: Pick<BillingSettings, "billing_mode" | "cadence" | "cadence_anchor">,
+  count = 12,
+  asOf: Date = new Date()
+): { start: string; end: string; label: string }[] {
+  if (settings.billing_mode !== "cadence" || !settings.cadence) return [];
+
+  const out: { start: string; end: string; label: string }[] = [];
+  const label = (start: string, end: string) => {
+    const s = new Date(`${start}T00:00:00`);
+    const e = new Date(new Date(`${end}T00:00:00`).getTime() - 86400000);
+    const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+    const sameYear = s.getFullYear() === new Date().getFullYear();
+    const yr = sameYear ? "" : ` ${e.getFullYear()}`;
+    if (settings.cadence === "monthly") {
+      return s.toLocaleDateString(undefined, { month: "long", year: sameYear ? undefined : "numeric" });
+    }
+    return `${s.toLocaleDateString(undefined, opts)} – ${e.toLocaleDateString(undefined, opts)}${yr}`;
+  };
+
+  try {
+    for (let i = 0; i < count; i++) {
+      let cursor: Date;
+      if (settings.cadence === "monthly") {
+        cursor = new Date(asOf.getFullYear(), asOf.getMonth() - i, 15);
+      } else if (settings.cadence === "quarterly") {
+        cursor = new Date(asOf.getFullYear(), asOf.getMonth() - i * 3, 15);
+      } else {
+        cursor = new Date(asOf.getTime() - i * 28 * 86400000);
+      }
+      const p = billingPeriod(settings, cursor);
+      if (!p) break;
+      // A 4-week cadence walks back past its anchor eventually; stop there.
+      if (settings.cadence_anchor && p.start < settings.cadence_anchor) break;
+      if (!out.some((x) => x.start === p.start)) out.push({ ...p, label: label(p.start, p.end) });
+    }
+  } catch {
+    return [];
+  }
+  return out;
 }

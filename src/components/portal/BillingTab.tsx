@@ -19,14 +19,14 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X, Repeat, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X, Repeat, Plus, Trash2, Pencil } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   buildDraftInvoice,
   buildOneTimeInvoice,
   saveDraftInvoice,
   listBillableVisits,
-  billingPeriod,
+  recentPeriods,
   type DraftInvoice,
   type BillableVisit,
   type CustomLine,
@@ -37,6 +37,8 @@ import { InvoiceCard } from "@/components/portal/InvoiceCard";
 const emailList = (v: unknown): string => (Array.isArray(v) ? v : []).map((e: any) => (typeof e === "string" ? e : e?.email)).filter(Boolean).join(", ");
 const parseEmails = (s: string): string[] =>
   s.split(/[,;\s]+/).map((e) => e.trim()).filter((e) => e.includes("@"));
+
+const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
 
 const money = (n: number | null | undefined) =>
   `$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -54,23 +56,70 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 
-/** Shared preview of a built draft — identical for a recurring and a one-time bill. */
+/**
+ * A built draft, fully editable before it is saved.
+ *
+ * Everything the builder worked out is a starting point, never a verdict: any
+ * line can be reworded, repriced, removed, and new lines typed from scratch —
+ * on a recurring bill exactly as on a one-time one.
+ */
 function DraftPreview({
   draft,
+  onChange,
   onDiscard,
   onSave,
   saving,
 }: {
   draft: DraftInvoice;
+  onChange: (d: DraftInvoice) => void;
   onDiscard: () => void;
   onSave: () => void;
   saving: boolean;
 }) {
+  const [editing, setEditing] = useState(false);
+
+  const recalc = (lines: DraftInvoice["lines"]): DraftInvoice => ({
+    ...draft,
+    lines: lines.map((l, i) => ({ ...l, sort_order: i, amount: round2(l.quantity * l.unit_price) })),
+    subtotal: round2(lines.reduce((s, l) => s + l.quantity * l.unit_price, 0)),
+  });
+
+  const patch = (i: number, p: Partial<DraftInvoice["lines"][number]>) =>
+    onChange(recalc(draft.lines.map((l, j) => (j === i ? { ...l, ...p } : l))));
+
+  const remove = (i: number) => onChange(recalc(draft.lines.filter((_, j) => j !== i)));
+
+  const add = () =>
+    onChange(
+      recalc([
+        ...draft.lines,
+        {
+          sort_order: draft.lines.length,
+          line_type: "custom",
+          service_id: null,
+          description: "",
+          detail: null,
+          service_date: null,
+          quantity: 1,
+          unit_price: 0,
+          taxable: false,
+          units_snapshot: null,
+          fr_entry_required: null,
+          amount: 0,
+        },
+      ])
+    );
+
   return (
     <div className="space-y-4">
-      <div className="text-sm text-muted-foreground">
-        {draft.period_start ? `${shortDate(draft.period_start)} – ${shortDate(draft.period_end)}` : "One-time bill"}
-        {draft.po_number && <> · PO {draft.po_number}</>}
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm text-muted-foreground">
+          {draft.period_start ? `${shortDate(draft.period_start)} – ${shortDate(draft.period_end)}` : "One-time bill"}
+          {draft.po_number && <> · PO {draft.po_number}</>}
+        </div>
+        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditing((e) => !e)}>
+          <Pencil className="w-3 h-3 mr-1" /> {editing ? "Done editing" : "Edit lines"}
+        </Button>
       </div>
 
       {draft.warnings.length > 0 && (
@@ -85,19 +134,59 @@ function DraftPreview({
       )}
 
       <div className="border rounded-lg divide-y">
-        {draft.lines.map((l, i) => (
-          <div key={i} className="p-3 flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="text-sm font-medium">{l.description}</div>
-              {l.detail && <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{l.detail}</div>}
+        {draft.lines.map((l, i) =>
+          editing ? (
+            <div key={i} className="p-2.5 space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  placeholder="Description"
+                  value={l.description}
+                  onChange={(e) => patch(i, { description: e.target.value })}
+                />
+                <Input
+                  className="w-20"
+                  type="number"
+                  value={l.quantity}
+                  onChange={(e) => patch(i, { quantity: Number(e.target.value) || 0 })}
+                />
+                <Input
+                  className="w-28"
+                  type="number"
+                  value={l.unit_price}
+                  onChange={(e) => patch(i, { unit_price: Number(e.target.value) || 0 })}
+                />
+                <div className="w-24 flex items-center justify-end text-sm font-semibold tabular-nums">
+                  {money(l.amount)}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => remove(i)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+              {l.detail && (
+                <div className="text-[11px] text-muted-foreground whitespace-pre-line pl-1">{l.detail}</div>
+              )}
             </div>
-            <div className="text-sm font-semibold tabular-nums shrink-0">{money(l.amount)}</div>
-          </div>
-        ))}
+          ) : (
+            <div key={i} className="p-3 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="text-sm font-medium">{l.description || <span className="text-muted-foreground italic">Untitled line</span>}</div>
+                {l.detail && <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{l.detail}</div>}
+              </div>
+              <div className="text-sm font-semibold tabular-nums shrink-0">{money(l.amount)}</div>
+            </div>
+          )
+        )}
         {draft.lines.length === 0 && (
-          <div className="p-4 text-sm text-muted-foreground text-center">Nothing to bill.</div>
+          <div className="p-4 text-sm text-muted-foreground text-center">Nothing on this bill yet.</div>
         )}
       </div>
+
+      {editing && (
+        <Button variant="outline" size="sm" className="h-7 text-xs" onClick={add}>
+          <Plus className="w-3 h-3 mr-1" /> Add a line
+        </Button>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="text-base font-bold">Total {money(draft.subtotal)}</div>
@@ -134,6 +223,13 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const [pickedVisits, setPickedVisits] = useState<string[]>([]);
   const [customLines, setCustomLines] = useState<CustomLine[]>([]);
 
+  // Which billing period the recurring bill is being built for. Defaults to the
+  // current one; prior periods are selectable so a missed month can be caught up.
+  const [pickedPeriod, setPickedPeriod] = useState<string>("");
+
+  // Hand-typed price for a picked visit, keyed by service id.
+  const [visitAmounts, setVisitAmounts] = useState<Record<string, number>>({});
+
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: s }, { data: inv }] = await Promise.all([
@@ -161,6 +257,13 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     load();
   }, [load]);
 
+  // Default to the current period once the cycle is known; leave a manual pick alone.
+  useEffect(() => {
+    if (pickedPeriod || !settings) return;
+    const p = recentPeriods(settings as any, 1)[0];
+    if (p) setPickedPeriod(p.start);
+  }, [settings, pickedPeriod]);
+
   const saveSetting = async (patch: Record<string, unknown>) => {
     const { error } = await supabase
       .from("portal_billing_settings")
@@ -175,7 +278,8 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const buildCadence = async () => {
     setBuilding("cadence");
     try {
-      setDraft(await buildDraftInvoice(propertyId));
+      const p = periods.find((x) => x.start === pickedPeriod) ?? periods[0];
+      setDraft(await buildDraftInvoice(propertyId, p ? { periodStart: p.start, periodEnd: p.end } : {}));
     } catch (e: any) {
       // A 4-week property with no anchor lands here by design — it refuses to
       // guess the window rather than bill the wrong visits.
@@ -188,7 +292,13 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const buildOneTime = async () => {
     setBuilding("one_time");
     try {
-      setDraft(await buildOneTimeInvoice(propertyId, { serviceIds: pickedVisits, customLines }));
+      setDraft(
+        await buildOneTimeInvoice(propertyId, {
+          serviceIds: pickedVisits,
+          customLines,
+          amountOverrides: visitAmounts,
+        })
+      );
     } catch (e: any) {
       toast({ title: "Can't build this bill", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
@@ -205,6 +315,7 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       setDraft(null);
       setPickedVisits([]);
       setCustomLines([]);
+      setVisitAmounts({});
       await load();
     } catch (e: any) {
       toast({ title: "Could not save draft", description: e?.message ?? String(e), variant: "destructive" });
@@ -234,18 +345,14 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     (i) => ["sent", "paid", "partial"].includes(i.status) && i.fieldroutes_status === "pending"
   );
 
-  // The window a cadence invoice would cover right now. A 4-week property with
-  // no anchor throws rather than guessing, so the label just stays empty.
-  let periodLabel = "";
-  try {
-    const p = settings ? billingPeriod(settings as any) : null;
-    if (p) {
-      const endShown = new Date(new Date(`${p.end}T00:00:00`).getTime() - 86400000).toISOString().slice(0, 10);
-      periodLabel = `${shortDate(p.start)} – ${shortDate(endShown)}`;
-    }
-  } catch {
-    periodLabel = "";
-  }
+  // Selectable billing periods, newest first. A 4-week property with no anchor
+  // yields none rather than guessing a window.
+  const periods = settings ? recentPeriods(settings as any, 12) : [];
+
+  // Periods that already carry an invoice, so the picker can say so.
+  const invoicedPeriods = new Set(
+    invoices.filter((i) => i.kind !== "one_time" && i.period_start).map((i) => String(i.period_start))
+  );
 
   // A PM should never see a draft or a voided invoice — only what we issued.
   const visible = isAdmin ? invoices : invoices.filter((i) => ["sent", "paid", "partial"].includes(i.status));
@@ -433,23 +540,47 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                 Recurring bill
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">
-                {periodLabel
-                  ? `This period: ${periodLabel}`
+                {periods.length
+                  ? "Any period, not just the current one — catch up on ones you missed."
                   : "Set the billing cycle above to open a period."}
               </p>
             </div>
-            <Button size="sm" onClick={buildCadence} disabled={building !== null}>
-              {building === "cadence" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build this period"}
-            </Button>
+            <div className="flex items-center gap-2">
+              {periods.length > 0 && (
+                <Select value={pickedPeriod} onValueChange={setPickedPeriod}>
+                  <SelectTrigger className="w-52 h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {periods.map((p, i) => (
+                      <SelectItem key={p.start} value={p.start}>
+                        {p.label}
+                        {i === 0 ? " (current)" : ""}
+                        {invoicedPeriods.has(p.start) ? " · billed" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Button size="sm" onClick={buildCadence} disabled={building !== null || !periods.length}>
+                {building === "cadence" ? <RefreshCw className="w-4 h-4 animate-spin" /> : "Build"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="pt-4">
             {draft?.kind === "cadence" ? (
-              <DraftPreview draft={draft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
+              <DraftPreview draft={draft} onChange={setDraft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
             ) : (
-              <p className="text-sm text-muted-foreground">
-                Sweeps up every completed visit in this billing period that hasn't been invoiced — the recurring
-                charge plus any units over the plan.
-              </p>
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Sweeps up every completed visit in the chosen period that hasn't been invoiced — the recurring
+                  charge plus any units over the plan. Everything stays editable before you save.
+                </p>
+                {invoicedPeriods.has(pickedPeriod) && (
+                  <div className="mt-3 flex gap-2 text-xs text-amber-900 bg-amber-50 border border-amber-300 rounded-lg p-2.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    This period already has an invoice. Building again only picks up visits that were never billed.
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -479,11 +610,14 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
           </CardHeader>
           <CardContent className="pt-4 space-y-4">
             {draft?.kind === "one_time" ? (
-              <DraftPreview draft={draft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
+              <DraftPreview draft={draft} onChange={setDraft} onDiscard={() => setDraft(null)} onSave={save} saving={saving} />
             ) : (
               <>
                 <div>
                   <Label className="text-xs font-semibold">Visits not yet invoiced</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Tick one to price it — a visit covered by the plan bills at $0 unless you type an amount.
+                  </p>
                   {billable.length === 0 ? (
                     <p className="text-sm text-muted-foreground mt-2">
                       Every completed visit here has already been invoiced.
@@ -509,9 +643,22 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                               {v.billing_type && v.billing_type !== "plan" && <> · {v.billing_type.replace("_", " ")}</>}
                             </div>
                           </div>
-                          <span className="text-sm font-semibold tabular-nums shrink-0">
-                            {money(v.suggested_amount)}
-                          </span>
+                          <div className="shrink-0 w-32 flex justify-end" onClick={(e) => e.preventDefault()}>
+                            {pickedVisits.includes(v.id) ? (
+                              <Input
+                                className="h-8 text-right"
+                                type="number"
+                                value={visitAmounts[v.id] ?? v.suggested_amount}
+                                onChange={(e) =>
+                                  setVisitAmounts({ ...visitAmounts, [v.id]: Number(e.target.value) || 0 })
+                                }
+                              />
+                            ) : v.suggested_amount > 0 ? (
+                              <span className="text-sm font-semibold tabular-nums">{money(v.suggested_amount)}</span>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">Covered by plan</span>
+                            )}
+                          </div>
                         </label>
                       ))}
                     </div>

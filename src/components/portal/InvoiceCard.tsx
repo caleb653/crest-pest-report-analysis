@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send } from "lucide-react";
+import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
 
 const EDIT_PASSWORD = "18444";
@@ -60,6 +60,7 @@ export function InvoiceCard({
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [confirmSend, setConfirmSend] = useState(false);
+  const [editingLines, setEditingLines] = useState(false);
 
   const lines: any[] = [...(invoice.portal_invoice_lines ?? [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -168,6 +169,43 @@ export function InvoiceCard({
     onChanged();
   };
 
+  /** Lines stay editable on a draft, and on a sent invoice once it is unlocked
+      — the database enforces that, this just exposes it. */
+  const patchLine = async (id: string, patch: Record<string, unknown>) => {
+    const { error } = await supabase.from("portal_invoice_lines").update(patch).eq("id", id);
+    if (error) {
+      toast({ title: "Could not save that line", description: error.message, variant: "destructive" });
+      return;
+    }
+    onChanged();
+  };
+
+  const removeLine = async (id: string) => {
+    const { error } = await supabase.from("portal_invoice_lines").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Could not remove that line", description: error.message, variant: "destructive" });
+      return;
+    }
+    onChanged();
+  };
+
+  const addLine = async () => {
+    const { error } = await supabase.from("portal_invoice_lines").insert({
+      invoice_id: invoice.id,
+      sort_order: lines.length,
+      line_type: "custom",
+      description: "New line",
+      quantity: 1,
+      unit_price: 0,
+      taxable: false,
+    });
+    if (error) {
+      toast({ title: "Could not add a line", description: error.message, variant: "destructive" });
+      return;
+    }
+    onChanged();
+  };
+
   const saveHeader = async () => {
     setSaving(true);
     const { error } = await supabase
@@ -226,6 +264,54 @@ export function InvoiceCard({
       {open && (
         <div className="border-t bg-muted/20 p-3 space-y-4">
           {/* ── lines, with every unit we treated ── */}
+          {canEdit && (
+            <div className="flex justify-end">
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingLines((e) => !e)}>
+                <Pencil className="w-3 h-3 mr-1" /> {editingLines ? "Done editing" : "Edit lines"}
+              </Button>
+            </div>
+          )}
+
+          {canEdit && editingLines ? (
+            <div className="space-y-2">
+              {lines.map((l) => (
+                <div key={l.id} className="bg-background rounded-md border p-2.5 flex gap-2">
+                  <Input
+                    className="flex-1 h-8"
+                    defaultValue={l.description}
+                    onBlur={(e) => e.target.value !== l.description && patchLine(l.id, { description: e.target.value })}
+                  />
+                  <Input
+                    className="w-20 h-8"
+                    type="number"
+                    defaultValue={l.quantity}
+                    onBlur={(e) =>
+                      Number(e.target.value) !== Number(l.quantity) &&
+                      patchLine(l.id, { quantity: Number(e.target.value) || 0 })
+                    }
+                  />
+                  <Input
+                    className="w-28 h-8"
+                    type="number"
+                    defaultValue={l.unit_price}
+                    onBlur={(e) =>
+                      Number(e.target.value) !== Number(l.unit_price) &&
+                      patchLine(l.id, { unit_price: Number(e.target.value) || 0 })
+                    }
+                  />
+                  <div className="w-24 flex items-center justify-end text-sm font-semibold tabular-nums">
+                    {money(l.amount)}
+                  </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeLine(l.id)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={addLine}>
+                <Plus className="w-3 h-3 mr-1" /> Add a line
+              </Button>
+            </div>
+          ) : (
           <div className="space-y-2">
             {lines.map((l) => {
               const units = l.units_snapshot?.units ?? [];
@@ -262,6 +348,8 @@ export function InvoiceCard({
               );
             })}
           </div>
+
+          )}
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Total</span>
