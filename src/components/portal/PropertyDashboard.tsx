@@ -16,7 +16,7 @@ import {
   CheckCircle, Wrench, Image, ExternalLink, MapPin, Bug,
   Copy, FileText, Send, X, Flag, ClipboardList, CalendarPlus, Link2, FileDown, FlaskConical, User,
   BarChart3, Phone, Mail, Repeat, Video, Upload, Eye, Download, Shield, Search, Clock, AlertTriangle,
-  GripVertical
+  GripVertical, Receipt
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
@@ -25,6 +25,7 @@ import { QuarterlyVideoTab } from "@/components/portal/QuarterlyVideoTab";
 import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
+import { BillingTab } from "@/components/portal/BillingTab";
 import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
@@ -5268,11 +5269,12 @@ const PropertyDashboard = ({
             <SelectItem value="map">{isHOA ? "Community Overview" : "Site Map and Plan"}</SelectItem>
             {!isHOA && <SelectItem value="prep">Prep / Auth / Docs ({prepSheets.length})</SelectItem>}
             <SelectItem value="survey">Survey ({surveys.length})</SelectItem>
+            <SelectItem value="billing">Billing</SelectItem>
             {isHOA && <SelectItem value="quarterly">Video Reviews</SelectItem>}
           </SelectContent>
         </Select>
       </div>
-      <TabsList className={`hidden sm:grid w-full h-auto p-1.5 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-6" : "lg:grid-cols-6"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
+      <TabsList className={`hidden sm:grid w-full h-auto p-1.5 sm:grid-cols-3 ${isHOA ? "lg:grid-cols-7" : "lg:grid-cols-7"} gap-1.5 bg-muted/50 border-2 border-primary/60 rounded-xl shadow-sm mb-5`}>
         <TabsTrigger value="map" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
           <MapPin className="w-5 h-5" />
           <span>Site Map and Plan</span>
@@ -5299,6 +5301,10 @@ const PropertyDashboard = ({
           <BarChart3 className="w-5 h-5" />
           <span>Survey <Badge variant="secondary" className="ml-1 text-xs h-4">{surveys.length}</Badge></span>
         </TabsTrigger>
+        <TabsTrigger value="billing" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
+          <Receipt className="w-5 h-5" />
+          <span>Billing</span>
+        </TabsTrigger>
         {isHOA && (
           <TabsTrigger value="quarterly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md font-semibold text-sm py-3 rounded-lg transition-all flex flex-col items-center gap-1">
             <Video className="w-5 h-5" />
@@ -5306,6 +5312,11 @@ const PropertyDashboard = ({
           </TabsTrigger>
         )}
       </TabsList>
+
+      {/* ══════════ TAB: BILLING ══════════ */}
+      <TabsContent value="billing" className="mt-0">
+        <BillingTab propertyId={property.id} isAdmin />
+      </TabsContent>
 
       {/* ══════════ TAB 1: MAP & PREFERENCES ══════════ */}
       <TabsContent value="map" className="mt-0 space-y-5">
