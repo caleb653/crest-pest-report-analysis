@@ -1041,3 +1041,81 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
 
   return updated;
 }
+
+/**
+ * Create the invoices that history implies but nobody ever built.
+ *
+ * Walks back through the property's billing periods and, for each one holding
+ * completed visits that have never been invoiced, saves a draft. Properties
+ * that aren't on a cycle get one bill per uninvoiced visit instead, which is
+ * what "billed after each service" means.
+ *
+ * Everything lands as a DRAFT — history is reconstructed for review, never
+ * sent, and every line stays editable.
+ */
+export async function backfillInvoices(
+  propertyId: string,
+  opts: { maxPeriods?: number; actor?: string } = {}
+): Promise<{ created: number; periods: string[]; skipped: string[] }> {
+  const { data: settingsRow } = await supabase
+    .from("portal_billing_settings")
+    .select("*")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+
+  const settings = (settingsRow ?? {
+    billing_mode: "per_service",
+    cadence: null,
+    cadence_anchor: null,
+  }) as BillingSettings;
+
+  const created: string[] = [];
+  const skipped: string[] = [];
+
+  // Which periods already have an invoice, so a rerun doesn't duplicate them.
+  const { data: existing } = await supabase
+    .from("portal_invoices")
+    .select("period_start, kind, status")
+    .eq("property_id", propertyId);
+  const taken = new Set(
+    (existing ?? [])
+      .filter((i: any) => i.kind !== "one_time" && i.period_start && i.status !== "void")
+      .map((i: any) => String(i.period_start))
+  );
+
+  if (settings.billing_mode === "cadence") {
+    const periods = recentPeriods(settings, opts.maxPeriods ?? 24);
+    // Oldest first, so the reconstructed history reads in order.
+    for (const p of [...periods].reverse()) {
+      if (taken.has(p.start)) {
+        skipped.push(`${p.label} — already has an invoice`);
+        continue;
+      }
+      const draft = await buildDraftInvoice(propertyId, { periodStart: p.start, periodEnd: p.end });
+      if (draft.lines.length === 0) {
+        skipped.push(`${p.label} — nothing to bill`);
+        continue;
+      }
+      await saveDraftInvoice(draft, opts.actor);
+      created.push(p.label);
+    }
+    return { created: created.length, periods: created, skipped };
+  }
+
+  // Not on a cycle: one bill per visit that was never invoiced.
+  const visits = await listBillableVisits(propertyId);
+  for (const v of visits) {
+    const draft = await buildOneTimeInvoice(propertyId, {
+      serviceIds: [v.id],
+      markAsPaidService: false,
+    });
+    if (draft.lines.length === 0) {
+      skipped.push(`${v.service_date ?? "undated"} — nothing chargeable`);
+      continue;
+    }
+    await saveDraftInvoice(draft, opts.actor);
+    created.push(`${v.service_date ?? "undated"} — ${v.service_type}`);
+  }
+
+  return { created: created.length, periods: created, skipped };
+}

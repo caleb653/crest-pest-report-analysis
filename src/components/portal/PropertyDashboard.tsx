@@ -26,6 +26,7 @@ import { ProductUsageEditor } from "@/components/portal/ProductUsageEditor";
 import { ProductUsageSummary, ProductUsageTotalsCard } from "@/components/portal/ProductUsageSummary";
 import { VisitPdfButton } from "@/components/portal/VisitPdfButton";
 import { BillingTab } from "@/components/portal/BillingTab";
+import { ServiceBillingControls } from "@/components/portal/ServiceBillingControls";
 import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import PlanRichEditor from "@/components/portal/PlanRichEditor";
 import { UnitProductPicker } from "@/components/portal/UnitProductPicker";
@@ -3950,6 +3951,18 @@ const PropertyDashboard = ({
             </div>
           );
         })()}
+
+        {/* Billing for this visit — recurring or one-time paid, its price, and
+            whether the units beyond the plan get charged. Past services only:
+            an upcoming visit hasn't happened, so there is nothing to bill yet. */}
+        {!isUpcoming && !isProjected && s.status === "completed" && (
+          <ServiceBillingControls
+            service={s}
+            overage={overage}
+            invoiced={!!s.invoiced_at}
+            onChanged={onRefresh}
+          />
+        )}
 
         {/* Overage banner — only shows when this service exceeds the property's included-unit allowance */}
         {overage.hasOverage && !overage.waived && (

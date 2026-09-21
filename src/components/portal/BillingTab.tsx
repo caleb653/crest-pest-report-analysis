@@ -33,6 +33,7 @@ import {
   firstCompletedServiceDate,
   periodMonthKey,
   monthLabel,
+  backfillInvoices,
   type DraftInvoice,
   type BillableVisit,
   type CustomLine,
@@ -243,6 +244,7 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
 
   // The day the first service was completed — where a cycle naturally starts.
   const [firstService, setFirstService] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -318,6 +320,25 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       toast({ title: "Can't build this period yet", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setBuilding(null);
+    }
+  };
+
+  /** Reconstruct the invoices history implies but nobody ever built. */
+  const runBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const { created, periods, skipped } = await backfillInvoices(propertyId, { actor: "admin" });
+      toast({
+        title: created ? `${created} draft invoice${created === 1 ? "" : "s"} created` : "Nothing to create",
+        description: created
+          ? `${periods.join(", ")}. All drafts — review them before sending anything.`
+          : skipped.slice(0, 3).join(" · ") || "Every period is already invoiced.",
+      });
+      await load();
+    } catch (e: any) {
+      toast({ title: "Could not build the history", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setBackfilling(false);
     }
   };
 
@@ -920,10 +941,19 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
 
       {/* ─────────────── invoice list ─────────────── */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-3 pt-4 border-b">
+        <CardHeader className="pb-3 pt-4 border-b flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base font-bold">
             {isAdmin ? "Invoices" : "Invoice history"}
           </CardTitle>
+          {isAdmin && (
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={runBackfill} disabled={backfilling}>
+              {backfilling ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <>Build missing invoices</>
+              )}
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="pt-4">
           {visible.length === 0 ? (
