@@ -32,8 +32,10 @@ export type InitialPestPdfOptions = {
   customerPreferenceNotes?: string;
 };
 
-const PAGE_W = 842;
-const PAGE_H = 595;
+/** Landscape for the full customer report; the lean site-map report is portrait
+ *  so the 3:4 map can fill the page. Set once per build in buildInitialPestReportPDF. */
+let PAGE_W = 842;
+let PAGE_H = 595;
 const MARGIN = 24;
 const BRAND_BLACK = rgb(0.165, 0.165, 0.165);
 const BRAND_SAGE = rgb(0.765, 0.82, 0.773);
@@ -446,7 +448,74 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
   const logo = await embedJpeg(doc, opts.logoSrc, 600);
   const map = await embedJpeg(doc, opts.mapImage, 1600);
 
+  // Page size is module state the draw helpers read, so set it after the awaits,
+  // immediately before anything is drawn.
+  PAGE_W = opts.lean ? 595 : 842;
+  PAGE_H = opts.lean ? 842 : 595;
+
   let cursor = addPage(doc, fonts, opts, 1, logo);
+
+  if (opts.lean) {
+    // ── Lean / internal layout: the site map IS the report. One meta line, one
+    //    notes line, target pests inline — then the map fills the rest of the page. ──
+    const contentW = PAGE_W - MARGIN * 2;
+    let top = cursor.y + 10;
+
+    const metaLine = [
+      opts.address || "-",
+      `${opts.technicianName || "-"}${opts.licenseNumber ? ` (${opts.licenseNumber})` : ""}`,
+      `${opts.propertyType || "Residential"}${opts.companyName ? ` - ${opts.companyName}` : ""}`,
+      opts.targetPests?.length ? opts.targetPests.join(", ") : "",
+    ]
+      .filter(Boolean)
+      .join("  •  ");
+    top -= drawWrappedLine(cursor.page, metaLine, MARGIN, top, contentW, fonts.bold, 9, 12, BRAND_DARK_SAGE) + 4;
+
+    // Notes: a single strip across the top — up to 3 lines, the rest flows to page 2.
+    const noteLines = toLines(opts.todaysFindings);
+    const noteText = noteLines.filter((line) => line !== "-").join("  •  ");
+    const labelW = 46;
+    const noteBodyW = contentW - labelW - 16;
+    // One line if it fits; longer notes tighten to 9pt (up to 5 lines) before the
+    // remainder flows to a second page, so the map always owns page 1.
+    const noteSize = noteText && wrapText(noteText, fonts.regular, 10, noteBodyW).length > 3 ? 9 : 10;
+    const noteLead = noteSize + 3;
+    const maxNoteRows = noteSize === 10 ? 3 : 5;
+    const allNoteRows = noteText ? wrapText(noteText, fonts.regular, noteSize, noteBodyW) : ["-"];
+    const noteRows = allNoteRows.slice(0, maxNoteRows);
+    const stripH = Math.max(22, noteRows.length * noteLead + 9);
+    cursor.page.drawRectangle({ x: MARGIN, y: top - stripH, width: contentW, height: stripH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.8 });
+    cursor.page.drawRectangle({ x: MARGIN, y: top - stripH, width: labelW, height: stripH, color: BRAND_BLACK });
+    cursor.page.drawText("NOTES", { x: MARGIN + 7, y: top - 15, size: 8, font: fonts.bold, color: WHITE });
+    noteRows.forEach((row, i) => {
+      cursor.page.drawText(safePdfText(row), { x: MARGIN + labelW + 8, y: top - 6 - noteSize - i * noteLead, size: noteSize, font: fonts.regular, color: BRAND_BLACK });
+    });
+    top -= stripH + 8;
+
+    // Map — front and centre: everything left on the page.
+    const mapBoxH = top - MARGIN;
+    cursor.page.drawRectangle({ x: MARGIN, y: top - mapBoxH, width: contentW, height: mapBoxH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.8 });
+    cursor.page.drawRectangle({ x: MARGIN, y: top - 20, width: contentW, height: 20, color: BRAND_BLACK });
+    cursor.page.drawText("SITE MAP", { x: MARGIN + 9, y: top - 14, size: 11, font: fonts.bold, color: WHITE });
+    if (map) {
+      drawImageContain(cursor.page, map, MARGIN + 6, top - 26, contentW - 12, mapBoxH - 32);
+    } else {
+      cursor.page.drawText("No map image added", { x: MARGIN + 30, y: top - mapBoxH / 2, size: 12, font: fonts.bold, color: BRAND_BLACK });
+    }
+
+    cursor.y = MARGIN;
+    const restNotes = allNoteRows.length > noteRows.length ? noteLines : [];
+    if (restNotes.length) {
+      const next = addPage(doc, fonts, opts, cursor.pageNumber + 1, logo);
+      cursor.page = next.page;
+      cursor.y = next.y;
+      cursor.pageNumber = next.pageNumber;
+      addFlowSection(doc, cursor, fonts, opts, "Notes", restNotes, logo, 11);
+    }
+    // Photos taken on the site-map page follow it, two to a page.
+    cursor = await drawPhotoPages(doc, cursor, fonts, opts, logo);
+    return doc.save();
+  }
 
   const metaLines = [
     `Address: ${opts.address || "-"}`,
@@ -455,38 +524,6 @@ export async function buildInitialPestReportPDF(opts: InitialPestPdfOptions): Pr
   ];
   const detailsH = drawSectionOnPage(cursor.page, "Report Details", metaLines, MARGIN, cursor.y, PAGE_W - MARGIN * 2, fonts, 10);
   cursor.y -= detailsH + 8;
-
-  if (opts.lean) {
-    // ── Lean / internal layout: as much map as fits, target pests + notes beside it. ──
-    const leanTop = cursor.y;
-    const leanMapH = Math.min(leanTop - MARGIN, 430);
-    const leanMapW = Math.round(leanMapH * 0.75);
-    cursor.page.drawRectangle({ x: MARGIN, y: leanTop - leanMapH, width: leanMapW, height: leanMapH, color: BRAND_TINT, borderColor: BORDER, borderWidth: 0.8 });
-    cursor.page.drawRectangle({ x: MARGIN, y: leanTop - 20, width: leanMapW, height: 20, color: BRAND_BLACK });
-    cursor.page.drawText("SITE MAP", { x: MARGIN + 9, y: leanTop - 14, size: 11, font: fonts.bold, color: WHITE });
-    if (map) {
-      drawImageCover(cursor.page, map, MARGIN + 6, leanTop - 26, leanMapW - 12, leanMapH - 32);
-    } else {
-      cursor.page.drawText("No map image added", { x: MARGIN + 30, y: leanTop - leanMapH / 2, size: 12, font: fonts.bold, color: BRAND_BLACK });
-    }
-    const leanRightX = MARGIN + leanMapW + 12;
-    const leanRightW = PAGE_W - leanRightX - MARGIN;
-    let leanRightY = leanTop;
-    if (opts.targetPests?.length) {
-      leanRightY -= drawChipSectionOnPage(cursor.page, "Target Pests", opts.targetPests, leanRightX, leanRightY, leanRightW, fonts) + 8;
-    }
-    const noteLines = toLines(opts.todaysFindings);
-    const noteAvail = leanRightY - MARGIN;
-    const noteCapacity = noteAvail >= 60 ? Math.max(1, Math.floor((noteAvail - 50) / 17)) : 0;
-    const firstNotes = noteCapacity > 0 ? noteLines.slice(0, noteCapacity) : [];
-    if (firstNotes.length || noteLines.length === 0) {
-      leanRightY -= drawSectionOnPage(cursor.page, "Notes", firstNotes.length ? firstNotes : ["-"], leanRightX, leanRightY, leanRightW, fonts, 11);
-    }
-    cursor.y = Math.min(leanTop - leanMapH, leanRightY) - 8;
-    const restNotes = noteLines.slice(firstNotes.length);
-    if (restNotes.length) addFlowSection(doc, cursor, fonts, opts, firstNotes.length ? "Notes Continued" : "Notes", restNotes, logo, 11);
-    return doc.save();
-  }
 
   const mapW = 200;
   const mapH = 264;

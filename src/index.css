@@ -554,6 +554,61 @@
   }
 }
 
+/* Lean initial report (internal site map): one thin header line, then the map
+   as large as the page allows, photos after it — not the two-column grid. */
+@media print {
+  .lean-header {
+    position: static !important;
+    padding: 2mm 6mm !important;
+    border-bottom: 0.5mm solid #000 !important;
+  }
+
+  .lean-header img {
+    height: 9mm !important;
+    width: auto !important;
+  }
+
+  .print-layout.lean-layout {
+    display: block !important;
+    height: auto !important;
+    width: 297mm !important;
+  }
+
+  .print-layout.lean-layout .print-map-container {
+    width: 130mm !important;
+    min-width: 130mm !important;
+    max-width: 130mm !important;
+    height: 173mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+  }
+
+  .print-layout.lean-layout > div:last-child {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  /* Photos: wrap onto their own page rather than scrolling off the strip. */
+  .lean-photo-strip {
+    break-before: page;
+    page-break-before: always;
+    width: 265mm !important;
+    margin: 0 auto !important;
+    overflow: visible !important;
+  }
+
+  .lean-photo-strip > div:last-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+    gap: 4mm !important;
+  }
+
+  .lean-photo-strip > div:last-child > div {
+    width: 60mm !important;
+  }
+}
+
 /* Continue general print styles */
 @media print {
   .print-layout > div:last-child {

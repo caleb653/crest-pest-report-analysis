@@ -23,6 +23,10 @@ import {
   Check,
   ChevronsUpDown,
   Edit,
+  Camera,
+  ImagePlus,
+  Settings2,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -335,6 +339,12 @@ const Report = () => {
   const [staticMapUrl, setStaticMapUrl] = useState<string | null>(null);
   const [pestsDropdownOpen, setPestsDropdownOpen] = useState(false);
   const pestsDropdownRef = useRef<HTMLDivElement>(null);
+  // LEAN header popovers: "Customer" (who this report is for) and "Details"
+  // (everything that used to sit in the tall header — address, date, tech,
+  // property type, target pests). Keeping them behind a click is what lets the
+  // header stay one thin row so the site map owns the screen.
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const [leanDetailsOpen, setLeanDetailsOpen] = useState(false);
   const [customMapImage, setCustomMapImage] = useState<string | null>(null);
   const latestMapDataRef = useRef<string | null>(null);
   const reportLoadedRef = useRef(false);
@@ -1592,6 +1602,63 @@ Crest Pest Control
     }
   };
 
+  // Lean report: add photos to the site map page. Unlike the full report's
+  // uploader this APPENDS (techs add a couple of photos at a time as they walk
+  // the property) and compresses on the way up so iPad uploads stay quick.
+  const handleLeanPhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const room = 20 - propertyImages.length;
+    if (room <= 0) {
+      toast.error("Maximum 20 photos");
+      return;
+    }
+    const fileArray = Array.from(files).slice(0, room);
+
+    if (fileArray.some((file) => file.size === 0)) {
+      toast.error("One of the selected photos isn't downloaded to this iPad yet (iCloud). Download it in Photos and try again.");
+      return;
+    }
+    if (fileArray.some((file) => file.type && !file.type.startsWith("image/"))) {
+      toast.error("Please upload only image files");
+      return;
+    }
+
+    try {
+      const uploaded = await Promise.all(
+        fileArray.map(async (file) => {
+          const { ext, contentType } = inferImageUploadMeta(file);
+          let uploadBlob: Blob = file;
+          try {
+            const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7 });
+            uploadBlob = compressed.blob;
+            URL.revokeObjectURL(compressed.localUrl);
+          } catch (compressErr) {
+            console.warn("Image compression failed, uploading original:", compressErr);
+          }
+
+          const fileName = `${Math.random()}.${ext}`;
+          const filePath = `${reportId || "temp"}/property/${fileName}`;
+          const { error: uploadError } = await supabase.storage
+            .from("report-images")
+            .upload(filePath, uploadBlob, { upsert: true, contentType });
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage.from("report-images").getPublicUrl(filePath);
+          return { image: publicUrl, caption: "" };
+        }),
+      );
+
+      setPropertyImages((prev) => [...prev, ...uploaded]);
+      pendingAutoSaveRef.current = true;
+      toast.success(`${uploaded.length} photo(s) added`);
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+      toast.error("Failed to upload photos");
+    }
+  };
+
   const updateImageCaption = (index: number, caption: string) => {
     setPropertyImages((prev) => {
       const updated = [...prev];
@@ -1938,8 +2005,273 @@ Crest Pest Control
 
   return (
     <div className="min-h-screen bg-background">
+      {/* LEAN initial report — ONE thin header. The only things on it are the
+          two a tech actually touches: the note line and which customer this is.
+          Address / date / tech / property type / target pests moved into the
+          Details popover so the site map below owns the whole screen. */}
+      {isLean && (
+        <div
+          data-pdf-page="0"
+          data-pdf-capture="0"
+          data-report-type="initial-pest"
+          className="print-header lean-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 border-b-2 border-dark-sage px-2 md:px-4 py-1.5 sticky top-0 z-30"
+        >
+          <div className="max-w-[1800px] mx-auto flex items-center gap-1.5 md:gap-2 flex-wrap md:flex-nowrap">
+            <img src={crestLogo} alt="Crest Pest Control" className="h-7 md:h-8 w-auto shrink-0 no-print-compress" />
+
+            {/* Which customer this report is for. */}
+            <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-[150px] md:w-[220px] shrink-0 justify-between gap-1 text-xs no-print bg-background"
+                >
+                  <span className="truncate">{editableCustomer || "Select customer"}</span>
+                  <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[440px] max-w-[92vw] p-3 z-50 bg-background border border-border space-y-3"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">FieldRoutes customer</p>
+                  <CustomerPicker
+                    staffName={currentStaff?.fullName}
+                    linkedId={fieldroutesCustomerId}
+                    linkedLabel={editableCustomer || null}
+                    linkedLoginLink={fieldroutesLoginLink}
+                    onSelect={(c) => {
+                      setFieldroutesCustomerId(c.customer_id);
+                      setFieldroutesLoginLink(c.loginLink || null);
+                      if (c.name || c.company_name) setEditableCustomer(c.name || c.company_name || "");
+                      if (c.email) setCustomerEmail(c.email);
+                      if (c.phone) setCustomerPhone(c.phone);
+                      const addr = [c.address, [c.city, c.state].filter(Boolean).join(", "), c.zip]
+                        .filter(Boolean).join(", ");
+                      if (addr) { setEditableAddress(addr); setExtractedAddress(addr); }
+                      setCustomerPickerOpen(false);
+                    }}
+                    onClear={() => { setFieldroutesCustomerId(null); setFieldroutesLoginLink(null); }}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Customer name</label>
+                  <Input
+                    value={editableCustomer}
+                    onChange={(e) => setEditableCustomer(e.target.value)}
+                    placeholder="Customer name"
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                {fieldroutesCustomerId && (
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
+                      Customer Portal loginLink (paste from FieldRoutes)
+                    </label>
+                    <Input
+                      value={fieldroutesLoginLink ?? ""}
+                      onChange={(e) => setFieldroutesLoginLink(e.target.value.trim() || null)}
+                      onBlur={() => saveLoginLink(fieldroutesCustomerId, fieldroutesLoginLink, "manual-paste")}
+                      placeholder="https://crestpest.pestportals.com/?loginHash=…"
+                      className="text-xs font-mono h-8"
+                    />
+                  </div>
+                )}
+
+                {fieldroutesLoginLink && (
+                  <a
+                    href={fieldroutesLoginLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-xs font-bold text-foreground no-underline hover:bg-primary/15"
+                  >
+                    Open Customer Portal
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                  </a>
+                )}
+              </PopoverContent>
+            </Popover>
+
+            {/* The one free-text field on the report. */}
+            <Textarea
+              value={todaysFindings}
+              onChange={(e) => setTodaysFindings(e.target.value)}
+              placeholder="Notes — access / gate codes, problem areas, what to do next visit…"
+              rows={1}
+              className="no-print order-last md:order-none w-full md:w-auto flex-1 min-w-[160px] h-8 min-h-[32px] max-h-[96px] resize-y bg-background text-sm leading-snug py-1.5"
+            />
+
+            {/* Everything else — one click away, off the header. */}
+            <Popover open={leanDetailsOpen} onOpenChange={setLeanDetailsOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 shrink-0 px-2 text-xs no-print bg-background">
+                  <Settings2 className="h-3.5 w-3.5 md:mr-1" />
+                  <span className="hidden md:inline">Details</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="end"
+                className="w-[360px] max-w-[92vw] p-3 z-50 bg-background border border-border space-y-2.5"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Address</label>
+                  <Input
+                    value={editableAddress || extractedAddress}
+                    onChange={(e) => setEditableAddress(e.target.value)}
+                    placeholder="Enter address"
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Date</label>
+                    <Input
+                      type="date"
+                      value={editableServiceDate}
+                      onChange={(e) => setEditableServiceDate(e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Property type</label>
+                    <Select value={propertyType} onValueChange={setPropertyType}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PROPERTY_TYPES.map((type) => (
+                          <SelectItem key={type} value={type} className="text-sm">{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {propertyType !== "Residential" && (
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Company (optional)</label>
+                    <Input
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Company name"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                    Route Manager{editableLicenseNumber ? ` — license ${editableLicenseNumber}` : ""}
+                  </label>
+                  <Popover open={techDropdownOpen} onOpenChange={setTechDropdownOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" className="w-full h-8 justify-between text-sm font-normal">
+                        {editableTech || "Select technician"}
+                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[240px] p-0 z-50 bg-background border border-border" onOpenAutoFocus={(e) => e.preventDefault()}>
+                      <Command>
+                        <CommandInput placeholder="Search technician..." className="h-8 text-xs" />
+                        <CommandList>
+                          <CommandEmpty>No technician found.</CommandEmpty>
+                          <CommandGroup>
+                            {TECHNICIANS.map((tech) => (
+                              <CommandItem key={tech.name} value={tech.name} onSelect={handleTechnicianChange} className="text-xs">
+                                <Check className={cn("mr-2 h-3 w-3", editableTech === tech.name ? "opacity-100" : "opacity-0")} />
+                                {tech.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Customer email</label>
+                  <Input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder="customer@email.com"
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                <div ref={pestsDropdownRef}>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Target pest(s)</label>
+                  <div className="max-h-48 overflow-y-auto rounded-md border border-border">
+                    {PEST_OPTIONS.map((pest) => (
+                      <button
+                        key={pest}
+                        type="button"
+                        onClick={() =>
+                          setEditableTargetPests((prev) =>
+                            prev.includes(pest) ? prev.filter((p) => p !== pest) : [...prev, pest],
+                          )
+                        }
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center justify-between ${
+                          editableTargetPests.includes(pest) ? "bg-primary/10 text-primary font-medium" : ""
+                        }`}
+                      >
+                        {pest}
+                        {editableTargetPests.includes(pest) && <span className="text-primary">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex items-center gap-1 shrink-0 no-print">
+              <Button onClick={handleOpenCompose} variant="secondary" size="sm" className="h-8 px-2 text-xs">
+                <Mail className="w-3.5 h-3.5" />
+              </Button>
+              <Button onClick={handleSubmit} disabled={isSaving} size="sm" className="h-8 px-2 text-xs">
+                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 md:mr-1" />}
+                <span className="hidden md:inline">Save</span>
+              </Button>
+              <Button onClick={exportToPDF} variant="outline" size="sm" className="h-8 px-2 text-xs bg-background">
+                <FileDown className="w-3.5 h-3.5 md:mr-1" />
+                <span className="hidden md:inline">PDF</span>
+              </Button>
+              {!!localStorage.getItem("admin_session") && (
+                <Button onClick={sendReportToFieldRoutes} variant="outline" size="sm" className="h-8 px-2 text-xs bg-background hidden lg:flex">
+                  Send to FieldRoutes
+                </Button>
+              )}
+              <Button onClick={() => navigate("/")} variant="outline" size="icon" className="h-8 w-8 bg-background">
+                <Home className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Browser-print only: the header fields as plain text (the PDF export
+              is data-driven and builds its own meta line). */}
+          <div className="hidden print-only-text text-[10px] text-foreground">
+            {[
+              editableCustomer || "Customer",
+              displayAddress,
+              editableServiceDate,
+              editableTech,
+              pestDisplayOrder(editableTargetPests).join(", "),
+            ].filter(Boolean).join("  •  ")}
+            {todaysFindings ? `  •  Notes: ${todaysFindings.replace(/\n+/g, " • ")}` : ""}
+          </div>
+        </div>
+      )}
+
       {/* Mobile Header */}
-      {isMobile && (
+      {isMobile && !isLean && (
         <div className="print-header bg-gradient-primary border-b-2 border-foreground px-4 py-3 sticky top-0 z-20">
           <div className="flex items-center justify-between">
             <img src={crestLogo} alt="Crest" className="h-10 no-print-compress" />
@@ -1962,7 +2294,7 @@ Crest Pest Control
       )}
 
       {/* Desktop Header */}
-      {!isMobile && (
+      {!isMobile && !isLean && (
         <div data-pdf-page="0" data-pdf-capture="0" data-report-type="initial-pest" className="print-header bg-gradient-to-r from-sage/40 via-sage/15 to-sage/35 shadow-md border-b-2 border-dark-sage px-6 py-2 md:sticky md:top-0 md:z-20 lg:static">
           <div className="max-w-[1800px] mx-auto">
             {/* Action buttons row for iPad - shown at top on medium screens */}
@@ -2197,13 +2529,26 @@ Crest Pest Control
 
 
       {/* Main Content */}
-      <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isMobileOrTablet ? "flex flex-col" : "flex min-h-[calc(100vh-88px)]"}`}>
+      <div data-pdf-page="1" data-pdf-capture="1" data-report-type="initial-pest" className={`print-layout ${isLean ? "lean-layout " : ""}${isMobileOrTablet || isLean ? "flex flex-col" : "flex"} ${isMobileOrTablet ? "" : "min-h-[calc(100vh-88px)]"}`}>
         {/* Map Section - Fixed 3:4 aspect ratio for consistency across devices */}
         <div
           className={`print-map-container ${
-            isMobileOrTablet ? "w-full max-w-[506px] mx-auto px-4 py-2" : "flex-none p-4"
+            isLean
+              ? "w-full mx-auto px-2 md:px-3 pt-2 pb-1"
+              : isMobileOrTablet
+                ? "w-full mx-auto px-3 py-2 max-w-[506px]"
+                : "flex-none p-4"
           }`}
-          style={!isMobileOrTablet ? { width: 'min(130mm, calc((100vh - 88px) * 0.75))', maxWidth: '42%' } : undefined}
+          style={
+            isLean
+              ? // As tall as the screen allows: viewport height less the thin
+                // header and the photo strip, then 3:4 back to a width. The
+                // min(100%) keeps it inside narrow phones.
+                { width: `min(100%, calc((100vh - ${propertyImages.length > 0 ? 200 : 128}px) * 0.75))` }
+              : isMobileOrTablet
+                ? undefined
+                : { width: 'min(130mm, calc((100vh - 88px) * 0.75))', maxWidth: '42%' }
+          }
         >
           <div 
             className="relative w-full bg-sage rounded-lg print-map-aspect" 
@@ -2333,10 +2678,106 @@ Crest Pest Control
           </div>
         </div>
 
-        <div className={isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "flex-1 min-w-0 overflow-y-auto"}>
-          <div className="p-3 md:p-4 space-y-3">
-            {/* Mobile/Tablet: Customer & Technician - hidden in print */}
-            {isMobileOrTablet && (
+        <div className={isLean ? `w-full min-w-0 ${isMobileOrTablet ? "pb-32" : ""}` : isMobileOrTablet ? "flex-1 overflow-y-auto pb-32" : "flex-1 min-w-0 overflow-y-auto"}>
+          <div className={isLean ? "px-3 md:px-4 pb-3 space-y-3" : "p-3 md:p-4 space-y-3"}>
+            {/* LEAN: photos live with the site map, as a thumbnail strip right
+                under it — add from the library or straight from the camera,
+                caption them, and mark them up. */}
+            {isLean && (
+              <Card
+                className="print-section lean-photo-strip p-2 md:p-3"
+                onPaste={handlePropertyImagesPaste}
+                tabIndex={0}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-sm font-bold text-foreground">
+                    Photos{propertyImages.length > 0 ? ` (${propertyImages.length})` : ""}
+                  </h2>
+                  <div className="flex-1" />
+                  <div className="relative inline-flex no-print">
+                    <Button size="sm" variant="outline" type="button" className="h-8 px-2 text-xs">
+                      <ImagePlus className="w-3.5 h-3.5 mr-1" />
+                      Add photos
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                      onChange={handleLeanPhotosUpload}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Add photos from photo library"
+                    />
+                  </div>
+                  <div className="relative inline-flex no-print">
+                    <Button size="sm" variant="secondary" type="button" className="h-8 px-2 text-xs">
+                      <Camera className="w-3.5 h-3.5 md:mr-1" />
+                      <span className="hidden md:inline">Camera</span>
+                    </Button>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onClick={(e) => { (e.currentTarget as HTMLInputElement).value = ""; }}
+                      onChange={handleLeanPhotosUpload}
+                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                      aria-label="Take a photo with the camera"
+                    />
+                  </div>
+                </div>
+
+                {propertyImages.length === 0 ? (
+                  <p className="text-xs text-muted-foreground no-print">
+                    No photos yet — add them from the photo library, snap one with the camera, or paste with ⌘V.
+                  </p>
+                ) : (
+                  <div className="flex gap-2 overflow-x-auto pb-1 print:flex-wrap print:overflow-visible">
+                    {propertyImages.map((item, index) => (
+                      <div key={index} className="w-24 md:w-28 shrink-0 space-y-1">
+                        <div className="relative aspect-[4/3] rounded-md overflow-hidden border border-border bg-muted group">
+                          <img src={item.image} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                          <Button
+                            size="icon"
+                            variant="destructive"
+                            className="absolute top-1 right-1 h-6 w-6 max-md:h-8 max-md:w-8 md:opacity-0 md:group-hover:opacity-100 transition-opacity no-print"
+                            onClick={() => {
+                              setPropertyImages((prev) => prev.filter((_, i) => i !== index));
+                              pendingAutoSaveRef.current = true;
+                              toast.info("Photo removed");
+                            }}
+                            aria-label={`Remove photo ${index + 1}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="absolute bottom-1 right-1 h-6 px-1.5 text-[10px] no-print"
+                            onClick={() => setAnnotatingImageIndex(index)}
+                          >
+                            <Edit className="w-3 h-3 mr-0.5" />
+                            Draw
+                          </Button>
+                        </div>
+                        <Input
+                          value={item.caption || ""}
+                          onChange={(e) => updateImageCaption(index, e.target.value)}
+                          placeholder="Caption"
+                          className="no-print h-6 px-1.5 text-[10px]"
+                        />
+                        {item.caption && (
+                          <p className="hidden print-only-text text-[9px] leading-tight text-foreground">{item.caption}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Mobile/Tablet: Customer & Technician - hidden in print
+                (lean reports keep all of this in the thin header instead) */}
+            {isMobileOrTablet && !isLean && (
               <Card className="p-4 no-print">
                 <div className="space-y-3">
                   <div>
@@ -2431,7 +2872,9 @@ Crest Pest Control
               </Card>
             )}
 
-            {/* Target Pest(s) Section - Made more prominent */}
+            {/* Target Pest(s) Section - Made more prominent (lean reports use the
+                compact selector in the top strip instead) */}
+            {!isLean && (
             <Card className="print-section p-0 overflow-visible border-2 border-primary/50">
               <div className="relative" ref={pestsDropdownRef}>
                 <button
@@ -2501,6 +2944,7 @@ Crest Pest Control
                 </div>
               )}
             </Card>
+            )}
 
             {/* For rodent-exclusion variant, collapse all the structured
                 sections (Key Areas, Preferences, Services Completed,
@@ -2635,26 +3079,9 @@ Crest Pest Control
               </Card>
             )}
 
-            {/* LEAN initial report (internal): one Notes card replaces every
-                customer-facing section below. Saved to reports.notes. */}
-            {isLean && (
-              <Card className="print-section p-3 md:p-4">
-                <h2 className="print-section-header text-lg md:text-xl font-bold mb-3">Notes</h2>
-                <Textarea
-                  value={todaysFindings}
-                  onChange={(e) => setTodaysFindings(e.target.value)}
-                  placeholder="Anything the Route Manager needs for this job — access / gate codes, problem areas, what was found, what to do on the next visit…"
-                  className="text-sm resize-y min-h-[260px] leading-relaxed no-print"
-                  rows={10}
-                />
-                <div
-                  className="hidden print-content-formatted"
-                  dangerouslySetInnerHTML={{
-                    __html: (todaysFindings || "").replace(/\n/g, "<br/>"),
-                  }}
-                />
-              </Card>
-            )}
+            {/* LEAN initial report (internal): the site map is the report — notes
+                live as a single line in the strip above it (saved to reports.notes),
+                and every customer-facing section below stays hidden. */}
 
             {/* Customer Key Areas */}
             {!isRodentExclusion && !isLean && (
@@ -3515,6 +3942,35 @@ Crest Pest Control
 
 
 
+
+      {/* LEAN: mark up a photo full-size (the strip thumbnails are too small
+          to draw on). */}
+      {isLean && annotatingImageIndex !== null && propertyImages[annotatingImageIndex] && (
+        <Dialog open onOpenChange={(open) => { if (!open) setAnnotatingImageIndex(null); }}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Mark up photo {annotatingImageIndex + 1}</DialogTitle>
+            </DialogHeader>
+            <div className="w-full aspect-[4/3]">
+              <InlineImageAnnotator
+                imageUrl={propertyImages[annotatingImageIndex].image}
+                onSave={(annotatedDataUrl) => {
+                  const index = annotatingImageIndex;
+                  setPropertyImages((prev) => {
+                    const updated = [...prev];
+                    updated[index] = { ...updated[index], image: annotatedDataUrl };
+                    return updated;
+                  });
+                  pendingAutoSaveRef.current = true;
+                  setAnnotatingImageIndex(null);
+                  toast.success("Annotations saved");
+                }}
+                onCancel={() => setAnnotatingImageIndex(null)}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Compose Email Dialog */}
       <Dialog open={showComposeDialog} onOpenChange={setShowComposeDialog}>
