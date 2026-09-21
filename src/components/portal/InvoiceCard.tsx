@@ -283,10 +283,16 @@ export function InvoiceCard({
   };
 
   const saveHeader = async () => {
+    const nextNumber = invNo.trim();
+    if (!nextNumber) {
+      toast({ title: "Invoice number is required", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("portal_invoices")
       .update({
+        invoice_number: nextNumber,
         po_number: po.trim() || null,
         customer_note: note.trim() || null,
         reference_numbers: refs.filter((r) => r.label.trim() && r.value.trim()) as never,
