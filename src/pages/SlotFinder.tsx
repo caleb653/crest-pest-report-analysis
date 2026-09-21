@@ -959,35 +959,35 @@ const SlotFinder = () => {
   const days = useMemo(() => upcomingBusinessDays(21), []);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to home
-          </Button>
-        </div>
-
+    <div className="min-h-screen bg-background p-3 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-3">
         <Tabs defaultValue="find">
-          <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-grid h-auto p-1.5 bg-muted border-2 border-border shadow-sm">
+          {/* Back link rides along the tab bar so the page starts at the form. */}
+          <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-9 px-2" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Back
+          </Button>
+          <TabsList className="grid flex-1 min-w-[16rem] grid-cols-2 md:flex-none md:w-auto md:inline-grid h-auto p-1 bg-muted border-2 border-border shadow-sm">
             <TabsTrigger
               value="find"
-              className="gap-1.5 md:gap-2 text-sm md:text-base font-semibold px-3 md:px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-1.5 md:gap-2 text-sm font-semibold px-3 md:px-5 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <MapPin className="w-4 h-4 shrink-0" /> Find open slots
             </TabsTrigger>
             <TabsTrigger
               value="check"
-              className="gap-1.5 md:gap-2 text-sm md:text-base font-semibold px-3 md:px-5 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
+              className="gap-1.5 md:gap-2 text-sm font-semibold px-3 md:px-5 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"
             >
               <CalendarClock className="w-4 h-4 shrink-0" /> Check a day &amp; window
             </TabsTrigger>
           </TabsList>
+          </div>
 
-          <TabsContent value="find" className="mt-4">
+          <TabsContent value="find" className="mt-3">
             <FindMode staff={staff} dayOptions={days} />
           </TabsContent>
-          <TabsContent value="check" className="mt-4">
+          <TabsContent value="check" className="mt-3">
             <CheckMode staff={staff} dayOptions={days} />
           </TabsContent>
         </Tabs>
@@ -1052,8 +1052,10 @@ function DayMultiSelect({
 // has one orange one at 3 PM. Columns follow the days selected in the search
 // (next 3 working days by default).
 
-const CAL_HOUR_PX = 46;     // pixels per hour of the grid
-const CAL_DAY_MIN_PX = 132; // min column width before the strip scrolls
+const CAL_HOUR_PX = 32;     // pixels per hour of the grid (kept tight — the
+                            // whole strip should fit without scrolling)
+const CAL_DAY_MIN_PX = 116; // min column width before the strip scrolls
+const CAL_HEAD_REM = 2.5;   // day-header height, in rem
 
 /** Where a slot sits on the calendar: the window we'd actually promise the
     customer (tightened when the office narrowed the width, else the route's
@@ -1173,17 +1175,17 @@ function OpeningsCalendar({
 
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base flex items-center gap-2">
-          <CalendarClock className="w-4 h-4" /> {title}
-        </CardTitle>
-        <CardDescription>
-          {subtitle ?? "One column per day you're searching. Each block is an opening, at the time we'd book it — bright green is on route, orange and red mean a real detour."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
+      <CardHeader className="py-2.5">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <CalendarClock className="w-4 h-4" /> {title}
+          </CardTitle>
+          <CardDescription className="text-[11px]">
+            {subtitle ?? (searched ? "Each block is an opening — tap it to jump to its card." : "One column per day you're searching.")}
+          </CardDescription>
+        </div>
         {/* Legend */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] font-medium text-muted-foreground">
           {([
             ["bg-emerald-500", "On route (<5 min)"],
             ["bg-green-500", "Near (5–10)"],
@@ -1192,17 +1194,19 @@ function OpeningsCalendar({
             ["bg-red-600", "20+ min out of the way"],
           ] as const).map(([bg, label]) => (
             <span key={label} className="inline-flex items-center gap-1">
-              <span className={`inline-block h-2.5 w-2.5 rounded-sm ${bg}`} aria-hidden />{label}
+              <span className={`inline-block h-2 w-2 rounded-sm ${bg}`} aria-hidden />{label}
             </span>
           ))}
         </div>
+      </CardHeader>
+      <CardContent className="pb-3 pt-0">
 
         <div className="overflow-x-auto">
           <div className="flex min-w-full gap-px">
             {/* Hour gutter */}
-            <div className="shrink-0 pt-[3.4rem] pr-1 text-right" style={{ width: "3.6rem" }}>
+            <div className="shrink-0 pr-1 text-right" style={{ width: "2.9rem", paddingTop: `${CAL_HEAD_REM}rem` }}>
               {hours.map((h) => (
-                <div key={h} className="text-[10px] font-medium text-muted-foreground" style={{ height: CAL_HOUR_PX }}>
+                <div key={h} className="text-[10px] font-medium leading-none text-muted-foreground" style={{ height: CAL_HOUR_PX }}>
                   {fmtTime(h).replace(":00", "")}
                 </div>
               ))}
@@ -1211,13 +1215,16 @@ function OpeningsCalendar({
             {cols.map((col) => (
               <div key={col.iso} className="flex-1 min-w-0" style={{ minWidth: CAL_DAY_MIN_PX }}>
                 {/* Day header */}
-                <div className={`flex h-[3.4rem] flex-col justify-center rounded-t-md border border-b-0 px-2 py-1 text-center ${
-                  col.best ? "border-border bg-muted/50" : "border-border bg-muted/20"}`}>
-                  <div className="text-xs font-bold leading-tight">{col.weekday}</div>
-                  <div className="text-[11px] text-muted-foreground leading-tight">
-                    {new Date(`${col.iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                <div className={`flex flex-col justify-center rounded-t-md border border-b-0 px-1.5 py-0.5 text-center ${
+                  col.best ? "border-border bg-muted/50" : "border-border bg-muted/20"}`}
+                  style={{ height: `${CAL_HEAD_REM}rem` }}>
+                  <div className="text-[11px] font-bold leading-tight">
+                    {col.weekday}{" "}
+                    <span className="font-medium text-muted-foreground">
+                      {new Date(`${col.iso}T12:00:00`).toLocaleDateString(undefined, { month: "numeric", day: "numeric" })}
+                    </span>
                   </div>
-                  <div className="mt-0.5 text-[10px] leading-tight">
+                  <div className="text-[10px] leading-tight">
                     {col.best ? (
                       <span className={`inline-block rounded px-1 py-px font-bold ${tierBlockClasses(col.best)}`}>
                         {tierWord(col.best)}
@@ -1250,7 +1257,7 @@ function OpeningsCalendar({
                   )}
                   {col.blocks.map((b) => {
                     const top = ((Math.max(b.lo, startMin) - startMin) / 60) * CAL_HOUR_PX;
-                    const height = Math.max(34, ((Math.min(b.hi, endMin) - Math.max(b.lo, startMin)) / 60) * CAL_HOUR_PX);
+                    const height = Math.max(26, ((Math.min(b.hi, endMin) - Math.max(b.lo, startMin)) / 60) * CAL_HOUR_PX);
                     const widthPct = 100 / b.lanes;
                     return (
                       <button
@@ -1265,13 +1272,13 @@ function OpeningsCalendar({
                           width: `calc(${widthPct}% - 4px)`,
                         }}
                       >
-                        <div className="truncate text-[10px] font-bold">
+                        <div className="truncate text-[10px] font-bold leading-tight">
                           {fmtTime(b.lo).replace(":00", "")} – {fmtTime(b.hi).replace(":00", "")}
                         </div>
-                        <div className="truncate text-[10px] font-semibold opacity-95">
+                        <div className="truncate text-[10px] font-semibold leading-tight opacity-95">
                           {b.c.tech_name.split(" ")[0]} · +{detourMinutes(b.c)}m
                         </div>
-                        {b.c.est_min != null && height >= 50 && (
+                        {b.c.est_min != null && height >= 56 && (
                           <div className="truncate text-[10px] opacity-90">~{fmtTime(b.c.est_min)}</div>
                         )}
                       </button>
@@ -1282,11 +1289,6 @@ function OpeningsCalendar({
             ))}
           </div>
         </div>
-        {searched && (
-          <p className="text-[11px] text-muted-foreground">
-            Tap a block to jump to that opening's card.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
@@ -1510,52 +1512,29 @@ function FindMode({
 
   return (
     <>
-      <OpeningsCalendar
-        title={planInfo ? "Visit 1 — best opening each day" : "Best opening each day"}
-        dates={calendarDates}
-        byDay={result?.by_day ?? []}
-        dayRoutes={mergedRoutes}
-        windowWidth={Number(windowWidth)}
-        loading={loading}
-        searched={!!result}
-      />
-      {planInfo && followUp && (
-        <OpeningsCalendar
-          title={`${planInfo.label} — best opening each day`}
-          subtitle={`The follow-up band: ${planInfo.lo}–${planInfo.hi} days after Visit 1.`}
-          dates={(followUp.by_day ?? []).map((d) => d.date)}
-          byDay={followUp.by_day ?? []}
-          dayRoutes={mergedRoutes}
-          windowWidth={Number(windowWidth)}
-          loading={followUpLoading}
-          searched
-        />
-      )}
-      <Card className="mt-6">
-        <CardHeader className={formOpen ? undefined : "py-3"}>
+      <Card>
+        <CardHeader className="py-3">
           <button
             type="button"
             onClick={() => setFormOpen((v) => !v)}
             className="flex w-full items-center justify-between gap-3 text-left"
             aria-expanded={formOpen}
           >
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" /> Find open slots
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MapPin className="w-4 h-4" /> Find open slots
             </CardTitle>
-            <span className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+            <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               {formOpen ? "Hide" : "Change search"}
               <ChevronDown className={`h-4 w-4 transition-transform ${formOpen ? "rotate-180" : ""}`} />
             </span>
           </button>
           {formOpen ? (
-            <CardDescription>
-              Pick the day(s) and an optional time window. Returns the 5 most
-              efficient openings per day — each showing the Route Manager's
-              resulting stops, per-window load, estimated route time, and why it
-              works. Detours are traffic-aware via Google.
+            <CardDescription className="text-xs">
+              Pick the day(s) and an optional window — the 5 most efficient openings per day,
+              traffic-aware via Google.
             </CardDescription>
           ) : (
-            <CardDescription className="truncate">
+            <CardDescription className="truncate text-xs">
               {address || "No address"}
               {selectedDates.length ? ` · ${selectedDates.length} day${selectedDates.length === 1 ? "" : "s"}` : ""}
               {window !== "none" ? ` · ${window}` : ""}
@@ -1563,13 +1542,13 @@ function FindMode({
           )}
         </CardHeader>
         <CardContent className={formOpen ? undefined : "hidden"}>
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-3">
             {/* ── Visit plan boxes: single visit vs. 7 / 14 day follow-up ── */}
-            <div className="space-y-2">
-              <Label>Visit plan</Label>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Visit plan</Label>
+              <div className="grid grid-cols-3 gap-1.5">
                 {([
-                  { key: "none" as FollowUpPlan, title: "Single visit", sub: "Just find one opening" },
+                  { key: "none" as FollowUpPlan, title: "Single visit", sub: "one opening" },
                   { key: "7" as FollowUpPlan, title: "7 day follow up", sub: "2nd visit 6–10 days after" },
                   { key: "14" as FollowUpPlan, title: "14 day follow up", sub: "2nd visit 12–16 days after" },
                 ]).map((opt) => {
@@ -1591,56 +1570,48 @@ function FindMode({
                           }
                         }
                       }}
-                      className={`rounded-md border-2 px-3 py-2.5 text-left transition-colors ${
+                      className={`rounded-md border-2 px-2 py-1.5 text-left transition-colors ${
                         on
-                          ? "border-primary bg-primary text-primary-foreground shadow-md"
+                          ? "border-primary bg-primary text-primary-foreground shadow-sm"
                           : "border-border bg-background hover:bg-muted"
                       }`}
                     >
-                      <div className="text-sm font-bold leading-tight">{opt.title}</div>
-                      <div className={`text-[11px] leading-tight mt-0.5 ${on ? "opacity-90" : "text-muted-foreground"}`}>{opt.sub}</div>
+                      <div className="text-xs font-bold leading-tight">{opt.title}</div>
+                      <div className={`hidden sm:block text-[10px] leading-tight ${on ? "opacity-90" : "text-muted-foreground"}`}>{opt.sub}</div>
                     </button>
                   );
                 })}
               </div>
-              {planInfo && (
-                <p className="text-xs text-muted-foreground">
-                  Finds the best opening for Visit 1 in the days you pick below, then the best
-                  opening for the follow-up {planInfo.lo}–{planInfo.hi} days after it.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Customer (FieldRoutes)</Label>
-              <CustomerPicker
-                staffName={staff?.fullName ?? undefined}
-                linkedId={customer?.customer_id ?? null}
-                linkedLabel={customer
-                  ? [customer.name || customer.company_name || null, lastServiceLabel(customer)].filter(Boolean).join(" · ")
-                  : null}
-                linkedLoginLink={customer?.loginLink ?? null}
-                onSelect={selectCustomer}
-                onClear={() => setCustomer(null)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Required to click-to-schedule. Selecting a customer also autofills the address below.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Service address</Label>
-              <Input
-                id="address"
-                placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Service type *</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Customer (FieldRoutes)</Label>
+                <CustomerPicker
+                  staffName={staff?.fullName ?? undefined}
+                  linkedId={customer?.customer_id ?? null}
+                  linkedLabel={customer
+                    ? [customer.name || customer.company_name || null, lastServiceLabel(customer)].filter(Boolean).join(" · ")
+                    : null}
+                  linkedLoginLink={customer?.loginLink ?? null}
+                  onSelect={selectCustomer}
+                  onClear={() => setCustomer(null)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="address" className="text-xs">Service address</Label>
+                <Input
+                  id="address"
+                  placeholder="e.g. 9 Harrisburg, Irvine CA 92620"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Service type *</Label>
                 <Select value={serviceTypeLabel} onValueChange={(v) => { setServiceTypeLabel(v); if (findServiceType(v)?.kind === "standalone") setSubscriptionId(""); }}>
                   <SelectTrigger><SelectValue placeholder="Pick a service type" /></SelectTrigger>
                   <SelectContent className="max-h-80">
@@ -1658,86 +1629,106 @@ function FindMode({
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                {serviceType && (
-                  <p className="text-xs text-muted-foreground">
-                    {isStandalone ? "Standalone — books with subscription_id = -1." : "Subscription — enter the customer's subscription id."}
-                  </p>
-                )}
               </div>
-              <div className="space-y-2">
-                <Label>Subscription ID {isStandalone ? "(not needed)" : "*"}</Label>
+              <div className="space-y-1">
+                <Label className="text-xs">Subscription ID {isStandalone ? "(not needed)" : "*"}</Label>
                 <Input
                   value={isStandalone ? "" : subscriptionId}
                   onChange={(e) => setSubscriptionId(e.target.value.replace(/[^0-9]/g, ""))}
-                  placeholder={isStandalone ? "—" : "e.g. 48213"}
+                  placeholder={isStandalone ? "— standalone, books with -1" : "e.g. 48213"}
                   disabled={isStandalone || !serviceType}
                   inputMode="numeric"
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>{planInfo ? "Days to search for Visit 1" : "Days to search"}</Label>
-              <div className="flex flex-wrap items-center gap-2">
-                <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
-                {[3, 5, 10].map((n) => (
-                  <Button
-                    key={n}
-                    type="button"
-                    size="sm"
-                    variant={selectedDates.length === n
-                      && selectedDates.every((d, i) => d === dayOptions[i]?.iso) ? "default" : "outline"}
-                    onClick={() => setSelectedDates(dayOptions.slice(0, n).map((o) => o.iso))}
-                  >
-                    Next {n} days
-                  </Button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">{planInfo ? "Days to search for Visit 1" : "Days to search"}</Label>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <DayMultiSelect options={dayOptions} selected={selectedDates} onChange={setSelectedDates} />
+                  {[3, 5, 10].map((n) => (
+                    <Button
+                      key={n}
+                      type="button"
+                      size="sm"
+                      variant={selectedDates.length === n
+                        && selectedDates.every((d, i) => d === dayOptions[i]?.iso) ? "default" : "outline"}
+                      onClick={() => setSelectedDates(dayOptions.slice(0, n).map((o) => o.iso))}
+                    >
+                      Next {n}
+                    </Button>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Next 3 working days are selected by default. The calendar at the top of the page
-                shows one column per day you pick here.
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Preferred window</Label>
+                  <Select value={window} onValueChange={setWindow}>
+                    <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Any time</SelectItem>
+                      <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
+                      <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Arrival window</Label>
+                  <Select value={windowWidth} onValueChange={setWindowWidth}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="4">4-hour window (default)</SelectItem>
+                      <SelectItem value="3">3-hour window</SelectItem>
+                      <SelectItem value="2">2-hour window</SelectItem>
+                      <SelectItem value="1">1-hour window</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={loading || followUpLoading} className="w-full md:w-auto">
+                {loading ? "Searching…" : planInfo ? "Find Visit 1 + follow-up slots" : "Find slots"}
+              </Button>
+              <p className="text-[11px] text-muted-foreground">
+                {planInfo
+                  ? `Best opening for Visit 1 in the days you pick, then the best opening ${planInfo.lo}–${planInfo.hi} days after it.`
+                  : "A customer is required to click-to-schedule; picking one autofills the address. The calendar below shows one column per day."}
               </p>
             </div>
-
-            <div className="flex flex-wrap gap-4">
-              <div className="space-y-2 md:w-64">
-                <Label>Preferred window (optional)</Label>
-                <Select value={window} onValueChange={setWindow}>
-                  <SelectTrigger><SelectValue placeholder="Any time" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Any time</SelectItem>
-                    <SelectItem value="AM">AM (8 AM – 12 PM)</SelectItem>
-                    <SelectItem value="PM">PM (12 PM – 5 PM)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2 md:w-64">
-                <Label>Arrival window width</Label>
-                <Select value={windowWidth} onValueChange={setWindowWidth}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">4-hour window (default)</SelectItem>
-                    <SelectItem value="3">3-hour window</SelectItem>
-                    <SelectItem value="2">2-hour window</SelectItem>
-                    <SelectItem value="1">1-hour window</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Narrows the customer's arrival window around the estimated time.
-                </p>
-              </div>
-            </div>
-
-            <Button type="submit" disabled={loading || followUpLoading} className="w-full md:w-auto">
-              {loading ? "Searching…" : planInfo ? "Find Visit 1 + follow-up slots" : "Find slots"}
-            </Button>
           </form>
         </CardContent>
       </Card>
 
+      <div className="mt-4 space-y-4">
+        <OpeningsCalendar
+          title={planInfo ? "Visit 1 — best opening each day" : "Best opening each day"}
+          dates={calendarDates}
+          byDay={result?.by_day ?? []}
+          dayRoutes={mergedRoutes}
+          windowWidth={Number(windowWidth)}
+          loading={loading}
+          searched={!!result}
+        />
+        {planInfo && followUp && (
+          <OpeningsCalendar
+            title={`${planInfo.label} — best opening each day`}
+            subtitle={`The follow-up band: ${planInfo.lo}–${planInfo.hi} days after Visit 1.`}
+            dates={(followUp.by_day ?? []).map((d) => d.date)}
+            byDay={followUp.by_day ?? []}
+            dayRoutes={mergedRoutes}
+            windowWidth={Number(windowWidth)}
+            loading={followUpLoading}
+            searched
+          />
+        )}
+      </div>
+
       {/* Single visit: one result block. */}
       {result && !planInfo && (
-        <div className="mt-6">
+        <div className="mt-4">
           <FindResultsView
             result={result}
             windowWidth={Number(windowWidth)}
@@ -1756,7 +1747,7 @@ function FindMode({
         const v2 = followUpLoading ? null : bestFitSlot(followUp);
         const w = Number(windowWidth);
         return (
-          <div className="mt-6 space-y-4 lg:relative lg:left-1/2 lg:-translate-x-1/2 lg:w-[min(96rem,calc(100vw-3rem))]">
+          <div className="mt-4 space-y-4 lg:relative lg:left-1/2 lg:-translate-x-1/2 lg:w-[min(96rem,calc(100vw-3rem))]">
             {/* Recommendation strip: the two days to offer the customer. */}
             <div className="rounded-lg border-2 border-emerald-600 bg-emerald-50/60 p-3">
               <div className="text-xs font-bold uppercase tracking-wide text-emerald-800 mb-2">Recommend</div>
@@ -1856,7 +1847,7 @@ function FindMode({
       {/* With a result on screen the map is threaded INTO the results, directly
           under the Best Fit card (Caleb: best fit, then the map, then the other
           choices). With no search yet it stands alone here. */}
-      <div className={result && !planInfo ? "hidden" : "mt-6"}>
+      <div className={result && !planInfo ? "hidden" : "mt-4"}>
         {routesMapNode}
       </div>
     </>
@@ -2640,7 +2631,7 @@ function CheckMode({
       </Card>
 
       {result && (
-        <div className="mt-6 space-y-4">
+        <div className="mt-4 space-y-4">
           <VerdictBanner result={result} />
           {result.options.length > 0 && (
             <Card>
