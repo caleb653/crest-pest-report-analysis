@@ -185,6 +185,7 @@ export type Database = {
           send_mode: string
           tax_rate: number
           test_recipients: Json
+          unit_line_style: string
           updated_at: string
         }
         Insert: {
@@ -210,6 +211,7 @@ export type Database = {
           send_mode?: string
           tax_rate?: number
           test_recipients?: Json
+          unit_line_style?: string
           updated_at?: string
         }
         Update: {
@@ -235,6 +237,7 @@ export type Database = {
           send_mode?: string
           tax_rate?: number
           test_recipients?: Json
+          unit_line_style?: string
           updated_at?: string
         }
         Relationships: [
@@ -1676,6 +1679,10 @@ export type Database = {
         Args: { p_asof: string; p_property: string }
         Returns: unknown
       }
+      portal_invoice_delete: {
+        Args: { p_actor?: string; p_invoice: string }
+        Returns: undefined
+      }
       portal_invoice_mark_sent: {
         Args: { p_actor?: string; p_invoice: string; p_to: Json }
         Returns: undefined
@@ -1703,6 +1710,10 @@ export type Database = {
       portal_invoice_unlock: {
         Args: { p_actor?: string; p_invoice: string; p_minutes?: number }
         Returns: string
+      }
+      portal_invoice_void: {
+        Args: { p_actor?: string; p_invoice: string }
+        Returns: undefined
       }
       portal_next_invoice_number: { Args: never; Returns: string }
     }
