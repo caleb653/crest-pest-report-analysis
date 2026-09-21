@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil } from "lucide-react";
+import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
 
 const EDIT_PASSWORD = "18444";
@@ -61,6 +61,9 @@ export function InvoiceCard({
   const [sending, setSending] = useState(false);
   const [confirmSend, setConfirmSend] = useState(false);
   const [editingLines, setEditingLines] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<null | "void" | "delete">(null);
+  const [removePw, setRemovePw] = useState("");
+  const [removing, setRemoving] = useState(false);
 
   const lines: any[] = [...(invoice.portal_invoice_lines ?? [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
@@ -146,6 +149,34 @@ export function InvoiceCard({
     } finally {
       setSending(false);
       setConfirmSend(false);
+    }
+  };
+
+  /** Void keeps the record; delete destroys it. Both release the visits so they
+      can be billed again, which the database handles. */
+  const removeInvoice = async (mode: "void" | "delete") => {
+    if (mode === "delete" && isSent && removePw.trim() !== EDIT_PASSWORD) {
+      toast({ title: "Wrong password", variant: "destructive" });
+      return;
+    }
+    setRemoving(true);
+    try {
+      const { error } =
+        mode === "void"
+          ? await supabase.rpc("portal_invoice_void", { p_invoice: invoice.id, p_actor: "admin" })
+          : await supabase.rpc("portal_invoice_delete", { p_invoice: invoice.id, p_actor: "admin" });
+      if (error) throw error;
+      toast({
+        title: mode === "void" ? `${invoice.invoice_number} voided` : `${invoice.invoice_number} deleted`,
+        description: "Its visits are billable again.",
+      });
+      onChanged();
+    } catch (e: any) {
+      toast({ title: "Could not remove it", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setRemoving(false);
+      setConfirmRemove(null);
+      setRemovePw("");
     }
   };
 
@@ -438,6 +469,67 @@ export function InvoiceCard({
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
               <Download className="w-3 h-3 mr-1" /> Download PDF
             </Button>
+
+            {isAdmin && !confirmRemove && (
+              <>
+                {isSent && invoice.status !== "void" ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => setConfirmRemove("void")}
+                  >
+                    <Ban className="w-3 h-3 mr-1" /> Void
+                  </Button>
+                ) : null}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                  onClick={() => setConfirmRemove("delete")}
+                >
+                  <Trash2 className="w-3 h-3 mr-1" /> Delete
+                </Button>
+              </>
+            )}
+
+            {isAdmin && confirmRemove && (
+              <div className="flex flex-wrap items-center gap-2 w-full">
+                <span className="text-xs text-muted-foreground">
+                  {confirmRemove === "void"
+                    ? "Void it? The record and number stay, the visits become billable again."
+                    : isSent
+                    ? "Delete for good? This destroys an invoice the customer already has."
+                    : "Delete this draft?"}
+                </span>
+                {confirmRemove === "delete" && isSent && (
+                  <Input
+                    type="password"
+                    className="w-40 h-8"
+                    placeholder="Admin password"
+                    value={removePw}
+                    onChange={(e) => setRemovePw(e.target.value)}
+                  />
+                )}
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 text-xs"
+                  onClick={() => removeInvoice(confirmRemove)}
+                  disabled={removing}
+                >
+                  {removing ? "Working…" : confirmRemove === "void" ? "Void it" : "Delete it"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 text-xs"
+                  onClick={() => { setConfirmRemove(null); setRemovePw(""); }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            )}
 
             {isAdmin && invoice.status !== "void" && (
               !confirmSend ? (

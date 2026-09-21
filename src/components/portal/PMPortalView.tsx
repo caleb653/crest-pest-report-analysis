@@ -154,11 +154,11 @@ const addDaysISO = (isoDate: string, days: number): string => {
 const todayISO = () => new Date().toISOString().split("T")[0];
 
 /**
- * Invoices are not shown to property managers yet (Caleb, 2026-09-21) — billing
- * is still being proved out internally. The tab and everything behind it are
- * built and working; flip this to true to show it.
+ * Property managers see their own invoices (Caleb, 2026-09-21). Read-only:
+ * issued invoices with the units behind each line, never drafts or voids, and
+ * none of the admin controls.
  */
-const SHOW_TENANT_BILLING = false;
+const SHOW_TENANT_BILLING = true;
 
 const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map" }: PMPortalViewProps) => {
   const billingSettings = useBillingSettings(propertyId);
