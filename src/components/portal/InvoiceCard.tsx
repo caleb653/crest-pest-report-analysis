@@ -8,7 +8,7 @@
  * always recoverable.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -202,17 +202,6 @@ export function InvoiceCard({
     }
   };
 
-  // Drafts auto-refresh against the latest visit/service edits whenever the card is opened,
-  // so the numbers always match what was last edited without anyone pressing a button.
-  const [autoRefreshed, setAutoRefreshed] = useState(false);
-  useEffect(() => {
-    if (open && !autoRefreshed && isAdmin && !isSent && lines.some((l: any) => l.line_type === "units")) {
-      setAutoRefreshed(true);
-      refreshFromPlan(true);
-    }
-    if (!open) setAutoRefreshed(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   /** Issue it to the portal without emailing anyone — it stops being a draft
       and the customer can see it straight away. */
@@ -533,14 +522,15 @@ export function InvoiceCard({
 
             {isAdmin && !isSent && lines.some((l: any) => l.line_type === "units") && (
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
-                className="h-7 text-xs"
+                className="h-8 text-xs font-semibold"
                 onClick={() => refreshFromPlan(false)}
                 disabled={refreshing}
-                title="Recalculate unit lines from the current visit data"
+                title="Recalculate unit lines from the latest service edits"
               >
-                <RefreshCw className={`w-3 h-3 mr-1 ${refreshing ? "animate-spin" : ""}`} /> Update based on service edits
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
+                {refreshing ? "Refreshing…" : "Refresh with new service details"}
               </Button>
             )}
 
