@@ -511,6 +511,12 @@ export function InvoiceCard({
               <Download className="w-3 h-3 mr-1" /> Download PDF
             </Button>
 
+            {isAdmin && !isSent && (
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={issueWithoutEmail} disabled={issuing}>
+                <Check className="w-3 h-3 mr-1" /> {issuing ? "Issuing…" : "Issue to portal (no email)"}
+              </Button>
+            )}
+
             {isAdmin && !isSent && lines.some((l: any) => l.line_type === "units") && (
               <Button
                 variant="outline"
