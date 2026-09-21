@@ -77,6 +77,7 @@ export function InvoiceCard({
   const canEdit = isAdmin && (!isSent || unlocked);
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
+  const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
   const [note, setNote] = useState<string>(invoice.customer_note ?? "");
   const [refs, setRefs] = useState<RefNumber[]>(
     Array.isArray(invoice.reference_numbers) ? invoice.reference_numbers : []
@@ -282,10 +283,16 @@ export function InvoiceCard({
   };
 
   const saveHeader = async () => {
+    const nextNumber = invNo.trim();
+    if (!nextNumber) {
+      toast({ title: "Invoice number is required", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("portal_invoices")
       .update({
+        invoice_number: nextNumber,
         po_number: po.trim() || null,
         customer_note: note.trim() || null,
         reference_numbers: refs.filter((r) => r.label.trim() && r.value.trim()) as never,
@@ -439,6 +446,14 @@ export function InvoiceCard({
           {canEdit && (
             <div className="space-y-3 border-t pt-3">
               <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Invoice number</Label>
+                  <Input
+                    value={invNo}
+                    onChange={(e) => setInvNo(e.target.value)}
+                    placeholder="CR-2026-01000"
+                  />
+                </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">PO number (optional)</Label>
                   <Input value={po} onChange={(e) => setPo(e.target.value)} placeholder="Leave blank if not needed" />
