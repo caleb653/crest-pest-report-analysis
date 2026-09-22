@@ -20,6 +20,7 @@ import { ArrowLeft, Plus, Copy, ExternalLink, Trash2, Building2, Link2, MapPin, 
 import { toast } from "@/hooks/use-toast";
 import crestLogo from "@/assets/crest-logo.png";
 import BillingDashboard from "@/components/portal/BillingDashboard";
+import { BillingPortalsAdmin } from "@/components/portal/BillingPortalsAdmin";
 import NotificationBell from "@/components/NotificationBell";
 import RegionalManagersTab from "@/components/portal/RegionalManagersTab";
 import { STAFF_NAMES } from "@/lib/staffRoster";
@@ -456,12 +457,12 @@ const PortalAdmin = () => {
   const deletePrepSheet = async (id: string) => { await supabase.from("portal_prep_sheets").delete().eq("id", id); loadPrepSheets(); toast({ title: "Prep sheet deleted" }); };
   
   const copyLink = (token: string, linkType?: string) => {
-    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    const prefix = linkType === "tenant" ? "tenant" : linkType === "billing" ? "billing" : "portal";
     navigator.clipboard.writeText(`${window.location.origin}/${prefix}/${token}`);
     toast({ title: "Link copied to clipboard" });
   };
   const openPortal = (token: string, linkType?: string) => {
-    const prefix = linkType === "tenant" ? "tenant" : "portal";
+    const prefix = linkType === "tenant" ? "tenant" : linkType === "billing" ? "billing" : "portal";
     window.open(`/${prefix}/${token}`, "_blank");
   };
 
@@ -864,6 +865,8 @@ const PortalAdmin = () => {
                 properties={allProperties}
                 services={allServices}
               />
+              {/* Customer-facing billing portals: admin picks the properties, customer gets one link. */}
+              <BillingPortalsAdmin />
             </TabsContent>
 
             <TabsContent value="regional">

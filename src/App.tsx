@@ -25,6 +25,7 @@ const PortalAdmin          = lazy(() => import("./pages/PortalAdmin"));
 const ClientPortal         = lazy(() => import("./pages/ClientPortal"));
 const TenantPortal         = lazy(() => import("./pages/TenantPortal"));
 const PMPortal             = lazy(() => import("./pages/PMPortal"));
+const BillingPortal        = lazy(() => import("./pages/BillingPortal"));
 const AppointmentReport    = lazy(() => import("./pages/AppointmentReport"));
 const RightToTreat         = lazy(() => import("./pages/RightToTreat"));
 const SurveyTake           = lazy(() => import("./pages/SurveyTake"));
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/portal/:token" element={<ClientPortal />} />
             <Route path="/tenant/:token" element={<TenantPortal />} />
             <Route path="/pm/:token" element={<PMPortal />} />
+            <Route path="/billing/:token" element={<BillingPortal />} />
             <Route path="/appointment-report/:serviceId" element={<AppointmentReport />} />
             <Route path="/portal-admin" element={<PortalAdmin />} />
             <Route path="/right-to-treat/:token" element={<RightToTreat />} />
