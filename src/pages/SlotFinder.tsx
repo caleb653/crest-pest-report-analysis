@@ -142,6 +142,14 @@ type SlotCandidate = {
   /** The Route Manager's day is already modeled to run past 7:30 PM — the
       slot is ranked last on purpose, not merely penalised. */
   day_unworkable?: boolean;
+  /** Stops already booked on that Route Manager's day. 0 = a wide-open day
+      (insertion_kind "open_day"), which is offered at a zero detour. */
+  stops_in_route?: number;
+  /** Why a near-empty day is worth a longer drive — set by the engine for
+      0/1/2-stop days only. */
+  bandwidth_note?: string | null;
+  /** How much of this slot's drive counted when ranking (1 = all of it). */
+  bandwidth_factor?: number;
   day_plan?: DayPlanRow[];
   prev_stop: Stop;
   next_stop: Stop;
@@ -1945,7 +1953,11 @@ function FindResultsView({
                         <span className="font-semibold text-muted-foreground"> · arrive ~{fmtTime(r.c.est_min)}</span>
                       )}
                     </p>
-                    {r.c.fits_between && (
+                    {r.c.insertion_kind === "open_day" ? (
+                      <p className="mt-1 text-sm font-medium text-muted-foreground">
+                        {r.c.tech_name} has nothing booked that day — the whole day is open.
+                      </p>
+                    ) : r.c.fits_between && (
                       <p className="mt-1 text-sm font-medium text-muted-foreground">
                         Goes in at {r.c.fits_between}
                         {r.c.prev_stop?.customer_name ? `, after ${r.c.prev_stop.customer_name}` : ""}
@@ -2254,12 +2266,14 @@ function SlotCard({
         const prevName = (c.prev_stop?.customer_name || "").trim();
         const nextName = (c.next_stop?.customer_name || "").trim();
         const positionLabel =
-          kind === "first_stop" ? `New first stop · before Stop ${nextIdx ?? 1}${totalIdx ? ` of ${totalIdx}` : ""}`
+          kind === "open_day" ? "Wide-open day · nothing booked yet"
+          : kind === "first_stop" ? `New first stop · before Stop ${nextIdx ?? 1}${totalIdx ? ` of ${totalIdx}` : ""}`
           : kind === "last_stop" ? `New last stop · after Stop ${prevIdx ?? totalIdx ?? "?"}${totalIdx ? ` of ${totalIdx}` : ""}`
           : prevIdx != null && nextIdx != null ? `Insert between Stop ${prevIdx} and Stop ${nextIdx}${totalIdx ? ` of ${totalIdx}` : ""}`
           : null;
         const namesLabel =
-          kind === "first_stop" ? (nextName ? `→ ${nextName}` : "")
+          kind === "open_day" ? ""
+          : kind === "first_stop" ? (nextName ? `→ ${nextName}` : "")
           : kind === "last_stop" ? (prevName ? `${prevName} →` : "")
           : (prevName || nextName) ? `${prevName || "—"} → ${nextName || "—"}` : "";
         return (
@@ -2470,6 +2484,12 @@ function SlotCard({
         );
       })()}
 
+      {c.bandwidth_note && (
+        <p className="mt-2 rounded-md border border-emerald-300 bg-emerald-50/70 px-2.5 py-1.5 text-xs font-semibold text-emerald-900">
+          {c.bandwidth_note}
+        </p>
+      )}
+
       {c.justification && (
         <p className="mt-2 text-xs italic text-muted-foreground">{c.justification}</p>
       )}
@@ -2657,6 +2677,9 @@ function CheckMode({
                       {(() => {
                         const kind = c.insertion_kind ?? "mid_route";
                         const tot = c.stops_total != null ? ` of ${c.stops_total}` : "";
+                        if (kind === "open_day") {
+                          return <>Whole day open — <span className="font-medium text-foreground">{c.tech_name}</span> has nothing booked{c.est_min != null ? ` · ETA ~${fmtTime(c.est_min)}` : ""}</>;
+                        }
                         if (kind === "first_stop") {
                           return <>New first stop (on site 8:00 AM) · before <span className="font-medium text-foreground">#{c.next_order ?? 1} {c.next_stop?.customer_name}</span> ({c.next_stop?.city}){tot}</>;
                         }
