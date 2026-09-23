@@ -503,7 +503,8 @@ interface Proposal {
   firstServiceMonth?: string;
 }
 
-const PROPOSAL_NAMES = ["Option A", "Option B", "Option C", "Option D"];
+const MAX_PROPOSALS = 10;
+const PROPOSAL_NAMES = Array.from({ length: MAX_PROPOSALS }, (_, i) => `Option ${String.fromCharCode(65 + i)}`);
 
 const Report = () => {
   const location = useLocation();
@@ -692,7 +693,7 @@ const Report = () => {
       toast.error("Options can't be added after a signature is on file. Clear the signature first.");
       return;
     }
-    if (proposals.length < 4) {
+    if (proposals.length < MAX_PROPOSALS) {
       const nextName = PROPOSAL_NAMES[proposals.length] || `Option ${proposals.length + 1}`;
       setProposals((prev) => [...prev, { name: nextName, services: [{ serviceType: "", initialPrice: "", recurringPrice: "", frequency: 30 }] }]);
     }
@@ -3984,9 +3985,9 @@ Crest Pest Control`;
           ))}
 
           {/* Add Proposal Button */}
-          {proposals.length < 4 && !isReadOnly && (
+          {proposals.length < MAX_PROPOSALS && !isReadOnly && (
             <Button type="button" variant="outline" size="sm" onClick={addProposal} className="no-print h-8 text-xs">
-              <Plus className="w-3 h-3 mr-1" /> Add Proposal (up to 4)
+              <Plus className="w-3 h-3 mr-1" /> Add Proposal (up to {MAX_PROPOSALS})
             </Button>
           )}
 
