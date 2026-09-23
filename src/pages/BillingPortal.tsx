@@ -179,12 +179,14 @@ const BillingPortal = () => {
         {properties.map((p) => {
           const t = totals.perProperty[p.id];
           const mine = invoices.filter((i) => i.property_id === p.id);
-          const byMonth = Object.entries(
-            mine.reduce((acc: Record<string, any[]>, inv) => {
-              const key = periodMonthKey(inv.period_start ?? inv.issue_date);
-              (acc[key] ||= []).push(inv);
-              return acc;
-            }, {})
+          const byMonth = (
+            Object.entries(
+              mine.reduce((acc: Record<string, any[]>, inv) => {
+                const key = periodMonthKey(inv.period_start ?? inv.issue_date);
+                (acc[key] ||= []).push(inv);
+                return acc;
+              }, {} as Record<string, any[]>)
+            ) as [string, any[]][]
           ).sort((a, b) => b[0].localeCompare(a[0]));
 
           return (
