@@ -258,7 +258,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
         .limit(50),
     ]);
     setSettings(s ?? null);
-    setInvoices(inv ?? []);
+    // Admins see everything (hidden ones are badged); customers never see an
+    // invoice an admin chose to hide.
+    setInvoices((inv ?? []).filter((i: any) => isAdmin || i.hidden_from_portal !== true));
     if (isAdmin) {
       try {
         const [b, o, f] = await Promise.all([

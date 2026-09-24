@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw } from "lucide-react";
+import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
 import { refreshDraftFromPlan } from "@/lib/invoiceBuilder";
 
@@ -75,6 +75,7 @@ export function InvoiceCard({
   const unlocked =
     !!invoice.edit_unlocked_until && new Date(invoice.edit_unlocked_until).getTime() > Date.now();
   const canEdit = isAdmin && (!isSent || unlocked);
+  const hiddenFromPortal = invoice.hidden_from_portal === true;
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
   const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
@@ -181,6 +182,29 @@ export function InvoiceCard({
       setConfirmRemove(null);
       setRemovePw("");
     }
+  };
+
+  /** Admin-only: take an issued invoice off the customer's billing portal and
+      Billing tab (or put it back). Nothing about the invoice itself changes. */
+  const [hiding, setHiding] = useState(false);
+  const toggleHidden = async () => {
+    setHiding(true);
+    const { error } = await supabase
+      .from("portal_invoices")
+      .update({ hidden_from_portal: !hiddenFromPortal } as never)
+      .eq("id", invoice.id);
+    setHiding(false);
+    if (error) {
+      toast({ title: "Could not change that", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: hiddenFromPortal ? "Visible to the customer again" : "Hidden from the customer",
+      description: hiddenFromPortal
+        ? `${invoice.invoice_number} is back on their billing portal and Billing tab.`
+        : `${invoice.invoice_number} stays here for you, but the customer no longer sees it.`,
+    });
+    onChanged();
   };
 
   const refreshFromPlan = async (silent = false) => {
@@ -332,6 +356,11 @@ export function InvoiceCard({
             )}
             {invoice.kind === "one_time" && (
               <Badge variant="outline" className="text-[10px]">one-time</Badge>
+            )}
+            {isAdmin && hiddenFromPortal && (
+              <Badge className="text-[10px] bg-neutral-200 text-neutral-700 gap-1">
+                <EyeOff className="w-3 h-3" /> hidden from customer
+              </Badge>
             )}
             {invoice.revision > 1 && (
               <span className="text-[10px] text-muted-foreground">rev {invoice.revision}</span>
@@ -536,6 +565,20 @@ export function InvoiceCard({
             <Button variant="outline" size="sm" className="h-7 text-xs" onClick={download}>
               <Download className="w-3 h-3 mr-1" /> Download PDF
             </Button>
+
+            {isAdmin && isSent && invoice.status !== "void" && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={toggleHidden}
+                disabled={hiding}
+                title={hiddenFromPortal ? "Put it back on the customer's billing portal" : "Keep it here, but take it off the customer's billing portal"}
+              >
+                {hiddenFromPortal ? <Eye className="w-3 h-3 mr-1" /> : <EyeOff className="w-3 h-3 mr-1" />}
+                {hiddenFromPortal ? "Show to customer" : "Hide from customer"}
+              </Button>
+            )}
 
             {isAdmin && !isSent && (
               <Button variant="outline" size="sm" className="h-7 text-xs" onClick={issueWithoutEmail} disabled={issuing}>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PropertyDashboard from "@/components/portal/PropertyDashboard";
 import CommercialDashboardView from "@/components/portal/CommercialDashboardView";
 import { supabase } from "@/integrations/supabase/client";
+import { syncInvoiceLinesForService } from "@/lib/invoiceBuilder";
 import { createIdleReloader } from "@/lib/typingGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -368,6 +369,7 @@ const PortalAdmin = () => {
     let error;
     if (editingService) {
       ({ error } = await supabase.from("portal_services").update(payload).eq("id", editingService.id));
+      if (!error) void syncInvoiceLinesForService(editingService.id).catch(() => {});
     } else {
       ({ error } = await supabase.from("portal_services").insert(payload));
     }

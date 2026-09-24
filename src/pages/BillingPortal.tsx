@@ -8,7 +8,7 @@
  *
  * Read-only by design. Which properties appear here is decided on the admin
  * side (a portal_links row of type "billing"); nothing on this page can change
- * it. Drafts and voided invoices never show.
+ * it. Drafts, voided invoices and invoices an admin hid never show.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -88,7 +88,10 @@ const BillingPortal = () => {
     setLabel(link.label);
     setClientName(client?.company || client?.name || null);
     setProperties((props as PropertyRow[]) ?? []);
-    setInvoices(inv ?? []);
+    // Hidden invoices are an admin choice (Billing tab → "Hide from customer");
+    // filtered here rather than in the query so an older database without the
+    // column still serves the page.
+    setInvoices((inv ?? []).filter((i: any) => i.hidden_from_portal !== true));
     setLoading(false);
   };
 

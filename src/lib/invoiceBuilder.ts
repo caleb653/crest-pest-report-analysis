@@ -1001,23 +1001,31 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
 
   const { data: lines, error: lErr } = await supabase
     .from("portal_invoice_lines")
-    .select("id, line_type, service_id, quantity, unit_price, units_snapshot, detail")
+    .select("id, line_type, service_id, description, sort_order, quantity, unit_price, units_snapshot, detail")
     .eq("invoice_id", invoiceId);
   if (lErr) throw lErr;
 
-  let updated = 0;
-
+  // Any line tied to a visit refreshes its unit facts — including the ad-hoc
+  // / flat visit lines, which used to be skipped and went stale.
+  const byService = new Map<string, any[]>();
   for (const l of lines ?? []) {
-    // Any line tied to a visit refreshes its unit facts — including the ad-hoc
-    // / flat visit lines, which used to be skipped and went stale.
     if (!l.service_id) continue;
     if (l.line_type !== "units" && !(l as any).units_snapshot) continue;
+    const list = byService.get(l.service_id) ?? [];
+    list.push(l);
+    byService.set(l.service_id, list);
+  }
 
+  let updated = 0;
+  let maxSort = Math.max(0, ...(lines ?? []).map((l: any) => Number(l.sort_order) || 0));
+  const itemizedUnitOf = (l: any) =>
+    String(l.description ?? "").replace(/^Unit /, "").split(" — ")[0].trim();
 
+  for (const [serviceId, svcLines] of byService) {
     const { data: v } = await supabase
       .from("portal_services")
-      .select("id, unit_details, report_data, billing_type, billing_amount")
-      .eq("id", l.service_id)
+      .select("id, service_type, service_date, unit_details, report_data, billing_type, billing_amount")
+      .eq("id", serviceId)
       .maybeSingle();
     if (!v) continue;
 
@@ -1025,26 +1033,84 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
     const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
     const glance = glanceUnitsFromPast(unitRows);
     const snapshot = { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived };
-
-    // A line priced by hand keeps its price — only the unit facts refresh.
     const handPriced = v.billing_type === "billable" && Number(v.billing_amount) > 0;
-    const patch: Record<string, unknown> = { units_snapshot: snapshot as never };
 
-    // The printed unit list lives in `detail` too — rebuild it under whatever
-    // heading the line already had so the text matches the snapshot.
-    const oldDetail = String((l as any).detail ?? "");
-    if (oldDetail.includes("Unit ")) {
+    // ── itemized style: one line per unit. A unit deleted from the visit
+    // loses its line; a unit added to the visit gets one; the rest re-read
+    // their text from the visit.
+    const itemized = svcLines.filter(
+      (l) => l.line_type === "units" && /^Unit .+ — /.test(String(l.description ?? "")),
+    );
+    if (itemized.length) {
+      const keep = new Map<string, any>();
+      for (const l of itemized) {
+        const u = itemizedUnitOf(l);
+        if (glance.some((g) => g.unit_number === u) && !keep.has(u)) {
+          keep.set(u, l);
+        } else {
+          const { error } = await supabase.from("portal_invoice_lines").delete().eq("id", l.id);
+          if (!error) updated++;
+        }
+      }
+      const over = ov.unitsOver;
+      for (let i = 0; i < glance.length; i++) {
+        const u = glance[i];
+        const chargeable = i >= glance.length - over;
+        const price = chargeable && !ov.waived ? ov.pricePerUnit : 0;
+        const text = {
+          description: `Unit ${u.unit_number} — ${fmtDate(v.service_date)}`,
+          detail: u.service || null,
+          units_snapshot: (i === 0 ? snapshot : null) as never,
+        };
+        const existing = keep.get(u.unit_number);
+        if (existing) {
+          const { error } = await supabase
+            .from("portal_invoice_lines")
+            .update({ ...text, quantity: 1, unit_price: price })
+            .eq("id", existing.id);
+          if (!error) updated++;
+        } else {
+          const { error } = await supabase.from("portal_invoice_lines").insert({
+            invoice_id: invoiceId,
+            sort_order: ++maxSort,
+            line_type: "units",
+            service_id: serviceId,
+            ...text,
+            service_date: v.service_date,
+            quantity: 1,
+            unit_price: price,
+            taxable: false,
+            fr_entry_required: null,
+          });
+          if (!error) updated++;
+        }
+      }
+      continue;
+    }
+
+    // ── summary / flat style: the unit list is printed inside `detail`.
+    for (const l of svcLines) {
+      const patch: Record<string, unknown> = { units_snapshot: snapshot as never };
+
+      // Rebuild the printed list under whatever heading the line already had,
+      // and fix the count in that heading, so the text matches the visit.
+      const oldDetail = String((l as any).detail ?? "");
       const head = oldDetail.split("\n")[0];
-      patch.detail = glance.length ? `${head}\n${glanceUnitsToText(glance)}` : head;
-    }
+      if (oldDetail.includes("Unit ") || /\bunits? treated\b/i.test(head)) {
+        const total = unitRows.length;
+        const nextHead = head.replace(/^\d+ units? treated/, `${total} unit${total === 1 ? "" : "s"} treated`);
+        patch.detail = glance.length ? `${nextHead}\n${glanceUnitsToText(glance)}` : nextHead;
+      }
 
-    if (l.line_type === "units" && !handPriced) {
-      patch.quantity = ov.unitsOver;
-      patch.unit_price = ov.waived ? 0 : ov.pricePerUnit;
-    }
+      // A line priced by hand keeps its price — only the unit facts refresh.
+      if (l.line_type === "units" && !handPriced) {
+        patch.quantity = ov.unitsOver;
+        patch.unit_price = ov.waived ? 0 : ov.pricePerUnit;
+      }
 
-    const { error } = await supabase.from("portal_invoice_lines").update(patch).eq("id", l.id);
-    if (!error) updated++;
+      const { error } = await supabase.from("portal_invoice_lines").update(patch as never).eq("id", l.id);
+      if (!error) updated++;
+    }
   }
 
   if (updated) {
@@ -1057,6 +1123,40 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
   }
 
   return updated;
+}
+
+/**
+ * A visit's units just changed — make every OPEN invoice that bills it say
+ * exactly what the visit says now.
+ *
+ * Open = draft, ready, or a sent invoice an admin has unlocked. Anything the
+ * customer is already holding stays frozen; unlock it and refresh to change it.
+ */
+export async function syncInvoiceLinesForService(serviceId: string, actor = "admin"): Promise<number> {
+  const { data: lines } = await supabase
+    .from("portal_invoice_lines")
+    .select("invoice_id")
+    .eq("service_id", serviceId);
+  const ids = [...new Set((lines ?? []).map((l: any) => l.invoice_id as string).filter(Boolean))];
+  if (!ids.length) return 0;
+
+  const { data: invoices } = await supabase
+    .from("portal_invoices")
+    .select("id, status, edit_unlocked_until")
+    .in("id", ids);
+
+  let n = 0;
+  for (const inv of invoices ?? []) {
+    const unlocked =
+      !!inv.edit_unlocked_until && new Date(inv.edit_unlocked_until).getTime() > Date.now();
+    if (!["draft", "ready"].includes(inv.status) && !(unlocked && inv.status !== "void")) continue;
+    try {
+      n += await refreshDraftFromPlan(inv.id, actor);
+    } catch {
+      /* one bad invoice must not block the others */
+    }
+  }
+  return n;
 }
 
 /**

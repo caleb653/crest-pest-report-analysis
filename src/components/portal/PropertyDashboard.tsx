@@ -50,6 +50,7 @@ import { SurveyQuestionsPreview } from "@/components/portal/SurveyQuestionsPrevi
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 import { readUnitPlanConfig, computeOverage, formatOverageMoney, isOverageWaived } from "@/lib/unitOverage";
+import { syncInvoiceLinesForService } from "@/lib/invoiceBuilder";
 import { basePriceLabel } from "@/lib/billingCadence";
 import { useBillingSettings } from "@/hooks/useBillingSettings";
 import { maybeNotifyUnitOverage } from "@/lib/overageAlert";
@@ -1668,6 +1669,7 @@ const PropertyDashboard = ({
     if (!details[unitIndex]) return;
     details[unitIndex] = { ...details[unitIndex], [field]: value };
     await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    void syncInvoiceLinesForService(serviceId).catch(() => {});
     onRefresh();
   };
 
@@ -1682,6 +1684,8 @@ const PropertyDashboard = ({
     const { error } = await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
     if (error) { toast({ title: "Couldn't delete unit", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Unit removed", duration: 1500 });
+    // Any open invoice that bills this visit now lists exactly the units left.
+    void syncInvoiceLinesForService(serviceId).catch(() => {});
     onRefresh();
   };
 
@@ -1781,6 +1785,7 @@ const PropertyDashboard = ({
     setNewUnitData({ unit_number: "", findings: "", pest_activity: "None", products_used: "", status: "Complete", notes: "", kind: "service" });
     setAddingUnitToService(null);
     toast({ title: "Unit added" });
+    void syncInvoiceLinesForService(serviceId).catch(() => {});
     onRefresh();
   };
 
@@ -3185,6 +3190,19 @@ const PropertyDashboard = ({
     const statusOptionsFor = (u: any) => isInspectionUnit(u) ? INSPECTION_STATUSES : SERVICE_STATUSES;
     const defaultStatusFor = (kind: string) => kind === "inspection" ? "Free and Clear" : "Complete";
 
+    // Stable identity per row: unit name + how many times that name has
+    // already appeared (duplicates stay distinct). Handlers still use the raw
+    // array index; only React's reconciliation uses these keys.
+    const unitRowKeys = (() => {
+      const seen = new Map<string, number>();
+      return unitDetails.map((u: any) => {
+        const name = String(u?.unit_number || "").trim() || "(blank)";
+        const n = seen.get(name) ?? 0;
+        seen.set(name, n + 1);
+        return `${name}#${n}`;
+      });
+    })();
+
     return (
       <div>
         <div className="flex items-center justify-between mb-1.5">
@@ -3205,11 +3223,17 @@ const PropertyDashboard = ({
             const isInspection = kind === "inspection";
             const isFollowUp = unit.follow_up_needed === true;
             const allComments: ServiceComment[] = Array.isArray(unit.comments) ? (unit.comments as ServiceComment[]) : [];
-            const unitKey = `pd-past:${s.id}:${j}`;
+            // Key the card by the UNIT, not its position. The unit name and
+            // findings are uncontrolled inputs (defaultValue); keyed by index,
+            // deleting row 2 of 5 left every DOM node in place and only the
+            // last card vanished — so it always looked like the bottom unit
+            // was deleted, whichever trash button was clicked.
+            const rowKey = unitRowKeys[j];
+            const unitKey = `pd-past:${s.id}:${rowKey}`;
             const isUnitOpen = expandedUnitKeys.has(unitKey);
             return (
               <div
-                key={j}
+                key={rowKey}
                 className={`rounded-xl border-2 bg-card shadow-md ring-1 ring-border overflow-hidden ${
                   isFollowUp ? "border-orange-500" : "border-primary/60"
                 }`}
