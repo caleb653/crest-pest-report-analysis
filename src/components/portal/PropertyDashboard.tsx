@@ -1671,6 +1671,20 @@ const PropertyDashboard = ({
     onRefresh();
   };
 
+  const deleteUnitFromService = async (serviceId: string, unitIndex: number) => {
+    const svc = propServices.find(s => s.id === serviceId);
+    if (!svc) return;
+    const details = Array.isArray(svc.unit_details) ? [...(svc.unit_details as any[])] : [];
+    const u = details[unitIndex];
+    if (!u) return;
+    if (!window.confirm(`Delete unit ${u.unit_number || unitIndex + 1} from this appointment? This can't be undone.`)) return;
+    details.splice(unitIndex, 1);
+    const { error } = await supabase.from("portal_services").update({ unit_details: details }).eq("id", serviceId);
+    if (error) { toast({ title: "Couldn't delete unit", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Unit removed", duration: 1500 });
+    onRefresh();
+  };
+
   // Save service-level products_used (per service date — not per unit).
   // Debounced — every keystroke in the ProductUsageEditor calls this, so we
   // batch DB writes (~600ms) and skip onRefresh() between strokes (which
@@ -3293,6 +3307,15 @@ const PropertyDashboard = ({
                     >
                       {statusOptionsFor(unit).map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                     </select>
+                    <button
+                      type="button"
+                      data-visit-pdf-hide
+                      title="Delete this unit from the appointment"
+                      onClick={(e) => { e.stopPropagation(); deleteUnitFromService(s.id, j); }}
+                      className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-destructive/40 bg-background hover:bg-destructive/10"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
                     {!isHOA && <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${isUnitOpen ? "rotate-180" : ""}`} />}
                   </div>
                 </div>
