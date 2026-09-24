@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw, Eye, EyeOff } from "lucide-react";
-import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
+import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, customerUnitText, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
 import { refreshDraftFromPlan } from "@/lib/invoiceBuilder";
 
 const EDIT_PASSWORD = "18444";
@@ -443,7 +443,7 @@ export function InvoiceCard({
                         {l.description}
                       </div>
                       {l.detail && !units.length && (
-                        <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{l.detail}</div>
+                        <div className="text-xs text-muted-foreground whitespace-pre-line mt-0.5">{customerUnitText(l.detail)}</div>
                       )}
                     </div>
                     <div className="text-sm font-semibold tabular-nums shrink-0">{money(l.amount)}</div>
@@ -457,7 +457,7 @@ export function InvoiceCard({
                       <div className="grid gap-0.5 sm:grid-cols-2">
                         {units.map((u: any, i: number) => (
                           <div key={i} className="text-[11px] text-foreground/80">
-                            <span className="font-medium">Unit {u.unit_number}</span> — {u.service}
+                            <span className="font-medium">Unit {u.unit_number}</span> — {customerUnitText(u.service)}
                           </div>
                         ))}
                       </div>

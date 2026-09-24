@@ -24,6 +24,13 @@ const PAGE_H = 792;
 const MARGIN = 48;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
+/** Internal scheduling notes never belong on a bill. Lines built before
+ *  Sep 24 2026 carry the wording in their stored text, so it is scrubbed at
+ *  render time as well as at build time. */
+export function customerUnitText(s: string | null | undefined): string {
+  return String(s ?? "").replace(/\s*•\s*Follow-up needed/gi, "");
+}
+
 export interface InvoicePdfLine {
   line_type: string;
   description: string;
@@ -243,7 +250,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     const descW = xQty - xDesc - 18;
     const descLines = pdf.splitTextToSize(line.description, descW);
     const units = line.units_snapshot?.units ?? [];
-    const detailLines = line.detail && !units.length ? pdf.splitTextToSize(line.detail, descW) : [];
+    const detailLines = line.detail && !units.length ? pdf.splitTextToSize(customerUnitText(line.detail), descW) : [];
     const need = descLines.length * 13 + detailLines.length * 11 + units.length * 10 + 18;
 
     if (y + need > PAGE_H - 140) {
@@ -290,7 +297,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
           newPage();
           ly = y = MARGIN + 6;
         }
-        pdf.text(`Unit ${u.unit_number} — ${u.service}`, xDesc + 10, ly);
+        pdf.text(`Unit ${u.unit_number} — ${customerUnitText(u.service)}`, xDesc + 10, ly);
         ly += 10;
       }
     }
