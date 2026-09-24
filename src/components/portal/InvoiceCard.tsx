@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, customerUnitText, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
-import { refreshDraftFromPlan } from "@/lib/invoiceBuilder";
+import { refreshDraftFromPlan, setInvoiceHidden } from "@/lib/invoiceBuilder";
 
 const EDIT_PASSWORD = "18444";
 
@@ -75,7 +75,7 @@ export function InvoiceCard({
   const unlocked =
     !!invoice.edit_unlocked_until && new Date(invoice.edit_unlocked_until).getTime() > Date.now();
   const canEdit = isAdmin && (!isSent || unlocked);
-  const hiddenFromPortal = invoice.hidden_from_portal === true;
+  const hiddenFromPortal = invoice._hidden_from_customer === true;
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
   const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
@@ -204,15 +204,14 @@ export function InvoiceCard({
   const [hiding, setHiding] = useState(false);
   const toggleHidden = async () => {
     setHiding(true);
-    const { error } = await supabase
-      .from("portal_invoices")
-      .update({ hidden_from_portal: !hiddenFromPortal } as never)
-      .eq("id", invoice.id);
-    setHiding(false);
-    if (error) {
-      toast({ title: "Could not change that", description: error.message, variant: "destructive" });
+    try {
+      await setInvoiceHidden(invoice.id, !hiddenFromPortal, "admin");
+    } catch (e: any) {
+      setHiding(false);
+      toast({ title: "Could not change that", description: e?.message ?? String(e), variant: "destructive" });
       return;
     }
+    setHiding(false);
     toast({
       title: hiddenFromPortal ? "Visible to the customer again" : "Hidden from the customer",
       description: hiddenFromPortal

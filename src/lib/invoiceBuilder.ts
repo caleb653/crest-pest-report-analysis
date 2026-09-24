@@ -45,6 +45,54 @@ export interface BillingSettings {
   send_mode: "test" | "live";
 }
 
+/** Today as YYYY-MM-DD in the office's local time (the database uses UTC). */
+export function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export function addDaysIso(iso: string, days: number): string {
+  const dt = new Date(`${String(iso).slice(0, 10)}T00:00:00Z`);
+  dt.setUTCDate(dt.getUTCDate() + (Number(days) || 0));
+  return dt.toISOString().slice(0, 10);
+}
+
+/**
+ * Hiding an invoice from the customer.
+ *
+ * Kept in the invoice events log rather than a column: the schema of this
+ * project can only be changed through Lovable, and the log is something the
+ * app already writes. The latest hide/show event for an invoice wins.
+ */
+export const HIDE_EVENT = "hidden_from_customer";
+export const SHOW_EVENT = "shown_to_customer";
+
+export async function fetchHiddenInvoiceIds(invoiceIds: string[]): Promise<Set<string>> {
+  const hidden = new Set<string>();
+  if (!invoiceIds.length) return hidden;
+  const { data } = await supabase
+    .from("portal_invoice_events")
+    .select("invoice_id, event, created_at")
+    .in("invoice_id", invoiceIds)
+    .in("event", [HIDE_EVENT, SHOW_EVENT])
+    .order("created_at", { ascending: true });
+  for (const e of data ?? []) {
+    if (e.event === HIDE_EVENT) hidden.add(e.invoice_id);
+    else hidden.delete(e.invoice_id);
+  }
+  return hidden;
+}
+
+export async function setInvoiceHidden(invoiceId: string, hidden: boolean, actor = "admin"): Promise<void> {
+  const { error } = await supabase.from("portal_invoice_events").insert({
+    invoice_id: invoiceId,
+    event: hidden ? HIDE_EVENT : SHOW_EVENT,
+    actor,
+    detail: null,
+  });
+  if (error) throw error;
+}
+
 export interface DraftLine {
   sort_order: number;
   line_type: LineType;
@@ -460,12 +508,25 @@ export async function saveDraftInvoice(draft: DraftInvoice, actor?: string): Pro
     .eq("id", draft.property_id)
     .maybeSingle();
 
+  // Dates are set here, not left to the database: the trigger default there
+  // still falls back to 30-day terms, and the app's rule is "due upon receipt"
+  // unless the property's settings say otherwise.
+  const issueDate = localToday();
+  const { data: termsRow } = await supabase
+    .from("portal_billing_settings")
+    .select("payment_terms_days")
+    .eq("property_id", draft.property_id)
+    .maybeSingle();
+  const termsDays = Math.max(0, Number(termsRow?.payment_terms_days ?? 0) || 0);
+
   const { data: invoice, error } = await supabase
     .from("portal_invoices")
     .insert({
       property_id: draft.property_id,
       client_id: property?.client_id ?? null,
       kind: draft.kind,
+      issue_date: issueDate,
+      due_date: addDaysIso(issueDate, termsDays),
       period_start: draft.period_start,
       period_end: draft.period_end,
       po_number: draft.po_number,

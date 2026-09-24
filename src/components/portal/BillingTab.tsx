@@ -38,6 +38,7 @@ import {
   type BillableVisit,
   type CustomLine,
   type OpenInvoice,
+  fetchHiddenInvoiceIds,
 } from "@/lib/invoiceBuilder";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
@@ -260,7 +261,12 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     setSettings(s ?? null);
     // Admins see everything (hidden ones are badged); customers never see an
     // invoice an admin chose to hide.
-    setInvoices((inv ?? []).filter((i: any) => isAdmin || i.hidden_from_portal !== true));
+    const hidden = await fetchHiddenInvoiceIds((inv ?? []).map((i: any) => i.id));
+    setInvoices(
+      (inv ?? [])
+        .map((i: any) => ({ ...i, _hidden_from_customer: hidden.has(i.id) }))
+        .filter((i: any) => isAdmin || !i._hidden_from_customer),
+    );
     if (isAdmin) {
       try {
         const [b, o, f] = await Promise.all([
