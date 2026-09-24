@@ -242,25 +242,24 @@ const BillingPortal = () => {
                     </div>
                     <div className="space-y-2">
                       {group.map((inv) => (
-                        <div key={inv.id} className="relative">
-                          <InvoiceCard
-                            invoice={inv}
-                            property={{ name: p.name, address: p.address }}
-                            clientName={clientName}
-                            isAdmin={false}
-                            onChanged={load}
-                          />
-                          {/* paid / due pill, top-right, so status reads without expanding */}
-                          <div className="absolute right-12 top-3 hidden sm:block">
-                            {inv.status === "paid" ? (
+                        <InvoiceCard
+                          key={inv.id}
+                          invoice={inv}
+                          property={{ name: p.name, address: p.address }}
+                          clientName={clientName}
+                          isAdmin={false}
+                          onChanged={load}
+                          defaultOpen
+                          headerBadge={
+                            inv.status === "paid" ? (
                               <Badge className="bg-emerald-100 text-emerald-900 text-[10px]">Paid</Badge>
                             ) : (
-                              <Badge className="bg-amber-100 text-amber-900 text-[10px]">
+                              <Badge className="bg-amber-100 text-amber-900 text-[10px] whitespace-nowrap">
                                 Due {money(inv.balance)}
                               </Badge>
-                            )}
-                          </div>
-                        </div>
+                            )
+                          }
+                        />
                       ))}
                     </div>
                   </div>

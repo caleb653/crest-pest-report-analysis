@@ -48,14 +48,20 @@ export function InvoiceCard({
   clientName,
   isAdmin,
   onChanged,
+  defaultOpen = false,
+  headerBadge,
 }: {
   invoice: any;
   property: { name: string; address?: string | null };
   clientName?: string | null;
   isAdmin: boolean;
   onChanged: () => void;
+  /** Start expanded (the customer billing portal does, so nothing is hidden). */
+  defaultOpen?: boolean;
+  /** Extra badge shown in the collapsed header, beside the total. */
+  headerBadge?: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [unlocking, setUnlocking] = useState(false);
   const [pw, setPw] = useState("");
   const [saving, setSaving] = useState(false);
@@ -361,15 +367,14 @@ export function InvoiceCard({
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <button
-        className="w-full flex items-center justify-between gap-4 p-3 text-left hover:bg-muted/40 transition-colors"
-        onClick={() => setOpen((o) => !o)}
-      >
-        <div className="min-w-0">
+      {/* Header: the left side toggles; Download is its own button so the PDF
+          is one click away even when the card is collapsed. */}
+      <div className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40 transition-colors">
+        <button className="min-w-0 flex-1 text-left" onClick={() => setOpen((o) => !o)}>
           <div className="text-sm font-semibold flex items-center gap-2 flex-wrap">
             {invoice.invoice_number}
             <Badge className={`text-[10px] ${STATUS_TONE[invoice.status] ?? ""}`}>{invoice.status}</Badge>
-            {unlocked && (
+            {isAdmin && unlocked && (
               <Badge className="text-[10px] bg-blue-100 text-blue-800 gap-1">
                 <LockOpen className="w-3 h-3" /> unlocked
               </Badge>
@@ -393,12 +398,29 @@ export function InvoiceCard({
             {invoice.po_number && <> · PO {invoice.po_number}</>}
             {Number(invoice.balance) > 0 && invoice.status !== "draft" && <> · {money(invoice.balance)} due</>}
           </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
+        </button>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {headerBadge}
           <span className="text-sm font-bold tabular-nums">{money(invoice.total)}</span>
-          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs px-2.5"
+            onClick={download}
+            title="Download this invoice as a PDF"
+          >
+            <Download className="w-3.5 h-3.5 sm:mr-1" />
+            <span className="hidden sm:inline">Download PDF</span>
+          </Button>
+          <button
+            className="p-1 rounded hover:bg-muted"
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Collapse invoice" : "Expand invoice"}
+          >
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+          </button>
         </div>
-      </button>
+      </div>
 
       {open && (
         <div className="border-t bg-muted/20 p-3 space-y-4">
