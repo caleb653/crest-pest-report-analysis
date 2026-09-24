@@ -590,11 +590,12 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">Payment terms (days)</Label>
+            <Label className="text-xs font-semibold">Payment terms (days) — 0 = due upon receipt</Label>
             <Input
               type="number"
-              defaultValue={settings?.payment_terms_days ?? 7}
-              onBlur={(e) => Number(e.target.value) !== settings?.payment_terms_days && saveSetting({ payment_terms_days: Number(e.target.value) || 7 })}
+              min={0}
+              defaultValue={settings?.payment_terms_days ?? 0}
+              onBlur={(e) => Number(e.target.value) !== settings?.payment_terms_days && saveSetting({ payment_terms_days: Math.max(0, Number(e.target.value) || 0) })}
             />
           </div>
 

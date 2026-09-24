@@ -519,7 +519,7 @@ export function InvoiceCard({
                 <div className="space-y-1 sm:col-span-2">
                   <Label className="text-xs font-semibold">Payment terms (days)</Label>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {["7", "10", "15", "30"].map((d) => (
+                    {["0", "7", "10", "15", "30"].map((d) => (
                       <Button
                         key={d}
                         type="button"
@@ -528,7 +528,7 @@ export function InvoiceCard({
                         className="h-8 text-xs"
                         onClick={() => setTerms(d)}
                       >
-                        Net {d}
+                        {d === "0" ? "Upon receipt" : `Net ${d}`}
                       </Button>
                     ))}
                     <Input
@@ -540,7 +540,9 @@ export function InvoiceCard({
                     />
                     <span className="text-xs text-muted-foreground">
                       {terms !== "" && invoice.issue_date
-                        ? `Due ${shortDate(addDays(invoice.issue_date, Number(terms) || 0))}`
+                        ? (Number(terms) || 0) === 0
+                          ? "Due upon receipt"
+                          : `Due ${shortDate(addDays(invoice.issue_date, Number(terms) || 0))}`
                         : ""}
                     </span>
                   </div>
@@ -582,6 +584,12 @@ export function InvoiceCard({
               </Button>
             </div>
           )}
+
+          {/* ── remit to — printed on every invoice, shown here too ── */}
+          <div className="text-[11px] text-muted-foreground border-t pt-2">
+            <span className="font-semibold uppercase tracking-wide">Please remit payment to</span>{" "}
+            Crest Pest Control · 2709 S Orange Ave STE C · Santa Ana, CA 92707 · License #9859
+          </div>
 
           {/* ── unlock ── */}
           {isAdmin && isSent && !unlocked && (

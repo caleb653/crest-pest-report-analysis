@@ -121,7 +121,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.faint);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7.5);
-    pdf.text("Crest Pest Control  ·  949-424-5000  ·  office@crestpestcontrol.com", MARGIN, PAGE_H - 32);
+    pdf.text("Crest Pest Control  ·  2709 S Orange Ave STE C, Santa Ana, CA 92707  ·  949-424-5000  ·  License #9859", MARGIN, PAGE_H - 32);
     pdf.text(data.invoiceNumber, PAGE_W - MARGIN, PAGE_H - 32, { align: "right" });
   };
 
@@ -152,7 +152,8 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   setText(C.muted);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
-  pdf.text("949-424-5000  ·  office@crestpestcontrol.com", MARGIN, 62);
+  pdf.text("2709 S Orange Ave STE C  ·  Santa Ana, CA 92707", MARGIN, 62);
+  pdf.text("949-424-5000  ·  office@crestpestcontrol.com  ·  License #9859", MARGIN, 75);
 
   setText(C.darkSage);
   pdf.setFont("helvetica", "bold");
@@ -196,12 +197,18 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     pdf.text(data.clientName, MARGIN, by);
   }
 
+  // Due on or before the issue date reads as "upon receipt", never as a date.
+  const dueUponReceipt =
+    data.termsDays === 0 ||
+    (!!data.dueDate && String(data.dueDate).slice(0, 10) <= String(data.issueDate).slice(0, 10));
   const dates: [string, string][] = [
     ["Invoice date", dateLabel(data.issueDate)],
     ...(data.termsDays != null
-      ? ([["Terms", data.termsDays === 0 ? "Due on receipt" : `Net ${data.termsDays}`]] as [string, string][])
+      ? ([["Terms", data.termsDays === 0 ? "Due upon receipt" : `Net ${data.termsDays}`]] as [string, string][])
       : []),
-    ...(data.dueDate ? ([["Due", dateLabel(data.dueDate)]] as [string, string][]) : []),
+    ...(data.dueDate
+      ? ([["Due", dueUponReceipt ? "Upon receipt" : dateLabel(data.dueDate)]] as [string, string][])
+      : []),
     ...(data.periodStart && data.periodEnd
       ? ([["Service period", `${shortDate(data.periodStart)} – ${shortDate(
           new Date(new Date(`${String(data.periodEnd).slice(0, 10)}T00:00:00`).getTime() - 86400000)
@@ -325,6 +332,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   // ─── totals ───────────────────────────────────────────────────────────
   room(130);
   const tx = MARGIN + CONTENT_W * 0.58;
+  const totalsTop = y;
   const row = (label: string, value: string, bold = false, tone = C.ink) => {
     setText(bold ? tone : C.muted);
     pdf.setFont("helvetica", bold ? "bold" : "normal");
@@ -351,6 +359,29 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setFill(C.sageTint);
     pdf.rect(tx - 12, y - 14, PAGE_W - MARGIN - tx + 12, 28, "F");
     row("Balance due", money(data.balance), true, C.ink);
+  }
+
+  // ─── remit to — on every invoice, beside the totals ──────────────────
+  {
+    let ry = totalsTop + 6;
+    setText(C.faint);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7.5);
+    pdf.text("PLEASE REMIT PAYMENT TO", MARGIN, ry);
+    ry += 14;
+    setText(C.ink);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9.5);
+    pdf.text("Crest Pest Control", MARGIN, ry);
+    ry += 13;
+    setText(C.soft);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    for (const l of ["2709 S Orange Ave STE C", "Santa Ana, CA 92707"]) {
+      pdf.text(l, MARGIN, ry);
+      ry += 13;
+    }
+    y = Math.max(y, ry);
   }
 
   // ─── note ─────────────────────────────────────────────────────────────

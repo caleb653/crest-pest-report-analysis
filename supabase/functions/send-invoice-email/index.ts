@@ -156,7 +156,7 @@ serve(async (req: Request): Promise<Response> => {
 
   <table style="margin:20px 0 4px;border-collapse:collapse">
     ${row("Invoice date", dateLabel(invoice.issue_date))}
-    ${invoice.due_date ? row("Due", dateLabel(invoice.due_date)) : ""}
+    ${invoice.due_date ? row("Due", String(invoice.due_date).slice(0, 10) <= String(invoice.issue_date).slice(0, 10) ? "Upon receipt" : dateLabel(invoice.due_date)) : ""}
     ${period ? row("Service period", period) : ""}
     ${refs.map((r) => row(r.label, r.value)).join("")}
   </table>
@@ -172,8 +172,12 @@ serve(async (req: Request): Promise<Response> => {
 
   ${invoice.customer_note ? `<div style="background:#fafaf9;border-left:3px solid #c3d1c5;padding:12px 16px;font-size:13px;color:#555a55;white-space:pre-line">${String(invoice.customer_note).replace(/</g, "&lt;")}</div>` : ""}
 
-  <p style="font-size:12px;color:#95a197;margin-top:28px;border-top:1px solid #dde2dd;padding-top:14px">
-    Crest Pest Control · 949-424-5000 · office@crestpestcontrol.com
+  <p style="font-size:12px;color:#6e746e;margin-top:24px;line-height:1.5">
+    <strong>Please remit payment to</strong><br>Crest Pest Control<br>2709 S Orange Ave STE C<br>Santa Ana, CA 92707
+  </p>
+
+  <p style="font-size:12px;color:#95a197;margin-top:16px;border-top:1px solid #dde2dd;padding-top:14px">
+    Crest Pest Control · 949-424-5000 · office@crestpestcontrol.com · License #9859
   </p>
 </div>`.trim();
 
