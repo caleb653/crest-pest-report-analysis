@@ -690,6 +690,7 @@ export type Database = {
           fieldroutes_ticket_id: string | null
           fieldroutes_variance: number | null
           front_desk_note: string | null
+          hidden_from_portal: boolean
           id: string
           internal_note: string | null
           invoice_number: string
@@ -730,6 +731,7 @@ export type Database = {
           fieldroutes_ticket_id?: string | null
           fieldroutes_variance?: number | null
           front_desk_note?: string | null
+          hidden_from_portal?: boolean
           id?: string
           internal_note?: string | null
           invoice_number?: string
@@ -770,6 +772,7 @@ export type Database = {
           fieldroutes_ticket_id?: string | null
           fieldroutes_variance?: number | null
           front_desk_note?: string | null
+          hidden_from_portal?: boolean
           id?: string
           internal_note?: string | null
           invoice_number?: string
