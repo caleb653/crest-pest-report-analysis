@@ -212,11 +212,17 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     (!!data.dueDate && String(data.dueDate).slice(0, 10) <= String(data.issueDate).slice(0, 10));
   const dates: [string, string][] = [
     ["Invoice date", dateLabel(data.issueDate)],
-    ...(data.termsDays != null
-      ? ([["Terms", data.termsDays === 0 ? "Due upon receipt" : `Net ${data.termsDays}`]] as [string, string][])
-      : []),
+    // One line says when it's due. Net terms ride on it ("October 24 · Net 30")
+    // instead of a separate Terms row repeating "upon receipt".
     ...(data.dueDate
-      ? ([["Due", dueUponReceipt ? "Upon receipt" : dateLabel(data.dueDate)]] as [string, string][])
+      ? ([[
+          "Due",
+          dueUponReceipt
+            ? "Upon receipt"
+            : `${dateLabel(data.dueDate)}${data.termsDays ? ` · Net ${data.termsDays}` : ""}`,
+        ]] as [string, string][])
+      : data.termsDays === 0
+      ? ([["Due", "Upon receipt"]] as [string, string][])
       : []),
     ...(data.periodStart && data.periodEnd
       ? ([["Service period", `${shortDate(data.periodStart)} – ${shortDate(
