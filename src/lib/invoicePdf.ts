@@ -47,6 +47,8 @@ export interface InvoicePdfData {
   invoiceNumber: string;
   issueDate: string;
   dueDate?: string | null;
+  /** Payment terms in days (Net N). */
+  termsDays?: number | null;
   periodStart?: string | null;
   periodEnd?: string | null;
 
@@ -196,6 +198,9 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
 
   const dates: [string, string][] = [
     ["Invoice date", dateLabel(data.issueDate)],
+    ...(data.termsDays != null
+      ? ([["Terms", data.termsDays === 0 ? "Due on receipt" : `Net ${data.termsDays}`]] as [string, string][])
+      : []),
     ...(data.dueDate ? ([["Due", dateLabel(data.dueDate)]] as [string, string][]) : []),
     ...(data.periodStart && data.periodEnd
       ? ([["Service period", `${shortDate(data.periodStart)} – ${shortDate(
