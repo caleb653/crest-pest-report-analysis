@@ -516,6 +516,35 @@ export function InvoiceCard({
                   <Label className="text-xs font-semibold">PO number (optional)</Label>
                   <Input value={po} onChange={(e) => setPo(e.target.value)} placeholder="Leave blank if not needed" />
                 </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Payment terms (days)</Label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {["7", "10", "15", "30"].map((d) => (
+                      <Button
+                        key={d}
+                        type="button"
+                        size="sm"
+                        variant={terms === d ? "default" : "outline"}
+                        className="h-8 text-xs"
+                        onClick={() => setTerms(d)}
+                      >
+                        Net {d}
+                      </Button>
+                    ))}
+                    <Input
+                      className="h-8 w-20"
+                      type="number"
+                      min={0}
+                      value={terms}
+                      onChange={(e) => setTerms(e.target.value)}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {terms !== "" && invoice.issue_date
+                        ? `Due ${shortDate(addDays(invoice.issue_date, Number(terms) || 0))}`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-1.5">
