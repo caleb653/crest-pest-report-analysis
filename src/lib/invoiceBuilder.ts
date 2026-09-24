@@ -375,7 +375,7 @@ export async function buildDraftInvoice(
 
     const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
     const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
-    const glance = glanceUnitsFromPast(unitRows);
+    const glance = glanceUnitsFromPast(unitRows, { forInvoice: true });
 
     if (!ov.planConfigured || unitRows.length === 0) continue;
 
@@ -625,7 +625,7 @@ export async function buildOneTimeInvoice(
 
       const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
       const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
-      const glance = glanceUnitsFromPast(unitRows);
+      const glance = glanceUnitsFromPast(unitRows, { forInvoice: true });
 
       const override = opts.amountOverrides?.[v.id];
       if (override !== undefined && override !== null) {
@@ -911,7 +911,7 @@ export async function addVisitsToInvoice(
 
     const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
     const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
-    const glance = glanceUnitsFromPast(unitRows);
+    const glance = glanceUnitsFromPast(unitRows, { forInvoice: true });
     const priced = Number(v.billing_amount) || 0;
 
     if (v.billing_type === "billable" && priced > 0) {
@@ -1031,7 +1031,7 @@ export async function refreshDraftFromPlan(invoiceId: string, actor?: string): P
 
     const unitRows = Array.isArray(v.unit_details) ? v.unit_details : [];
     const ov = computeOverage(unitRows.length, planCfg, isOverageWaived(v));
-    const glance = glanceUnitsFromPast(unitRows);
+    const glance = glanceUnitsFromPast(unitRows, { forInvoice: true });
     const snapshot = { units: glance, total: unitRows.length, included: ov.includedUnits, waived: ov.waived };
     const handPriced = v.billing_type === "billable" && Number(v.billing_amount) > 0;
 

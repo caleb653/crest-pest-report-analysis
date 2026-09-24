@@ -46,8 +46,10 @@ export function glanceUnitsFromUpcoming(contexts: UpcomingUnitContext[]): Glance
     .filter((u) => u.unit_number);
 }
 
-/** Unit list for a COMPLETED visit, from the saved unit_details rows. */
-export function glanceUnitsFromPast(unitDetails: any[]): GlanceUnit[] {
+/** Unit list for a COMPLETED visit, from the saved unit_details rows.
+ *  `forInvoice` leaves the follow-up flag off the text: it is an internal
+ *  scheduling note, not something the customer should read on a bill. */
+export function glanceUnitsFromPast(unitDetails: any[], opts: { forInvoice?: boolean } = {}): GlanceUnit[] {
   return (Array.isArray(unitDetails) ? unitDetails : [])
     .map((u: any) => {
       const unit = String(u?.unit_number || "").trim();
@@ -56,7 +58,7 @@ export function glanceUnitsFromPast(unitDetails: any[]): GlanceUnit[] {
       const isFU = u?.follow_up_needed === true;
       return {
         unit_number: unit,
-        service: [status, pest ? `(${pest})` : "", isFU ? "• Follow-up needed" : ""].filter(Boolean).join(" "),
+        service: [status, pest ? `(${pest})` : "", isFU && !opts.forInvoice ? "• Follow-up needed" : ""].filter(Boolean).join(" "),
         tone: (isFU ? "follow_up" : "planned") as GlanceUnit["tone"],
       };
     })
