@@ -79,6 +79,20 @@ export function InvoiceCard({
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
   const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
+  const termsFromDates = (): string => {
+    if (!invoice.due_date || !invoice.issue_date) return "";
+    const d = Math.round(
+      (new Date(`${String(invoice.due_date).slice(0, 10)}T00:00:00Z`).getTime() -
+        new Date(`${String(invoice.issue_date).slice(0, 10)}T00:00:00Z`).getTime()) / 86400000
+    );
+    return Number.isFinite(d) && d >= 0 ? String(d) : "";
+  };
+  const [terms, setTerms] = useState<string>(termsFromDates());
+  const addDays = (iso: string, n: number) => {
+    const dt = new Date(`${String(iso).slice(0, 10)}T00:00:00Z`);
+    dt.setUTCDate(dt.getUTCDate() + n);
+    return dt.toISOString().slice(0, 10);
+  };
   const [note, setNote] = useState<string>(invoice.customer_note ?? "");
   const [refs, setRefs] = useState<RefNumber[]>(
     Array.isArray(invoice.reference_numbers) ? invoice.reference_numbers : []
@@ -100,6 +114,7 @@ export function InvoiceCard({
       invoiceNumber: invoice.invoice_number,
       issueDate: invoice.issue_date,
       dueDate: invoice.due_date,
+      termsDays: termsFromDates() === "" ? null : Number(termsFromDates()),
       periodStart: invoice.period_start,
       periodEnd: invoice.period_end,
       propertyName: property.name,
@@ -312,6 +327,11 @@ export function InvoiceCard({
       toast({ title: "Invoice number is required", variant: "destructive" });
       return;
     }
+    const termsNum = terms.trim() === "" ? null : Math.max(0, Math.round(Number(terms)));
+    if (terms.trim() !== "" && !Number.isFinite(termsNum)) {
+      toast({ title: "Payment terms must be a number of days", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("portal_invoices")
@@ -320,6 +340,7 @@ export function InvoiceCard({
         po_number: po.trim() || null,
         customer_note: note.trim() || null,
         reference_numbers: refs.filter((r) => r.label.trim() && r.value.trim()) as never,
+        ...(termsNum != null && invoice.issue_date ? { due_date: addDays(invoice.issue_date, termsNum) } : {}),
       })
       .eq("id", invoice.id);
     setSaving(false);
