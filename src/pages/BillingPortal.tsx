@@ -18,7 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import crestLogo from "@/assets/crest-logo.png";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
-import { periodMonthKey, monthLabel, fetchHiddenInvoiceIds } from "@/lib/invoiceBuilder";
+import { periodMonthKey, monthLabel, fetchInvoiceExtras } from "@/lib/invoiceBuilder";
 import { Building2, CheckCircle2, Clock, Receipt, MapPin } from "lucide-react";
 
 const money = (n: number | null | undefined) =>
@@ -88,9 +88,14 @@ const BillingPortal = () => {
     setLabel(link.label);
     setClientName(client?.company || client?.name || null);
     setProperties((props as PropertyRow[]) ?? []);
-    // Hidden invoices are an admin choice (Billing tab → "Hide from customer").
-    const hidden = await fetchHiddenInvoiceIds((inv ?? []).map((i: any) => i.id));
-    setInvoices((inv ?? []).filter((i: any) => !hidden.has(i.id)));
+    // Hidden invoices are an admin choice (Billing tab → "Hide from customer");
+    // names ("August invoice") come from the same log.
+    const { hidden, titles } = await fetchInvoiceExtras((inv ?? []).map((i: any) => i.id));
+    setInvoices(
+      (inv ?? [])
+        .filter((i: any) => !hidden.has(i.id))
+        .map((i: any) => ({ ...i, _title: titles.get(i.id) ?? null }))
+    );
     setLoading(false);
   };
 

@@ -66,21 +66,54 @@ export function addDaysIso(iso: string, days: number): string {
  */
 export const HIDE_EVENT = "hidden_from_customer";
 export const SHOW_EVENT = "shown_to_customer";
+/** An invoice's display name ("August invoice") — same log, latest wins. */
+export const TITLE_EVENT = "titled";
 
-export async function fetchHiddenInvoiceIds(invoiceIds: string[]): Promise<Set<string>> {
+export interface InvoiceExtras {
+  hidden: Set<string>;
+  titles: Map<string, string>;
+}
+
+/**
+ * Everything the events log says about these invoices that the list needs:
+ * which are hidden from the customer, and what each one is called.
+ */
+export async function fetchInvoiceExtras(invoiceIds: string[]): Promise<InvoiceExtras> {
   const hidden = new Set<string>();
-  if (!invoiceIds.length) return hidden;
+  const titles = new Map<string, string>();
+  if (!invoiceIds.length) return { hidden, titles };
   const { data } = await supabase
     .from("portal_invoice_events")
-    .select("invoice_id, event, created_at")
+    .select("invoice_id, event, detail, created_at")
     .in("invoice_id", invoiceIds)
-    .in("event", [HIDE_EVENT, SHOW_EVENT])
+    .in("event", [HIDE_EVENT, SHOW_EVENT, TITLE_EVENT])
     .order("created_at", { ascending: true });
   for (const e of data ?? []) {
     if (e.event === HIDE_EVENT) hidden.add(e.invoice_id);
-    else hidden.delete(e.invoice_id);
+    else if (e.event === SHOW_EVENT) hidden.delete(e.invoice_id);
+    else if (e.event === TITLE_EVENT) {
+      const t = String((e.detail as any)?.title ?? "").trim();
+      if (t) titles.set(e.invoice_id, t);
+      else titles.delete(e.invoice_id);
+    }
   }
-  return hidden;
+  return { hidden, titles };
+}
+
+export async function fetchHiddenInvoiceIds(invoiceIds: string[]): Promise<Set<string>> {
+  return (await fetchInvoiceExtras(invoiceIds)).hidden;
+}
+
+/** Name (or un-name) an invoice. The number never changes; this is the label
+    beside it — "August invoice", "Q3 clean-up". */
+export async function setInvoiceTitle(invoiceId: string, title: string | null, actor = "admin"): Promise<void> {
+  const { error } = await supabase.from("portal_invoice_events").insert({
+    invoice_id: invoiceId,
+    event: TITLE_EVENT,
+    actor,
+    detail: { title: (title ?? "").trim() || null } as never,
+  });
+  if (error) throw error;
 }
 
 export async function setInvoiceHidden(invoiceId: string, hidden: boolean, actor = "admin"): Promise<void> {
@@ -892,6 +925,8 @@ export async function listOpenInvoices(propertyId: string): Promise<OpenInvoice[
   const fmt = (d: string | null) =>
     d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
 
+  const { titles } = await fetchInvoiceExtras((data ?? []).map((i: any) => i.id));
+
   return (data ?? [])
     .filter((i: any) => {
       const open = i.status === "draft" || i.status === "ready";
@@ -907,6 +942,7 @@ export async function listOpenInvoices(propertyId: string): Promise<OpenInvoice[
       period_end: i.period_end,
       total: Number(i.total),
       label:
+        (titles.get(i.id) ? `${titles.get(i.id)} · ` : "") +
         (i.period_start
           ? `${fmt(i.period_start)} – ${fmt(
               new Date(new Date(`${i.period_end}T00:00:00`).getTime() - 86400000).toISOString().slice(0, 10)
@@ -1218,6 +1254,155 @@ export async function syncInvoiceLinesForService(serviceId: string, actor = "adm
     }
   }
   return n;
+}
+
+/** What a property's terms say a new invoice is due — 0 = upon receipt. */
+async function paymentTermsDays(propertyId: string): Promise<number> {
+  const { data } = await supabase
+    .from("portal_billing_settings")
+    .select("payment_terms_days")
+    .eq("property_id", propertyId)
+    .maybeSingle();
+  return Math.max(0, Number(data?.payment_terms_days ?? 0) || 0);
+}
+
+/**
+ * Combine several invoices into ONE new draft — "the August invoice".
+ *
+ * Every line moves across unchanged (its section on the new invoice comes from
+ * the line itself, so the scheduled / ad hoc / units / discount breakdown still
+ * reads correctly). The originals then go away the same way the Delete and
+ * Void buttons do it: a draft is deleted, a sent invoice is voided (its number
+ * stays on record, its visits become billable again until the combined
+ * invoice is sent). Anything with money on it is refused rather than guessed
+ * at.
+ *
+ * The result is a DRAFT. Nothing is sent.
+ */
+export async function combineInvoices(
+  invoiceIds: string[],
+  opts: { title?: string | null; actor?: string } = {}
+): Promise<{ id: string; invoice_number: string; voided: string[]; deleted: string[] }> {
+  const ids = [...new Set(invoiceIds)];
+  if (ids.length < 2) throw new Error("Pick at least two invoices to combine.");
+
+  const { data: sources, error } = await supabase
+    .from("portal_invoices")
+    .select(
+      "id, invoice_number, property_id, client_id, kind, status, issue_date, period_start, period_end, po_number, tax_rate, customer_note, reference_numbers, amount_paid, portal_invoice_lines(*)"
+    )
+    .in("id", ids);
+  if (error) throw error;
+  if ((sources ?? []).length !== ids.length) throw new Error("One of those invoices no longer exists.");
+
+  const list = [...(sources ?? [])].sort((a: any, b: any) =>
+    String(a.period_start ?? a.issue_date).localeCompare(String(b.period_start ?? b.issue_date))
+  );
+
+  const propertyId = list[0].property_id;
+  if (list.some((i: any) => i.property_id !== propertyId)) {
+    throw new Error("Only invoices for the same property can be combined.");
+  }
+  for (const i of list as any[]) {
+    if (i.status === "void") throw new Error(`${i.invoice_number} is void and can't be combined.`);
+    if (i.status === "paid" || Number(i.amount_paid) > 0) {
+      throw new Error(`${i.invoice_number} has a payment on it. Mark it not paid first if you really mean to combine it.`);
+    }
+  }
+
+  const everyPeriod = list.every((i: any) => i.period_start && i.period_end);
+  const periodStart = everyPeriod ? list.map((i: any) => String(i.period_start)).sort()[0] : null;
+  const periodEnd = everyPeriod ? list.map((i: any) => String(i.period_end)).sort().slice(-1)[0] : null;
+
+  const notes = [...new Set(list.map((i: any) => String(i.customer_note ?? "").trim()).filter(Boolean))];
+  const refs: { label: string; value: string }[] = [];
+  for (const i of list as any[]) {
+    for (const r of Array.isArray(i.reference_numbers) ? i.reference_numbers : []) {
+      if (r?.label && r?.value && !refs.some((x) => x.label === r.label && x.value === r.value)) refs.push({ label: r.label, value: r.value });
+    }
+  }
+
+  const issueDate = localToday();
+  const { data: created, error: cErr } = await supabase
+    .from("portal_invoices")
+    .insert({
+      property_id: propertyId,
+      client_id: list[0].client_id ?? null,
+      kind: everyPeriod ? "cadence" : "one_time",
+      issue_date: issueDate,
+      due_date: addDaysIso(issueDate, await paymentTermsDays(propertyId)),
+      period_start: periodStart,
+      period_end: periodEnd,
+      po_number: (list.find((i: any) => i.po_number) as any)?.po_number ?? null,
+      tax_rate: Number(list[0].tax_rate || 0),
+      customer_note: notes.length ? notes.join("\n\n") : null,
+      reference_numbers: refs as never,
+      created_by: opts.actor ?? null,
+    })
+    .select("id, invoice_number")
+    .single();
+  if (cErr) throw cErr;
+
+  // Lines, in the order the originals were billed, renumbered from 0.
+  const lines = list.flatMap((i: any) =>
+    [...(i.portal_invoice_lines ?? [])]
+      .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map((l: any) => ({
+        invoice_id: created.id,
+        line_type: l.line_type,
+        service_id: l.service_id,
+        description: l.description,
+        detail: l.detail,
+        service_date: l.service_date,
+        quantity: l.quantity,
+        unit_price: l.unit_price,
+        taxable: l.taxable,
+        units_snapshot: (l.units_snapshot ?? null) as never,
+        fr_entry_required: l.fr_entry_required,
+      }))
+  ).map((l, sort_order) => ({ ...l, sort_order }));
+
+  if (lines.length) {
+    const { error: lErr } = await supabase.from("portal_invoice_lines").insert(lines);
+    if (lErr) {
+      // Leave nothing half-built behind.
+      await supabase.rpc("portal_invoice_delete", { p_invoice: created.id, p_actor: opts.actor ?? "admin" });
+      throw lErr;
+    }
+  }
+
+  const numbers = list.map((i: any) => i.invoice_number);
+  await supabase.from("portal_invoice_events").insert({
+    invoice_id: created.id,
+    event: "created",
+    actor: opts.actor ?? null,
+    detail: { combined_from: numbers, lines: lines.length } as never,
+  });
+  if (opts.title?.trim()) await setInvoiceTitle(created.id, opts.title, opts.actor ?? "admin");
+
+  // Now retire the originals. The combined invoice already exists, so a failure
+  // here leaves a duplicate to clean up by hand — reported, never hidden.
+  const voided: string[] = [];
+  const deleted: string[] = [];
+  for (const i of list as any[]) {
+    if (["draft", "ready"].includes(i.status)) {
+      const { error: dErr } = await supabase.rpc("portal_invoice_delete", { p_invoice: i.id, p_actor: opts.actor ?? "admin" });
+      if (dErr) throw new Error(`${created.invoice_number} was created, but ${i.invoice_number} could not be removed: ${dErr.message}`);
+      deleted.push(i.invoice_number);
+    } else {
+      await supabase.from("portal_invoice_events").insert({
+        invoice_id: i.id,
+        event: "combined_into",
+        actor: opts.actor ?? null,
+        detail: { invoice_number: created.invoice_number, invoice_id: created.id } as never,
+      });
+      const { error: vErr } = await supabase.rpc("portal_invoice_void", { p_invoice: i.id, p_actor: opts.actor ?? "admin" });
+      if (vErr) throw new Error(`${created.invoice_number} was created, but ${i.invoice_number} could not be voided: ${vErr.message}`);
+      voided.push(i.invoice_number);
+    }
+  }
+
+  return { id: created.id, invoice_number: created.invoice_number, voided, deleted };
 }
 
 /**

@@ -15,10 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Download, Lock, LockOpen, Plus, Trash2, Check, X, Send, Pencil, Ban, RefreshCw, Eye, EyeOff } from "lucide-react";
 import { buildInvoicePdf, invoicePdfBase64, invoicePdfFilename, customerUnitText, type InvoicePdfLine, type InvoicePdfData } from "@/lib/invoicePdf";
-import { refreshDraftFromPlan, setInvoiceHidden } from "@/lib/invoiceBuilder";
+import { refreshDraftFromPlan, setInvoiceHidden, setInvoiceTitle } from "@/lib/invoiceBuilder";
+import { groupLinesBySection, sectionOfLine, SECTION_ORDER, SECTION_LABELS, SECTION_LINE_TYPE, type InvoiceSection } from "@/lib/invoiceSections";
 
 const EDIT_PASSWORD = "18444";
 
@@ -50,6 +53,9 @@ export function InvoiceCard({
   onChanged,
   defaultOpen = false,
   headerBadge,
+  selectable = false,
+  selected = false,
+  onSelect,
 }: {
   invoice: any;
   property: { name: string; address?: string | null };
@@ -60,6 +66,10 @@ export function InvoiceCard({
   defaultOpen?: boolean;
   /** Extra badge shown in the collapsed header, beside the total. */
   headerBadge?: React.ReactNode;
+  /** Admin "combine invoices" mode: a checkbox in the header picks this one. */
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: (picked: boolean) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [unlocking, setUnlocking] = useState(false);
@@ -82,6 +92,9 @@ export function InvoiceCard({
     !!invoice.edit_unlocked_until && new Date(invoice.edit_unlocked_until).getTime() > Date.now();
   const canEdit = isAdmin && (!isSent || unlocked);
   const hiddenFromPortal = invoice._hidden_from_customer === true;
+  /** Display name from the events log ("August invoice"); the number stays. */
+  const title: string | null = invoice._title ? String(invoice._title) : null;
+  const [titleDraft, setTitleDraft] = useState<string>(title ?? "");
 
   const [po, setPo] = useState<string>(invoice.po_number ?? "");
   const [invNo, setInvNo] = useState<string>(invoice.invoice_number ?? "");
@@ -118,6 +131,7 @@ export function InvoiceCard({
 
     return {
       invoiceNumber: invoice.invoice_number,
+      title,
       issueDate: invoice.issue_date,
       dueDate: invoice.due_date,
       termsDays: termsFromDates() === "" ? null : Number(termsFromDates()),
@@ -361,6 +375,15 @@ export function InvoiceCard({
       });
       return;
     }
+    if (titleDraft.trim() !== (title ?? "")) {
+      try {
+        await setInvoiceTitle(invoice.id, titleDraft, "admin");
+      } catch (e: any) {
+        toast({ title: "Saved, but the name did not stick", description: e?.message ?? String(e), variant: "destructive" });
+        onChanged();
+        return;
+      }
+    }
     toast({ title: "Saved" });
     onChanged();
   };
@@ -370,9 +393,24 @@ export function InvoiceCard({
       {/* Header: the left side toggles; Download is its own button so the PDF
           is one click away even when the card is collapsed. */}
       <div className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40 transition-colors">
+        {selectable && (
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(c) => onSelect?.(c === true)}
+            aria-label={`Select ${invoice.invoice_number}`}
+            className="shrink-0"
+          />
+        )}
         <button className="min-w-0 flex-1 text-left" onClick={() => setOpen((o) => !o)}>
           <div className="text-sm font-semibold flex items-center gap-2 flex-wrap">
-            {invoice.invoice_number}
+            {title ? (
+              <>
+                {title}
+                <span className="text-xs font-normal text-muted-foreground">{invoice.invoice_number}</span>
+              </>
+            ) : (
+              invoice.invoice_number
+            )}
             <Badge className={`text-[10px] ${STATUS_TONE[invoice.status] ?? ""}`}>{invoice.status}</Badge>
             {isAdmin && unlocked && (
               <Badge className="text-[10px] bg-blue-100 text-blue-800 gap-1">
@@ -436,9 +474,24 @@ export function InvoiceCard({
           {canEdit && editingLines ? (
             <div className="space-y-2">
               {lines.map((l) => (
-                <div key={l.id} className="bg-background rounded-md border p-2.5 flex gap-2">
+                <div key={l.id} className="bg-background rounded-md border p-2.5 flex gap-2 flex-wrap sm:flex-nowrap">
+                  <Select
+                    value={sectionOfLine(l)}
+                    onValueChange={(v) =>
+                      v !== sectionOfLine(l) && patchLine(l.id, { line_type: SECTION_LINE_TYPE[v as InvoiceSection] })
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-full sm:w-44 text-xs" title="Which section of the invoice this line sits in">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SECTION_ORDER.map((k) => (
+                        <SelectItem key={k} value={k} className="text-xs">{SECTION_LABELS[k]}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
-                    className="flex-1 h-8"
+                    className="flex-1 h-8 min-w-[10rem]"
                     defaultValue={l.description}
                     onBlur={(e) => e.target.value !== l.description && patchLine(l.id, { description: e.target.value })}
                   />
@@ -473,8 +526,16 @@ export function InvoiceCard({
               </Button>
             </div>
           ) : (
-          <div className="space-y-2">
-            {lines.map((l) => {
+          <div className="space-y-3">
+            {groupLinesBySection(lines).map((section, _i, all) => (
+            <div key={section.key} className="space-y-1.5">
+              <div className="flex items-center justify-between px-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{section.label}</span>
+                {all.length > 1 && (
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{money(section.subtotal)}</span>
+                )}
+              </div>
+            {section.lines.map((l) => {
               const units = l.units_snapshot?.units ?? [];
               return (
                 <div key={l.id} className="bg-background rounded-md border p-2.5">
@@ -508,6 +569,8 @@ export function InvoiceCard({
                 </div>
               );
             })}
+            </div>
+            ))}
           </div>
 
           )}
@@ -525,6 +588,14 @@ export function InvoiceCard({
           {canEdit && (
             <div className="space-y-3 border-t pt-3">
               <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
+                  <Label className="text-xs font-semibold">Invoice name (optional)</Label>
+                  <Input
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    placeholder="e.g. August invoice — shown beside the number, here and on the PDF"
+                  />
+                </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Invoice number</Label>
                   <Input

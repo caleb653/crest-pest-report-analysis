@@ -5,6 +5,7 @@
 // for sit at the top, and every unit we treated is listed so the charge can
 // be verified without phoning the office.
 import jsPDF from "jspdf";
+import { groupLinesBySection } from "./invoiceSections";
 
 const C = {
   ink: [42, 42, 42] as const,
@@ -40,11 +41,13 @@ export interface InvoicePdfLine {
   unit_price: number;
   amount: number;
   /** Units frozen onto this line at build time. */
-  units_snapshot?: { units?: { unit_number: string; service: string }[]; total?: number; included?: number } | null;
+  units_snapshot?: { units?: { unit_number: string; service: string }[]; total?: number; included?: number; waived?: boolean } | null;
 }
 
 export interface InvoicePdfData {
   invoiceNumber: string;
+  /** Optional name beside the number — "August invoice". */
+  title?: string | null;
   issueDate: string;
   dueDate?: string | null;
   /** Payment terms in days (Net N). */
@@ -164,6 +167,12 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
   pdf.text(data.invoiceNumber, PAGE_W - MARGIN, 64, { align: "right" });
+  if (data.title) {
+    setText(C.muted);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(9.5);
+    pdf.text(pdf.splitTextToSize(data.title, CONTENT_W * 0.45)[0], PAGE_W - MARGIN, 80, { align: "right" });
+  }
 
   y = 140;
 
@@ -258,7 +267,28 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   room(80);
   tableHead();
 
-  for (const line of data.lines) {
+  // Section band: "SCHEDULED VISITS", "AD HOC VISITS", ... so each kind of
+  // charge is read on its own.
+  const sectionHead = (label: string) => {
+    if (y + 60 > PAGE_H - 140) {
+      newPage();
+      tableHead();
+    }
+    setFill(C.sageTint);
+    pdf.rect(MARGIN, y - 11, CONTENT_W, 17, "F");
+    setText(C.darkSage);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(7.5);
+    pdf.text(label.toUpperCase(), MARGIN + 6, y + 1);
+    y += 20;
+  };
+
+  const sections = groupLinesBySection(data.lines);
+
+  for (const section of sections) {
+  sectionHead(section.label);
+
+  for (const line of section.lines) {
     const descW = xQty - xDesc - 18;
     const descLines = pdf.splitTextToSize(line.description, descW);
     const units = line.units_snapshot?.units ?? [];
@@ -327,6 +357,23 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     pdf.setLineWidth(0.4);
     pdf.line(MARGIN, y - 4, PAGE_W - MARGIN, y - 4);
     y += 10;
+  }
+
+  // One section's worth of money, so "what did the extra units cost" has a
+  // number. Skipped when the whole invoice is one section — the subtotal
+  // below already says it.
+  if (sections.length > 1) {
+    room(24);
+    setText(C.muted);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.text(`${section.label} subtotal`, xRate, y - 2, { align: "right" });
+    setText(C.soft);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8.5);
+    pdf.text(money(section.subtotal), xAmt, y - 2, { align: "right" });
+    y += 14;
+  }
   }
 
   // ─── totals ───────────────────────────────────────────────────────────

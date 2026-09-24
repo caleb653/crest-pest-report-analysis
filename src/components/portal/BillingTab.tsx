@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X, Repeat, Plus, Trash2, Pencil } from "lucide-react";
+import { AlertTriangle, FileText, Receipt, RefreshCw, ClipboardList, Check, X, Repeat, Plus, Trash2, Pencil, Layers } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   buildDraftInvoice,
@@ -38,7 +38,8 @@ import {
   type BillableVisit,
   type CustomLine,
   type OpenInvoice,
-  fetchHiddenInvoiceIds,
+  fetchInvoiceExtras,
+  combineInvoices,
 } from "@/lib/invoiceBuilder";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 
@@ -48,6 +49,9 @@ const parseEmails = (s: string): string[] =>
   s.split(/[,;\s]+/).map((e) => e.trim()).filter((e) => e.includes("@"));
 
 const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+
+/** Same admin password the invoice card uses to unlock / delete sent invoices. */
+const EDIT_PASSWORD = "18444";
 
 const money = (n: number | null | undefined) =>
   `$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -247,6 +251,13 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
   const [firstService, setFirstService] = useState<string | null>(null);
   const [backfilling, setBackfilling] = useState(false);
 
+  // Combine mode: pick several invoices, name the result, get one draft.
+  const [combining, setCombining] = useState(false);
+  const [pickedInvoices, setPickedInvoices] = useState<string[]>([]);
+  const [combineName, setCombineName] = useState("");
+  const [combinePw, setCombinePw] = useState("");
+  const [combineBusy, setCombineBusy] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: s }, { data: inv }] = await Promise.all([
@@ -260,11 +271,11 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
     ]);
     setSettings(s ?? null);
     // Admins see everything (hidden ones are badged); customers never see an
-    // invoice an admin chose to hide.
-    const hidden = await fetchHiddenInvoiceIds((inv ?? []).map((i: any) => i.id));
+    // invoice an admin chose to hide. Names ("August invoice") ride along.
+    const { hidden, titles } = await fetchInvoiceExtras((inv ?? []).map((i: any) => i.id));
     setInvoices(
       (inv ?? [])
-        .map((i: any) => ({ ...i, _hidden_from_customer: hidden.has(i.id) }))
+        .map((i: any) => ({ ...i, _hidden_from_customer: hidden.has(i.id), _title: titles.get(i.id) ?? null }))
         .filter((i: any) => isAdmin || !i._hidden_from_customer),
     );
     if (isAdmin) {
@@ -434,6 +445,64 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
       toast({ title: "Could not save draft", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const stopCombining = () => {
+    setCombining(false);
+    setPickedInvoices([]);
+    setCombineName("");
+    setCombinePw("");
+  };
+
+  /** "August invoice" when everything picked sits in one month; a span otherwise. */
+  const suggestedCombineName = (ids: string[]) => {
+    const keys = [...new Set(ids.map((id) => {
+      const inv = invoices.find((i) => i.id === id);
+      return inv ? periodMonthKey(inv.period_start ?? inv.issue_date) : "";
+    }).filter(Boolean))].sort();
+    if (!keys.length) return "";
+    if (keys.length === 1) return `${monthLabel(keys[0])} invoice`;
+    return `${monthLabel(keys[0])} – ${monthLabel(keys[keys.length - 1])} invoice`;
+  };
+
+  const togglePickedInvoice = (id: string, picked: boolean) => {
+    const next = picked ? [...new Set([...pickedInvoices, id])] : pickedInvoices.filter((x) => x !== id);
+    // Keep suggesting a name until the user types their own.
+    if (!combineName.trim() || combineName === suggestedCombineName(pickedInvoices)) {
+      setCombineName(suggestedCombineName(next));
+    }
+    setPickedInvoices(next);
+  };
+
+  const pickedSent = pickedInvoices.some((id) => {
+    const inv = invoices.find((i) => i.id === id);
+    return inv && ["sent", "partial"].includes(inv.status);
+  });
+
+  const runCombine = async () => {
+    if (pickedInvoices.length < 2) return;
+    if (pickedSent && combinePw.trim() !== EDIT_PASSWORD) {
+      toast({ title: "Wrong password", description: "Combining a sent invoice voids it, so it needs the admin password.", variant: "destructive" });
+      return;
+    }
+    setCombineBusy(true);
+    try {
+      const r = await combineInvoices(pickedInvoices, { title: combineName, actor: "admin" });
+      const gone = [
+        ...(r.deleted.length ? [`${r.deleted.join(", ")} removed`] : []),
+        ...(r.voided.length ? [`${r.voided.join(", ")} voided`] : []),
+      ].join(" · ");
+      toast({
+        title: `${combineName.trim() || r.invoice_number} created as a draft`,
+        description: `${r.invoice_number}. ${gone}. Review it, then send.`,
+      });
+      stopCombining();
+      await load();
+    } catch (e: any) {
+      toast({ title: "Could not combine those", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setCombineBusy(false);
     }
   };
 
@@ -969,16 +1038,74 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
             {isAdmin ? "Invoices" : "Invoice history"}
           </CardTitle>
           {isAdmin && (
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={runBackfill} disabled={backfilling}>
-              {backfilling ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <>Build missing invoices</>
+            <div className="flex items-center gap-2">
+              {visible.filter((i) => !["void", "paid"].includes(i.status)).length >= 2 && (
+                <Button
+                  variant={combining ? "default" : "outline"}
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => (combining ? stopCombining() : setCombining(true))}
+                  title="Pick several invoices and turn them into one"
+                >
+                  <Layers className="w-3.5 h-3.5 mr-1" /> {combining ? "Cancel combining" : "Combine invoices"}
+                </Button>
               )}
-            </Button>
+              <Button variant="outline" size="sm" className="h-8 text-xs" onClick={runBackfill} disabled={backfilling}>
+                {backfilling ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <>Build missing invoices</>
+                )}
+              </Button>
+            </div>
           )}
         </CardHeader>
         <CardContent className="pt-4">
+          {isAdmin && combining && (
+            <div className="mb-4 rounded-lg border-2 border-primary/30 bg-primary/[0.03] p-3 space-y-2">
+              <div className="text-sm font-semibold">
+                Tick the invoices to combine
+                {pickedInvoices.length > 0 && (
+                  <span className="font-normal text-muted-foreground">
+                    {" "}— {pickedInvoices.length} picked ·{" "}
+                    {money(pickedInvoices.reduce((t, id) => t + Number(invoices.find((i) => i.id === id)?.total || 0), 0))}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Every line moves onto one new draft, grouped as scheduled visits, ad hoc visits, additional units and
+                discounts. Drafts you picked are removed; a sent invoice is voided (its number stays on record) and
+                needs the admin password. Paid invoices can't be combined.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  className="h-9 w-64"
+                  placeholder="Name it — e.g. August invoice"
+                  value={combineName}
+                  onChange={(e) => setCombineName(e.target.value)}
+                />
+                {pickedSent && (
+                  <Input
+                    type="password"
+                    className="h-9 w-40"
+                    placeholder="Admin password"
+                    value={combinePw}
+                    onChange={(e) => setCombinePw(e.target.value)}
+                  />
+                )}
+                <Button size="sm" className="h-9" onClick={runCombine} disabled={combineBusy || pickedInvoices.length < 2}>
+                  {combineBusy ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>Combine {pickedInvoices.length >= 2 ? pickedInvoices.length : ""} into one</>
+                  )}
+                </Button>
+                <Button size="sm" variant="ghost" className="h-9" onClick={stopCombining} disabled={combineBusy}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
           {visible.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">No invoices yet.</p>
           ) : (
@@ -1003,6 +1130,9 @@ export function BillingTab({ propertyId, propertyName, propertyAddress, clientNa
                     clientName={clientName}
                     isAdmin={isAdmin}
                     onChanged={load}
+                    selectable={isAdmin && combining && !["void", "paid"].includes(inv.status)}
+                    selected={pickedInvoices.includes(inv.id)}
+                    onSelect={(picked) => togglePickedInvoice(inv.id, picked)}
                   />
                   {isAdmin && inv.status !== "draft" && inv.status !== "void" && (
                     <div className="flex justify-end">
