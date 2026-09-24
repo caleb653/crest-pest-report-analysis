@@ -276,7 +276,7 @@ export async function buildDraftInvoice(
     cadence_anchor: null,
     base_price_basis: "per_period",
     unit_line_style: "summary",
-    payment_terms_days: 30,
+    payment_terms_days: 7,
     tax_rate: 0,
     default_po_number: null,
     send_mode: "test",
