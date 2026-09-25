@@ -97,6 +97,7 @@ const SERVICE_TYPES = [
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
   "Rodent Clean Up",
   "Mosquito Service", "Attic Services", "Dewebbing",
+  "Fly Light Service",
 ];
 
 const SERVICE_FREQUENCY_MAP: Record<string, number> = {
@@ -105,6 +106,7 @@ const SERVICE_FREQUENCY_MAP: Record<string, number> = {
   "Mosquito Service": 30,
   "Rodent Bait Boxes": 30,
   "Dewebbing": 30,
+  "Fly Light Service": 30,
 };
 
 /**

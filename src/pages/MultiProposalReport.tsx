@@ -106,6 +106,7 @@ const PEST_OPTIONS = [
   "Millipedes",
   "American Roaches",
   "Drain Flies",
+  "Flies",
   "Other",
 ];
 
@@ -331,6 +332,14 @@ const SERVICE_CONFIG: Record<
     targetPests: ["Drain Flies"],
     proposedServices:
       `<b>Drain Fly Treatment:</b><br>• Inspect and identify breeding sources in drains, pipes, and moist areas<br>• Apply biological and chemical treatments to eliminate larvae and adult drain flies<br>• Recommend sanitation practices to prevent recurrence`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
+  "Fly Light Service": {
+    frequency: 30,
+    targetPests: ["Flies"],
+    proposedServices:
+      `<b>Fly Light Service:</b><br>• Install commercial-grade fly light units in areas of highest fly activity (kitchens, prep areas, entryways, and trash areas)<br>• Inspect every unit on each visit, replace glue boards, and document insect activity<br>• Replace UV bulbs annually so units keep their full attracting strength<br><br><b>Additional Details:</b> Fly lights reduce flying insects that make it inside the building. They work best alongside good sanitation and door/screen fixes that limit how many flies enter in the first place.`,
     defaultInitial: 0,
     defaultRecurring: 0,
   },

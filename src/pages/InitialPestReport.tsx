@@ -455,6 +455,9 @@ const Report = () => {
     if (equipment.includes("Mosquito Buckets")) {
       lines.push("• Installed mosquito stations around the property");
     }
+    if (equipment.includes("Fly Light")) {
+      lines.push("• Installed fly light units and replaced glue boards in areas of fly activity");
+    }
 
     return lines.join("\n");
   };

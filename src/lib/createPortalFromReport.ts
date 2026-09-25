@@ -23,6 +23,7 @@ const SERVICE_FREQUENCY: Record<string, number> = {
   "Flea & Tick Treatment": 0,
   "German Cockroach Treatment": 0,
   "Drain Fly Treatment": 0,
+  "Fly Light Service": 30,
 };
 
 function flattenServices(reportServices: any): Array<{

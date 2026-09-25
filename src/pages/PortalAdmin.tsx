@@ -77,6 +77,7 @@ const SERVICE_TYPES = [
   "Rodent Exclusion", "Rodent Trapping & Exclusion", "Rodent Bait Boxes",
   "Rodent Clean Up",
   "Mosquito Service", "Attic Services", "Dewebbing",
+  "Fly Light Service",
 ];
 
 const PRODUCTS = [
