@@ -1066,12 +1066,12 @@ const PortalAdmin = () => {
             onUpdatePropertyMapData={updatePropertyMapData}
           />
         ) : (
-        <PropertyDashboard
         <UnitAuthorizationsProvider
           propertyId={selectedProperty.id}
           propertyName={selectedProperty.name}
           propertyAddress={selectedProperty.address}
         >
+        <PropertyDashboard
           property={selectedProperty}
           services={propServices}
           links={propLinks}
@@ -1088,8 +1088,8 @@ const PortalAdmin = () => {
           onAddUpcomingService={() => createAndOpenReport("scheduled")}
           propertyType={getPropertyType(selectedProperty)}
         />
-        )}
         </UnitAuthorizationsProvider>
+        )}
       </div>
 
       {/* Service Detail Modal */}

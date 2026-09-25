@@ -3096,8 +3096,8 @@ const PropertyDashboard = ({
                       <span className="text-sm font-bold">{unit.unit_number || "—"}</span>
                       <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
                         isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
-                      <UnitRightToTreatButton unitNumber={unit.unit_number} size="xs" allowStaffActions />
                       }`}>{isInspection ? "Inspection" : "Service"}</span>
+                      <UnitRightToTreatButton unitNumber={unit.unit_number} size="xs" allowStaffActions />
                       {unit.target_pest && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide bg-background border border-border px-2 py-0.5 rounded">
                           {unit.target_pest}
