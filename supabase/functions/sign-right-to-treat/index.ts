@@ -31,9 +31,40 @@ serve(async (req) => {
         .maybeSingle();
 
       if (!reqRow) {
-        return new Response(JSON.stringify({ ok: false, error: "not_found" }), {
-          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Per-unit Right-to-Treat form (portal_unit_authorizations) — same
+        // page, shaped like a request so the frontend needs no branching.
+        const { data: unitRow } = await supabase
+          .from("portal_unit_authorizations")
+          .select("id, unit_number, property_id, signature, signed_at, signer_name, signer_email")
+          .eq("token", token)
+          .maybeSingle();
+        if (!unitRow) {
+          return new Response(JSON.stringify({ ok: false, error: "not_found" }), {
+            status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { data: unitProp } = await supabase
+          .from("portal_properties")
+          .select("name, address")
+          .eq("id", unitRow.property_id)
+          .maybeSingle();
+        return new Response(JSON.stringify({
+          ok: true,
+          request: {
+            id: unitRow.id,
+            unit_number: unitRow.unit_number,
+            pest_type: null,
+            location_type: null,
+            description: null,
+            preferred_date: null,
+            property_id: unitRow.property_id,
+            right_to_treat_signature: unitRow.signature,
+            right_to_treat_signed_at: unitRow.signed_at,
+            right_to_treat_signer_name: unitRow.signer_name,
+            tenant_email: unitRow.signer_email,
+          },
+          property: unitProp || null,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
       const { data: prop } = await supabase
@@ -77,9 +108,23 @@ serve(async (req) => {
         .maybeSingle();
 
       if (error || !updated) {
-        return new Response(JSON.stringify({ ok: false, error: "save_failed" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Not a work-order token: try the per-unit authorization table.
+        const { data: unitUpdated, error: unitErr } = await supabase
+          .from("portal_unit_authorizations")
+          .update({
+            signature,
+            signer_name: cleanSigner || null,
+            signed_at: new Date().toISOString(),
+            signed_via: "link",
+          })
+          .eq("token", token)
+          .select("id")
+          .maybeSingle();
+        if (unitErr || !unitUpdated) {
+          return new Response(JSON.stringify({ ok: false, error: "save_failed" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
       return new Response(JSON.stringify({ ok: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

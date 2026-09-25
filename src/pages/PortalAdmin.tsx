@@ -28,6 +28,7 @@ import { STAFF_NAMES } from "@/lib/staffRoster";
 import { InlineEditableText } from "@/components/portal/InlineEditableText";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
+import { UnitAuthorizationsProvider } from "@/lib/unitAuthorizations";
 
 interface PortalClient {
   id: string; name: string; company: string | null; email: string | null; phone: string | null; notes: string | null; created_at: string;
@@ -1066,6 +1067,11 @@ const PortalAdmin = () => {
           />
         ) : (
         <PropertyDashboard
+        <UnitAuthorizationsProvider
+          propertyId={selectedProperty.id}
+          propertyName={selectedProperty.name}
+          propertyAddress={selectedProperty.address}
+        >
           property={selectedProperty}
           services={propServices}
           links={propLinks}
@@ -1083,6 +1089,7 @@ const PortalAdmin = () => {
           propertyType={getPropertyType(selectedProperty)}
         />
         )}
+        </UnitAuthorizationsProvider>
       </div>
 
       {/* Service Detail Modal */}

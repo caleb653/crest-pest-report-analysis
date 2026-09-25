@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,8 @@ import { parseResidentContact } from "@/lib/residentContact";
 import { stableJson } from "@/lib/stableJson";
 import AppointmentReminderControls from "@/components/portal/AppointmentReminderControls";
 import { STANDARD_PRODUCTS, CATALOG_PRODUCTS } from "@/lib/productCatalog";
+import { UnitRightToTreatButton } from "@/components/portal/UnitRightToTreatButton";
+import { useUnitAuthorizations } from "@/lib/unitAuthorizations";
 
 // ─── Types ───
 interface PortalProperty {
@@ -275,6 +277,24 @@ const PropertyDashboard = ({
   const ResidentTerm = isHOA ? "Resident" : "Tenant";
   const [expandedPastId, setExpandedPastId] = useState<string | null>(null);
   const [expandedUpcomingId, setExpandedUpcomingId] = useState<string | null>(null);
+  // Per-unit Right-to-Treat forms (signed in the app beside each unit number).
+  // Folded into the signed-authorizations archive alongside work-order ones.
+  const unitAuthCtx = useUnitAuthorizations();
+  const unitAuthArchiveRows = useMemo(() => (unitAuthCtx?.all || [])
+    .filter((a) => !!a.signature)
+    .map((a) => ({
+      id: `unit-auth-${a.id}`,
+      unit_number: a.unit_number,
+      right_to_treat_signer_name: a.signer_name,
+      tenant_email: a.signer_email,
+      right_to_treat_signature: a.signature,
+      right_to_treat_signed_at: a.signed_at,
+      request_type: "Unit Right to Treat",
+      pest_type: null,
+      location_type: null,
+      description: null,
+      created_at: a.created_at,
+    })), [unitAuthCtx?.all]);
   // Per-unit-card expansion (rich cards inside an opened service). Default: all collapsed.
   const [expandedUnitKeys, setExpandedUnitKeys] = useState<Set<string>>(new Set());
   const toggleUnitKey = (key: string) =>
@@ -3076,6 +3096,7 @@ const PropertyDashboard = ({
                       <span className="text-sm font-bold">{unit.unit_number || "—"}</span>
                       <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
                         isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
+                      <UnitRightToTreatButton unitNumber={unit.unit_number} size="xs" allowStaffActions />
                       }`}>{isInspection ? "Inspection" : "Service"}</span>
                       {unit.target_pest && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide bg-background border border-border px-2 py-0.5 rounded">
@@ -3865,6 +3886,7 @@ const PropertyDashboard = ({
         <VisitUnitsAtAGlance
           units={isUpcoming ? glanceUnitsFromUpcoming(merged.unitContexts) : glanceUnitsFromPast(unitDetails)}
           title={isUpcoming
+          staff
             ? `Units to be treated (${merged.unitContexts.length})`
             : `Units treated (${unitDetails.length})`}
           serviceTitle={(s as any).appointment_service || s.service_type}
@@ -4727,6 +4749,7 @@ const PropertyDashboard = ({
                               />
                               {/* Visit kind toggle — click to flip Treatment <-> Inspection.
                                   Always shown so any area can be reclassified, not just
+                              <UnitRightToTreatButton unitNumber={row.unit_number} allowStaffActions />
                                   rows that came from a work order. */}
                               <button
                                 type="button"
@@ -7472,15 +7495,17 @@ const PropertyDashboard = ({
             <div className="border-b-2 border-primary/70 pb-3 mb-3">
               <h3 className="text-xl font-bold flex items-center gap-2">
                 <Shield className="w-6 h-6 text-secondary" />Signed Right-to-Treat Authorizations
-                <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length}</Badge>
+                <Badge variant="secondary" className="text-xs ml-1">{signedAuthorizations.length + unitAuthArchiveRows.length}</Badge>
               </h3>
-              <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property.</p>
+              <p className="text-xs text-muted-foreground mt-1">Every signed {residentTerm} authorization recorded for this property, including the per-unit forms signed beside each unit.</p>
             </div>
-            {signedAuthorizations.length === 0 ? (
+            {signedAuthorizations.length + unitAuthArchiveRows.length === 0 ? (
               <Card className="shadow-sm"><CardContent className="p-8 text-center text-muted-foreground text-sm">No signed authorizations yet</CardContent></Card>
             ) : (
               <div className="space-y-2">
-                {signedAuthorizations.map((r) => (
+                {[...signedAuthorizations, ...unitAuthArchiveRows]
+                  .sort((a: any, b: any) => new Date(b.right_to_treat_signed_at || b.created_at).getTime() - new Date(a.right_to_treat_signed_at || a.created_at).getTime())
+                  .map((r: any) => (
                   <details key={r.id} className="rounded-lg border bg-card shadow-sm group">
                     <summary className="flex items-center justify-between gap-3 cursor-pointer p-3 list-none">
                       <div className="min-w-0 flex-1">

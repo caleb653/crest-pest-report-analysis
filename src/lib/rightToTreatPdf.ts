@@ -13,7 +13,7 @@ export interface RightToTreatPdfInput {
   signatureDataUrl?: string | null;
 }
 
-const PESTICIDE_NOTICE =
+export const PESTICIDE_NOTICE =
   "State law requires that you be given the following information: CAUTION—PESTICIDES ARE TOXIC CHEMICALS. " +
   "Structural Pest Control Companies are registered and regulated by the Structural Pest Control Board, and apply " +
   "pesticides which are registered and approved for use by the California Department of Pesticide Regulation and the " +
@@ -26,7 +26,7 @@ const PESTICIDE_NOTICE =
   "(800-564-8448); Application Information—County Agricultural Commissioner (714-955-0100); Regulatory Information—" +
   "Structural Pest Control Board (800-737-8188), 2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815.";
 
-const POSSIBLE_CHEMICALS = [
+export const POSSIBLE_CHEMICALS = [
   "Alpine WSG (Dinotefuran)", "Bifen I/T (Bifenthrin)",
   "Essentria IC Pro (Geraniol, Clove Oil, Cornmint Oil)",
   "Temprid FX (Imidacloprid, Cyfluthrin)", "Termidor SC (Fipronil)",

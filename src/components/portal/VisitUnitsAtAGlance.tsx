@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { friendlyUnitStatus } from "@/lib/unitStatus";
 import type { UpcomingUnitContext } from "@/lib/upcomingUnits";
+import { UnitRightToTreatButton } from "@/components/portal/UnitRightToTreatButton";
 
 /**
  * Compact "every unit on this visit" strip pinned to the TOP of an apartment
@@ -74,9 +75,12 @@ export function VisitUnitsAtAGlance({
   title,
   serviceDate,
   serviceTitle,
+  staff = false,
 }: {
   units: GlanceUnit[];
   title?: string;
+  /** Office view: the Right to Treat chip also offers copy-link / clear. */
+  staff?: boolean;
   /** Included as the first line of the copied text so a pasted list is self-describing. */
   serviceDate?: string | null;
   serviceTitle?: string | null;
@@ -128,6 +132,7 @@ export function VisitUnitsAtAGlance({
           >
             <span className="font-bold">Unit {u.unit_number}</span>
             <span className="text-xs font-semibold text-foreground/80">— {u.service}</span>
+            <UnitRightToTreatButton unitNumber={u.unit_number} size="xs" allowStaffActions={staff} className="self-center ml-1" />
           </li>
         ))}
       </ul>

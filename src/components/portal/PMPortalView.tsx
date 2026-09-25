@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { stableJson } from "@/lib/stableJson";
 import { createIdleReloader } from "@/lib/typingGuard";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +55,8 @@ import { VisitUnitsAtAGlance, glanceUnitsFromUpcoming, glanceUnitsFromPast } fro
 import { buildApartmentVisitPdfData, buildApartmentUnitVisitPdfData, unitVisitPdfFilename } from "@/lib/visitPdf";
 import { PropertyDocuments } from "@/components/portal/PropertyDocuments";
 import { downloadRightToTreatPdf, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
+import { UnitRightToTreatButton } from "@/components/portal/UnitRightToTreatButton";
+import { useUnitAuthorizations } from "@/lib/unitAuthorizations";
 
 const PEST_TYPES = [
   "General Pests",
@@ -229,6 +231,25 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
   const [tenantEmail, setTenantEmail] = useState("");
   const [selectedPrepSheetId, setSelectedPrepSheetId] = useState<string>("");
   const [requestRightToTreat, setRequestRightToTreat] = useState(false);
+  // Per-unit Right-to-Treat forms signed beside each unit number; merged into
+  // the signed-authorizations archive below. Hook lives above the early
+  // returns so it runs on every render.
+  const unitAuthCtx = useUnitAuthorizations();
+  const unitAuthArchiveRows = useMemo(() => (unitAuthCtx?.all || [])
+    .filter((a) => !!a.signature)
+    .map((a) => ({
+      id: `unit-auth-${a.id}`,
+      unit_number: a.unit_number,
+      right_to_treat_signer_name: a.signer_name,
+      tenant_email: a.signer_email,
+      right_to_treat_signature: a.signature,
+      right_to_treat_signed_at: a.signed_at,
+      request_type: "Unit Right to Treat",
+      pest_type: null,
+      location_type: null,
+      description: null,
+      created_at: a.created_at,
+    })), [unitAuthCtx?.all]);
   // Optional new-tenant move-in date attached to a PM work order. When set,
   // saved into property.customer_preferences.tenant_move_ins keyed by unit.
   const [tenantMoveInDate, setTenantMoveInDate] = useState<string>("");
@@ -1321,6 +1342,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-base font-bold">{u.unit_number || "—"}</span>
+                          <UnitRightToTreatButton unitNumber={u.unit_number} size="xs" />
                           <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
                             isInspection ? "bg-background border-sky-400 text-sky-700" : "bg-background border-primary/70 text-primary"
                           }`}>
@@ -3042,6 +3064,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                                             {idx + 1}
                                           </div>
                                           <span className="text-lg font-bold">{uc.unit_number}</span>
+                                          <UnitRightToTreatButton unitNumber={uc.unit_number} />
                                           <span className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded border ${
                                             isWO
                                               ? "text-primary bg-background border-primary/60"
@@ -3384,7 +3407,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
 
             {/* Signed Right-to-Treat Authorizations — full archive for this property */}
             {(() => {
-              const signed = (requests as any[])
+              const signed = [...(requests as any[]), ...unitAuthArchiveRows]
                 .filter(r => !!r.right_to_treat_signature)
                 .sort((a, b) => {
                   const ad = a.right_to_treat_signed_at || a.created_at;

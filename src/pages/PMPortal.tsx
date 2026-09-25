@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import PMPortalView from "@/components/portal/PMPortalView";
 import CommercialPMView from "@/components/portal/CommercialPMView";
+import { UnitAuthorizationsProvider } from "@/lib/unitAuthorizations";
 import crestLogo from "@/assets/crest-logo.png";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -13,6 +14,7 @@ const PMPortal = () => {
   const [linkId, setLinkId] = useState<string | null>(null);
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [propertyType, setPropertyType] = useState<string>("apartments");
+  const [propertyMeta, setPropertyMeta] = useState<{ name: string; address: string | null }>({ name: "", address: null });
 
   useEffect(() => {
     if (!token) return;
@@ -47,9 +49,10 @@ const PMPortal = () => {
       // the dedicated stripped-down portal (no units / work orders / surveys).
       const { data: prop } = await supabase
         .from("portal_properties")
-        .select("customer_preferences")
+        .select("name, address, customer_preferences")
         .eq("id", ids[0])
         .maybeSingle();
+      setPropertyMeta({ name: prop?.name || "", address: prop?.address ?? null });
       const ptype = (prop?.customer_preferences as any)?.property_type;
       setPropertyType(ptype === "commercial" || ptype === "hoa" ? ptype : "apartments");
       setLoading(false);
@@ -86,7 +89,11 @@ const PMPortal = () => {
   if (propertyType === "commercial") {
     return <CommercialPMView propertyId={propertyId} linkId={linkId} />;
   }
-  return <PMPortalView propertyId={propertyId} linkId={linkId} />;
+  return (
+    <UnitAuthorizationsProvider propertyId={propertyId} propertyName={propertyMeta.name} propertyAddress={propertyMeta.address}>
+      <PMPortalView propertyId={propertyId} linkId={linkId} />
+    </UnitAuthorizationsProvider>
+  );
 };
 
 export default PMPortal;
