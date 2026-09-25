@@ -16,7 +16,6 @@ export const STAFF: StaffMember[] = [
   { username: "jlatham",   fullName: "Jackson Latham",  email: "jlatham@crestpestcontrol.com" },
   { username: "dgallegos", fullName: "Dylan Gallegos",  email: "dgallegos@crestpestcontrol.com" },
   { username: "mmuniz",    fullName: "Michael Muniz",   email: "mmuniz@crestpestcontrol.com" },
-  { username: "clopez",    fullName: "Carmen Lopez",    email: "clopez@crestpestcontrol.com" },
   { username: "dlongoria", fullName: "David Longoria",  email: "dlongoria@crestpestcontrol.com" },
   { username: "nstovall", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
   { username: "ccarnival", fullName: "Cade Carnival",  email: "ccarnival@crestpestcontrol.com" },
@@ -37,7 +36,4 @@ export function findStaffByUsername(username: string | null | undefined): StaffM
   return STAFF.find(s => s.username === key) || null;
 }
 
-/** Carmen always receives notifications for tenant requests. */
-export const CARMEN_FULL_NAME = "Carmen Lopez";
-export const CARMEN_EMAIL = "office@crestpestcontrol.com";
 export const OFFICE_EMAIL = "office@crestpestcontrol.com";

@@ -11,7 +11,6 @@ const corsHeaders = {
 };
 
 const OFFICE_EMAIL = "office@crestpestcontrol.com";
-const CARMEN_FULL_NAME = "Carmen Lopez";
 
 /** Mirror of src/lib/staffRoster.ts so we can resolve owner email server-side. */
 const STAFF: { username: string; fullName: string; email: string }[] = [
@@ -21,7 +20,6 @@ const STAFF: { username: string; fullName: string; email: string }[] = [
   { username: "jlatham",   fullName: "Jackson Latham",  email: "jlatham@crestpestcontrol.com" },
   { username: "dgallegos", fullName: "Dylan Gallegos",  email: "dgallegos@crestpestcontrol.com" },
   { username: "mmuniz",    fullName: "Michael Muniz",   email: "mmuniz@crestpestcontrol.com" },
-  { username: "clopez",    fullName: "Carmen Lopez",    email: "clopez@crestpestcontrol.com" },
   { username: "dlongoria", fullName: "David Longoria",  email: "dlongoria@crestpestcontrol.com" },
   { username: "nstovall", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
   { username: "ccarnival", fullName: "Cade Carnival",  email: "ccarnival@crestpestcontrol.com" },
@@ -64,11 +62,6 @@ serve(async (req) => {
     // Property Point of Contact email — when set, gets CC'd on work order
     // notifications so the PM is always in the loop.
     let pmPocEmail: string | null = null;
-    // APARTMENT portals no longer ping Carmen for every unit added — she only
-    // receives the dedicated unit-overage billing email (notify-unit-overage).
-    // HOA/commercial submissions, general (no-unit) requests, and client
-    // messages still include her.
-    let skipCarmen = false;
 
     if (body.kind === "work_order") {
       if (!body.requestId) {
@@ -101,15 +94,6 @@ serve(async (req) => {
       if (pocEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pocEmail)) {
         pmPocEmail = pocEmail.trim();
       }
-
-      // Apartments are the default property type when none is set (mirrors
-      // getPropertyType in src/pages/PortalAdmin.tsx).
-      const propType = (prop as any)?.customer_preferences?.property_type;
-      const isApartment = propType !== "hoa" && propType !== "commercial";
-      const isGeneralReq =
-        !reqRow.unit_number ||
-        String(reqRow.request_type || "").toLowerCase().includes("general");
-      skipCarmen = isApartment && !isGeneralReq;
 
       subject = `New Work Order — ${propertyName}${reqRow.unit_number ? ` (Unit ${reqRow.unit_number})` : ""}`;
       plainSummary = `${reqRow.request_type} — ${reqRow.pest_type || "General"} • Unit ${reqRow.unit_number || "—"}`;
@@ -187,9 +171,7 @@ serve(async (req) => {
 
     // ── Resolve recipient list ──
     const ownerStaff = findStaffByName(ownerTech);
-    const carmenStaff = findStaffByName(CARMEN_FULL_NAME);
     const recipients = new Set<string>([OFFICE_EMAIL]);
-    if (carmenStaff?.email && !skipCarmen) recipients.add(carmenStaff.email);
     if (ownerStaff?.email) recipients.add(ownerStaff.email);
     // CC the property's Point of Contact (PM) on work order emails so the PM
     // always sees what tenants submit, alongside the office.
@@ -224,23 +206,8 @@ serve(async (req) => {
     const link = "/portal-admin";
     const notifType = body.kind;
 
-    // Notify Carmen (except apartment unit work orders — she only gets the
-    // unit-overage billing email for those)
-    if (carmenStaff && !skipCarmen) {
-      notifRows.push({
-        recipient_username: carmenStaff.username,
-        recipient_name: carmenStaff.fullName,
-        title: subject,
-        body: plainSummary,
-        link,
-        notification_type: notifType,
-        related_property_id: propertyId,
-        related_request_id: relatedRequestId,
-        related_message_id: relatedMessageId,
-      });
-    }
-    // Notify owner if different from Carmen
-    if (ownerStaff && ownerStaff.username !== carmenStaff?.username) {
+    // In-app bell for the property owner (the office gets the email above).
+    if (ownerStaff) {
       notifRows.push({
         recipient_username: ownerStaff.username,
         recipient_name: ownerStaff.fullName,

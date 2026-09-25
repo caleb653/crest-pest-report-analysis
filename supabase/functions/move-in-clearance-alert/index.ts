@@ -27,7 +27,6 @@ const OWNER_TECH_EMAIL: Record<string, string> = {
   "Jackson Latham": "jlatham@crestpestcontrol.com",
   "Dylan Gallegos": "dgallegos@crestpestcontrol.com",
   "Michael Muniz": "mmuniz@crestpestcontrol.com",
-  "Carmen Lopez": "clopez@crestpestcontrol.com",
   "David Longoria": "dlongoria@crestpestcontrol.com",
   "Nick Stovall": "nstovall@crestpestcontrol.com",
   "Cade Carnival": "ccarnival@crestpestcontrol.com",

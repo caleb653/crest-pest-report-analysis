@@ -47,7 +47,7 @@ const MAX_PDF_BYTES = 12 * 1024 * 1024;
 // Mirrors src/lib/staffRoster.ts / fieldroutes-customer-search.
 const KNOWN_STAFF = new Set([
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "Carmen Lopez", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
+  "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
 function json(body: unknown, status = 200) {

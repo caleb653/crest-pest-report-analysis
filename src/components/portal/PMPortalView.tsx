@@ -587,7 +587,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
         .order("created_at", { ascending: false });
       if (reqs) setRequests(reqs);
       // Billing alert: if this unit pushed the next visit past the plan's
-      // included-unit allotment, Carmen gets an overage email (the edge
+      // included-unit allotment, the office gets an overage email (the edge
       // function re-checks the plan and dedupes, so this is fire-and-forget).
       if (!isGeneral) {
         maybeNotifyUnitOverage({ property, services, requests: reqs || requests });

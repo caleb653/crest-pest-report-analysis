@@ -10,17 +10,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Carmen handles billing — she is the sole recipient of overage alerts.
-const CARMEN = {
-  username: "clopez",
-  fullName: "Carmen Lopez",
-  email: "clopez@crestpestcontrol.com",
-};
+// Billing alerts go to the office inbox (sole recipient).
+const BILLING_EMAIL = "office@crestpestcontrol.com";
 
 interface Body {
   /**
    * Omitted = normal "units over the cap" alert.
-   * "waived"   = admin waived the charge for this visit → tell Carmen NOT to bill it.
+   * "waived"   = admin waived the charge for this visit → tell the office NOT to bill it.
    * "unwaived" = admin undid the waiver → charge is back on.
    * Both only email when a prior overage alert was sent for the service.
    */
@@ -74,7 +70,7 @@ serve(async (req) => {
       ]);
       if (!wProp || !wSvc || wSvc.property_id !== propertyId) return json(404, { ok: false, error: "service_not_found" });
       const alert = (wSvc as any)?.report_data?.overage_alert;
-      // Carmen was never told to charge for this visit → nothing to retract.
+      // The office was never told to charge for this visit → nothing to retract.
       if (!alert) return json(200, { ok: true, sent: false, reason: "no_prior_alert" });
 
       const waived = body.action === "waived";
@@ -103,20 +99,11 @@ serve(async (req) => {
           const r = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-            body: JSON.stringify({ from: "Crest Pest Control <reports@crestpestco.com>", to: [CARMEN.email], subject, html }),
+            body: JSON.stringify({ from: "Crest Pest Control <reports@crestpestco.com>", to: [BILLING_EMAIL], subject, html }),
           });
           if (r.ok) emailSent = true; else console.error("notify-unit-overage waiver email error:", await r.text());
         } catch (e) { console.error("notify-unit-overage waiver email throw:", e); }
       }
-      await supabase.from("notifications").insert({
-        recipient_username: CARMEN.username,
-        recipient_name: CARMEN.fullName,
-        title: subject,
-        body: waived ? `Do not charge the ${unitsText} for ${visitDate}.` : `Charge the ${unitsText} for ${visitDate} after all.`,
-        link: "/portal-admin",
-        notification_type: "unit_overage",
-        related_property_id: propertyId,
-      });
       return json(200, { ok: true, sent: emailSent, action: body.action });
     }
 
@@ -153,7 +140,7 @@ serve(async (req) => {
       : 0;
 
     // The service row is both the validation anchor and the dedupe marker:
-    // we only re-notify when the scheduled unit count GROWS past what Carmen
+    // we only re-notify when the scheduled unit count GROWS past what the office
     // was last told, so adding a 3rd/4th/5th unit past the cap each sends an
     // updated email, but re-renders and page reloads never re-send the same one.
     const { data: svc, error: svcErr } = await supabase
@@ -164,7 +151,7 @@ serve(async (req) => {
     if (svcErr || !svc || svc.property_id !== propertyId) {
       return json(404, { ok: false, error: "service_not_found" });
     }
-    // Admin waived the charge for this visit — don't tell Carmen to bill it.
+    // Admin waived the charge for this visit — don't tell the office to bill it.
     if ((svc as any)?.report_data?.overage_waived === true) {
       return json(200, { ok: true, sent: false, reason: "waived" });
     }
@@ -218,7 +205,7 @@ serve(async (req) => {
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
           body: JSON.stringify({
             from: "Crest Pest Control <reports@crestpestco.com>",
-            to: [CARMEN.email],
+            to: [BILLING_EMAIL],
             subject,
             html: htmlBody,
           }),
@@ -231,18 +218,6 @@ serve(async (req) => {
     } else {
       console.warn("notify-unit-overage: RESEND_API_KEY not set — skipping email");
     }
-
-    // In-app notification so the alert also shows in Carmen's bell.
-    const { error: notifErr } = await supabase.from("notifications").insert({
-      recipient_username: CARMEN.username,
-      recipient_name: CARMEN.fullName,
-      title: subject,
-      body: `${totalUnits} units scheduled (${includedUnits} included) — ${unitsOver} over${overageCost > 0 ? ` = ${money(overageCost)} to charge` : ""}`,
-      link: "/portal-admin",
-      notification_type: "unit_overage",
-      related_property_id: propertyId,
-    });
-    if (notifErr) console.error("notify-unit-overage notification insert error:", notifErr);
 
     // Persist the dedupe marker (merged so we never clobber other report_data).
     const mergedReportData = {

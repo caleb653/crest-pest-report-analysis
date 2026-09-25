@@ -1456,7 +1456,7 @@ const PropertyDashboard = ({
   // Sometimes we over-schedule by mistake and don't want to bill the extra
   // units. The waiver lives on the service row (report_data.overage_waived) so
   // the banner, the list badges, the invoicing snapshot (report_data.overage)
-  // and Carmen's billing alert all agree. Fetch-fresh-merge so we never clobber
+  // and the office's billing alert all agree. Fetch-fresh-merge so we never clobber
   // report_data keys written by edge functions (overage_alert, pm_email_sent_at…).
   const [waiverBusyId, setWaiverBusyId] = useState<string | null>(null);
   const setOverageWaiver = async (svc: any, waive: boolean) => {
@@ -1483,7 +1483,7 @@ const PropertyDashboard = ({
       if (error) throw error;
       // Flip the in-memory row so the UI updates before the realtime reload lands.
       svc.report_data = rd;
-      // Carmen was already emailed to charge for this visit → tell her the
+      // The office was already emailed to charge for this visit → tell them the
       // charge is off (or back on). Fire-and-forget; the edge function no-ops
       // when no prior alert exists.
       if (rd.overage_alert) {
@@ -1508,7 +1508,7 @@ const PropertyDashboard = ({
   };
 
   // Billing alert (apartments): whenever the FIRST upcoming visit's merged
-  // unit list exceeds the plan's included allotment, email Carmen how many
+  // unit list exceeds the plan's included allotment, email the office how many
   // extra units to charge for. Replaces her old per-unit-added notification.
   // The edge function dedupes per service (report_data.overage_alert) and
   // only re-sends when the count GROWS, so re-renders never double-email.
@@ -2738,7 +2738,7 @@ const PropertyDashboard = ({
     toast({ title: isGeneral
       ? "General request submitted"
       : workOrder.request_type === "inspection" ? "Inspection request submitted" : "Work order submitted" });
-    // Fire-and-forget staff notification (office + Carmen + client owner)
+    // Fire-and-forget staff notification (office + client owner)
     if (inserted?.id) {
       try {
         await supabase.functions.invoke("notify-submission", {

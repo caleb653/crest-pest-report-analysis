@@ -31,7 +31,6 @@ const KNOWN_STAFF = new Set([
   "Jackson Latham",
   "Dylan Gallegos",
   "Michael Muniz",
-  "Carmen Lopez",
   "David Longoria",
   "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
 ]);

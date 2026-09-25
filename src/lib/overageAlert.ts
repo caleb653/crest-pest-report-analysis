@@ -2,7 +2,7 @@
  * Unit-overage billing alert for APARTMENT portals.
  *
  * Whenever more units are scheduled for a property's next visit than the
- * plan's `included_units`, Carmen gets an email telling her exactly how many
+ * plan's `included_units`, the office gets an email saying exactly how many
  * units to charge for (replacing the old per-unit-added notification).
  *
  * The count is computed here with the SAME single-source-of-truth helper the
@@ -21,7 +21,7 @@ const isAdHocService = (s: any): boolean => !!(s?.report_data && s.report_data.i
 /**
  * Fire-and-forget: checks the property's FIRST real upcoming service and, if
  * the merged unit count exceeds the included allotment, asks the edge function
- * to email Carmen. Safe to call after any unit-adding action; no-ops for
+ * to email the office. Safe to call after any unit-adding action; no-ops for
  * HOA/commercial properties, unconfigured plans, or projected-only schedules.
  */
 export async function maybeNotifyUnitOverage(args: {
@@ -57,7 +57,7 @@ export async function maybeNotifyUnitOverage(args: {
     .filter((s: any) => s.status !== "completed" && !isAdHocService(s))
     .sort((a: any, b: any) => (a.service_date || "").localeCompare(b.service_date || ""))[0];
   if (!firstUpcoming?.id || String(firstUpcoming.id).startsWith("projected")) return;
-  // Admin waived the charge for this visit — nothing for Carmen to bill.
+  // Admin waived the charge for this visit — nothing for the office to bill.
   if (isOverageWaived(firstUpcoming)) return;
 
   const merged = computeUpcomingUnits({
