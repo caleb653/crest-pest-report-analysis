@@ -68,10 +68,10 @@ export function UnitAuthorizationsProvider({
   const reload = useCallback(async () => {
     if (!propertyId) return;
     const { data, error } = await supabase
-      .from("portal_unit_authorizations" as any)
+      .from("portal_unit_authorizations")
       .select("*")
       .eq("property_id", propertyId);
-    if (!error && Array.isArray(data)) setRows(data as unknown as UnitAuthorization[]);
+    if (!error && Array.isArray(data)) setRows(data);
     setLoading(false);
   }, [propertyId]);
 
@@ -103,7 +103,7 @@ export function UnitAuthorizationsProvider({
     const existing = byUnit.get(key);
     if (existing) return existing;
     const { data, error } = await supabase
-      .from("portal_unit_authorizations" as any)
+      .from("portal_unit_authorizations")
       .upsert(
         { property_id: propertyId, unit_number: String(unit).trim(), unit_key: key },
         { onConflict: "property_id,unit_key", ignoreDuplicates: false },
@@ -113,16 +113,16 @@ export function UnitAuthorizationsProvider({
     if (error || !data) {
       // A concurrent insert from another card may have won; read it back.
       const { data: again } = await supabase
-        .from("portal_unit_authorizations" as any)
+        .from("portal_unit_authorizations")
         .select("*")
         .eq("property_id", propertyId)
         .eq("unit_key", key)
         .maybeSingle();
-      if (again) { upsertLocal(again as unknown as UnitAuthorization); return again as unknown as UnitAuthorization; }
+      if (again) { upsertLocal(again); return again; }
       return null;
     }
-    upsertLocal(data as unknown as UnitAuthorization);
-    return data as unknown as UnitAuthorization;
+    upsertLocal(data);
+    return data;
   }, [byUnit, propertyId, upsertLocal]);
 
   const sign = useCallback(async (unit: string, input: { signerName: string; signerEmail?: string; signature: string; via: string }) => {
@@ -139,13 +139,13 @@ export function UnitAuthorizationsProvider({
       signed_via: input.via,
     };
     const { data, error } = await supabase
-      .from("portal_unit_authorizations" as any)
+      .from("portal_unit_authorizations")
       .upsert(payload, { onConflict: "property_id,unit_key" })
       .select("*")
       .maybeSingle();
     if (error || !data) return null;
-    upsertLocal(data as unknown as UnitAuthorization);
-    return data as unknown as UnitAuthorization;
+    upsertLocal(data);
+    return data;
   }, [propertyId, upsertLocal]);
 
   const clear = useCallback(async (unit: string) => {
@@ -153,12 +153,12 @@ export function UnitAuthorizationsProvider({
     const row = byUnit.get(key);
     if (!row) return;
     const { data } = await supabase
-      .from("portal_unit_authorizations" as any)
+      .from("portal_unit_authorizations")
       .update({ signature: null, signed_at: null, signer_name: null, signer_email: null, signed_via: null })
       .eq("id", row.id)
       .select("*")
       .maybeSingle();
-    if (data) upsertLocal(data as unknown as UnitAuthorization);
+    if (data) upsertLocal(data);
   }, [byUnit, upsertLocal]);
 
   const value = useMemo<UnitAuthorizationsContextValue>(() => ({
