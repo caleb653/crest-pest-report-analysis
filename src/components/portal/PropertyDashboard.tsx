@@ -3885,8 +3885,8 @@ const PropertyDashboard = ({
             PM portal so office + PM see the same list at the top. */}
         <VisitUnitsAtAGlance
           units={isUpcoming ? glanceUnitsFromUpcoming(merged.unitContexts) : glanceUnitsFromPast(unitDetails)}
-          title={isUpcoming
           staff
+          title={isUpcoming
             ? `Units to be treated (${merged.unitContexts.length})`
             : `Units treated (${unitDetails.length})`}
           serviceTitle={(s as any).appointment_service || s.service_type}
