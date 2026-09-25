@@ -289,51 +289,6 @@ export type Database = {
         }
         Relationships: []
       }
-      portal_unit_authorizations: {
-        Row: {
-          created_at: string
-          id: string
-          property_id: string
-          signature: string | null
-          signed_at: string | null
-          signed_via: string | null
-          signer_email: string | null
-          signer_name: string | null
-          token: string | null
-          unit_key: string
-          unit_number: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          property_id: string
-          signature?: string | null
-          signed_at?: string | null
-          signed_via?: string | null
-          signer_email?: string | null
-          signer_name?: string | null
-          token?: string | null
-          unit_key: string
-          unit_number: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          property_id?: string
-          signature?: string | null
-          signed_at?: string | null
-          signed_via?: string | null
-          signer_email?: string | null
-          signer_name?: string | null
-          token?: string | null
-          unit_key?: string
-          unit_number?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       portal_conditions: {
         Row: {
           action: string | null
@@ -1422,6 +1377,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      portal_unit_authorizations: {
+        Row: {
+          created_at: string
+          id: string
+          property_id: string
+          signature: string | null
+          signed_at: string | null
+          signed_via: string | null
+          signer_email: string | null
+          signer_name: string | null
+          token: string | null
+          unit_key: string
+          unit_number: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          property_id: string
+          signature?: string | null
+          signed_at?: string | null
+          signed_via?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          token?: string | null
+          unit_key: string
+          unit_number: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          property_id?: string
+          signature?: string | null
+          signed_at?: string | null
+          signed_via?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          token?: string | null
+          unit_key?: string
+          unit_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_unit_authorizations_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "portal_properties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regional_managers: {
         Row: {
