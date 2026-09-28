@@ -90,6 +90,9 @@ serve(async (req) => {
     // auto-placement is strictly opt-in — default returns overdue as a
     // placeable pool instead of scattering it into the plan.
     const includeOverdue = body?.include_overdue === true;
+    // "Include all special scheduling notes" toggle (Caleb 2026-09-27): book
+    // "call to schedule" customers too, flagged call_to_confirm by the engine.
+    const includeCallToSchedule = body?.include_call_to_schedule === true;
     let overdueDays = 120;
     if (Number.isFinite(body?.overdue_days)) {
       overdueDays = Math.min(365, Math.max(0, Math.trunc(Number(body.overdue_days))));
@@ -272,6 +275,7 @@ serve(async (req) => {
       headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops,
                              include_overdue: includeOverdue, overdue_days: overdueDays,
+                             include_call_to_schedule: includeCallToSchedule,
                              strategy: String(body?.strategy ?? "") === "clump" ? "clump" : "",
                              pending_pushes: pushed.map(({ date, customer_id, subscription_id }) =>
                                ({ date, customer_id, subscription_id })) }),

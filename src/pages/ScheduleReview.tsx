@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import PendingFieldRoutesWrites from "@/components/PendingFieldRoutesWrites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import RouteMap from "@/components/scheduling/RouteMap";
@@ -1322,6 +1323,11 @@ type FillStop = {
   days_off_target: number;
   special_scheduling: string | null;
   confirm: boolean;
+  /** "Call to schedule" customer booked under the "Include all special
+   *  scheduling notes" toggle — appointment_notes goes onto the FieldRoutes
+   *  appointment when the stop is pushed. */
+  call_to_confirm?: boolean;
+  appointment_notes?: string | null;
   off_zone_day: boolean;
   route_id?: string;             // FieldRoutes routeID for the tech-day (placement)
   // Optional flags supplied by upstream planner:
@@ -1509,6 +1515,8 @@ type FillResult = {
   overdue_count?: number;
   include_overdue?: boolean;
   overdue_days?: number;
+  include_call_to_schedule?: boolean;
+  call_to_confirm_count?: number;
   summary?: FillTopSummary;
   /** "date|tech" → FieldRoutes routeID for EVERY field tech (not just the
    *  proposed days) — powers reassigning a day onto another tech's route. */
@@ -1574,6 +1582,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // distance to that day's committed stops. Measured NEUTRAL on the live pool
   // (the later geometric passes dominate) — kept as an opt-in experiment.
   const [clumpFirst, setClumpFirst] = useState<boolean>(false);
+  // "Include all special scheduling notes" (Caleb 2026-09-27): ON books the
+  // "call to schedule" customers too, each with a "Call to confirm" appointment
+  // note. OFF (default) = "Exclude call to schedule": they stay in the manual list.
+  const [includeCallToSchedule, setIncludeCallToSchedule] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FillResult | null>(null);
   // Stops the office X'd out of the plan: OFF the day, OFF the map, OFF the
@@ -1685,6 +1697,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         duration: s.duration || 30,
         subscription_id: b.subscription_id,
         route_id: s.route_id ? Number(s.route_id) : undefined,
+        notes: s.appointment_notes || undefined,
       }));
     let okIds: string[] = [];
     try {
@@ -1879,6 +1892,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             service_type_id: b.service_type_id, service_type_label: b.service_type_label,
             date: dayInfo.date, start: s.start, end: s.end, duration: s.duration || 30,
             subscription_id: b.subscription_id, route_id: Number(rid),
+            notes: s.appointment_notes || undefined,
           },
         });
         if (!(!error && data?.ok === true && (data?.pushed === true || data?.paced === true))) allOk = false;
@@ -2208,6 +2222,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
         body: { staffName: staff.fullName, start_date: start, end_date: end, techs, max_stops: maxStops, min_stops: minStops,
                 include_overdue: includeOverdue,
                 strategy: clumpFirst ? "clump" : "",
+                include_call_to_schedule: includeCallToSchedule,
                 overdue_days: Math.min(365, Math.max(0, Math.trunc(overdueDays) || 0)) },
       });
       if (error) throw error;
@@ -2335,6 +2350,18 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                 Pick each stop's day by how CLOSE it is to that day's other stops
                 (instead of by how full the day is). Measured about even with the
                 default so far — try both and compare.
+              </span>
+            </span>
+          </label>
+          <label className="mt-3 flex items-start gap-3 text-sm cursor-pointer">
+            <Switch checked={includeCallToSchedule} onCheckedChange={(v) => setIncludeCallToSchedule(v === true)}
+                    className="mt-0.5" aria-label="Include all special scheduling notes" />
+            <span>
+              {includeCallToSchedule ? "Include all special scheduling notes" : "Exclude call to schedule"}
+              <span className="block text-[11px] text-muted-foreground leading-tight">
+                {includeCallToSchedule
+                  ? "On: \"call to schedule\" customers are booked like everyone else and every one of those appointments is pushed with the note \"Call to confirm\". The rest of their note (days, windows, Route Manager) still applies."
+                  : "Off (default): \"call to schedule\" customers stay in the manual list. Flip on to plan them too — each gets a \"Call to confirm\" appointment note."}
               </span>
             </span>
           </label>
@@ -4347,6 +4374,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             duration: s.duration || 30,
             subscription_id: b.subscription_id,
             route_id: s.route_id ? Number(s.route_id) : undefined,
+            notes: s.appointment_notes || undefined,
           },
         });
         // Only count it when the backend CONFIRMED a real outcome: pushed
@@ -4433,6 +4461,7 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             duration: s.duration || 30,
             subscription_id: b.subscription_id,
             route_id: s.route_id ? Number(s.route_id) : undefined,
+            notes: s.appointment_notes || undefined,
           },
         });
         // No-commit path answers { ok, queued: row } — anything else didn't save.
@@ -4657,7 +4686,9 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                     same trip — doesn't count toward the day's stops
                   </Badge>
                 )}
-                {s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>}
+                {s.call_to_confirm ? (
+                  <Badge variant="outline" className="text-sky-700 border-sky-300">call to confirm — note goes on the appointment</Badge>
+                ) : (s.confirm && <Badge variant="outline" className="text-amber-700 border-amber-300">confirm first</Badge>)}
                 {s.moved && <Badge variant="outline" className="text-indigo-700 border-indigo-300">moved here manually</Badge>}
                 {typeof s.far_from_route_min === "number" && s.far_from_route_min > 0 && (
                   <Badge variant="outline" className="text-amber-700 border-amber-300">

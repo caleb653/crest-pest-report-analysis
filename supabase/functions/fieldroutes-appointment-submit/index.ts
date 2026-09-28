@@ -34,6 +34,13 @@ const KNOWN_STAFF = new Set([
   "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
+// Appointment Notes text for FieldRoutes (max 1000 chars there); undefined when blank.
+function cleanNotes(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim();
+  return t ? t.slice(0, 1000) : undefined;
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -136,6 +143,7 @@ serve(async (req) => {
         }
         const bTypeLabel = String(it?.service_type_label ?? "").trim();
         const bCustLabel = String(it?.customer_label ?? "").trim();
+        const bNotes = cleanNotes(it?.notes);
         rows.push({
           entity: "appointment",
           action: "create",
@@ -151,6 +159,7 @@ serve(async (req) => {
             employee_id: it?.employee_id == null ? null : Number(it.employee_id),
             route_id: it?.route_id == null || it?.route_id === "" ? null : Number(it.route_id),
             spot_id: null,
+            ...(bNotes ? { notes: bNotes } : {}),
             _label: { service_type: bTypeLabel, customer: bCustLabel, requested_by: requestedBy },
           },
           summary: `Book ${bTypeLabel || "appointment"} for ${bCustLabel || `customer ${bCustomer}`} on ${bDate} ${bStart}–${bEnd}`,
@@ -179,6 +188,7 @@ serve(async (req) => {
     const route_id = body?.route_id == null || body?.route_id === "" ? null : Number(body.route_id);
     const spot_id = body?.spot_id == null || body?.spot_id === "" ? null : Number(body.spot_id);
     const customer_label = String(body?.customer_label ?? "").trim();
+    const notes = cleanNotes(body?.notes);
 
     if (!customer_id || customer_id <= 0) return json({ ok: false, error: "missing_customer_id" }, 400);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ ok: false, error: "bad_date" }, 400);
@@ -197,6 +207,9 @@ serve(async (req) => {
       employee_id,
       route_id,
       spot_id,
+      // Appointment Notes shown on the FieldRoutes stop (e.g. "Call to confirm"
+      // from Fill's include-all-special-notes toggle). Omitted when empty.
+      ...(notes ? { notes } : {}),
       // Display-only context for the approval UI (not sent to Cloud Run):
       _label: {
         service_type: service_type_label,
