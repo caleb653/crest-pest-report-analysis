@@ -38,6 +38,7 @@ const WORKER_ID = "auto_worker";
 // route). Real FieldRoutes rejections (fieldroutes_error…) are never retried.
 const RETRY_MAX = 3;
 const RETRY_WINDOW_H = 48;
+const STALE_PROCESSING_MIN = 10;
 const TRANSIENT_ERRORS = ["upstream_502", "upstream_503", "upstream_504", "fieldroutes_rate_limited", "request_failed"];
 
 function json(body: unknown, status = 200) {
@@ -87,6 +88,31 @@ serve(async (req) => {
                     result: { ...prev, retry_count: n + 1, retry_of_error: err, retried_at: new Date().toISOString() } })
           .eq("id", row.id)
           .eq("status", "failed")
+          .select("id")
+          .single();
+        if (rearmed) retried.push(row.id);
+      }
+      // A row can be left `processing` forever when the invocation that
+      // claimed it was killed mid-write (edge-fn wall clock). Older than
+      // STALE_PROCESSING_MIN → back to `auto`, same retry bookkeeping.
+      const staleSince = new Date(Date.now() - STALE_PROCESSING_MIN * 60_000).toISOString();
+      const { data: stale } = await supabase
+        .from("fieldroutes_write_queue")
+        .select("id, result")
+        .eq("status", "processing")
+        .eq("entity", "appointment")
+        .lt("decided_at", staleSince)
+        .limit(50);
+      for (const row of stale ?? []) {
+        const prev = (row.result && typeof row.result === "object") ? row.result as Record<string, unknown> : {};
+        const n = Number(prev.retry_count ?? 0);
+        if (n >= RETRY_MAX) continue;
+        const { data: rearmed } = await supabase
+          .from("fieldroutes_write_queue")
+          .update({ status: "auto", error: null,
+                    result: { ...prev, retry_count: n + 1, retry_of_error: "stale_processing", retried_at: new Date().toISOString() } })
+          .eq("id", row.id)
+          .eq("status", "processing")
           .select("id")
           .single();
         if (rearmed) retried.push(row.id);
