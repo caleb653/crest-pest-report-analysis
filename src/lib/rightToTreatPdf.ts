@@ -231,9 +231,6 @@ export async function downloadBlankRightToTreatPdf() {
     "Property: ______________________________________________",
     "Address: __________________________________________________",
     "Unit: _______________________   Date: ____________________",
-    "Reason for Treatment: _______________________________________",
-    "Notes: _____________________________________________________",
-    "        _____________________________________________________",
   ];
   for (const line of fields) {
     ensure(14);
@@ -309,7 +306,7 @@ export async function downloadBlankRightToTreatPdf() {
   y += 16;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Printed Name: ____________________________   Email: ______________________________", margin, y); y += 18;
+  doc.text("Printed Name: ____________________________________________", margin, y); y += 18;
   doc.text("Date: ____________________", margin, y);
   doc.setDrawColor(120);
   doc.line(margin + 200, y + 14, margin + 480, y + 14);
