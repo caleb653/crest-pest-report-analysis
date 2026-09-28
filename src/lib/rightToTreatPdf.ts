@@ -197,7 +197,7 @@ export async function downloadBlankRightToTreatPdf() {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 48;
+  const margin = 36;
   const usable = pageWidth - margin * 2;
   let y = margin;
 
@@ -209,22 +209,22 @@ export async function downloadBlankRightToTreatPdf() {
   };
 
   doc.setFillColor(42, 42, 42);
-  doc.rect(0, 0, pageWidth, 70, "F");
+  doc.rect(0, 0, pageWidth, 56, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("Right to Treat — Authorization", margin, 32);
+  doc.setFontSize(16);
+  doc.text("Right to Treat — Authorization", margin, 26);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Crest Pest Control · 949-424-5000", margin, 52);
-  y = 90;
+  doc.text("Crest Pest Control · 949-424-5000", margin, 44);
+  y = 74;
   doc.setTextColor(0, 0, 0);
 
   // Property details — blank lines
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Property Details", margin, y);
-  y += 16;
+  y += 14;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const fields: string[] = [
@@ -236,11 +236,11 @@ export async function downloadBlankRightToTreatPdf() {
     "        _____________________________________________________",
   ];
   for (const line of fields) {
-    ensure(16);
+    ensure(14);
     doc.text(line, margin, y);
-    y += 16;
+    y += 14;
   }
-  y += 8;
+  y += 4;
 
   // Authorization
   doc.setFont("helvetica", "bold");
@@ -255,9 +255,9 @@ export async function downloadBlankRightToTreatPdf() {
     "The technician will apply EPA-registered pest control products consistent with their professional judgment and the property's service plan.",
     usable,
   );
-  ensure(auth.length * 12 + 4);
+  ensure(auth.length * 11 + 4);
   doc.text(auth, margin, y);
-  y += auth.length * 12 + 12;
+  y += auth.length * 11 + 8;
 
   // Pesticide notice
   doc.setFont("helvetica", "bold");
@@ -266,14 +266,14 @@ export async function downloadBlankRightToTreatPdf() {
   doc.text("Pesticide Notice", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   const notice = doc.splitTextToSize(PESTICIDE_NOTICE, usable);
   for (const line of notice) {
-    ensure(11);
+    ensure(9.5);
     doc.text(line, margin, y);
-    y += 11;
+    y += 9.5;
   }
-  y += 8;
+  y += 6;
 
   // Chemicals
   doc.setFont("helvetica", "bold");
@@ -282,7 +282,7 @@ export async function downloadBlankRightToTreatPdf() {
   doc.text("Possible Chemicals Used", margin, y);
   y += 14;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   const colWidth = usable / 2;
   const half = Math.ceil(POSSIBLE_CHEMICALS.length / 2);
   const left = POSSIBLE_CHEMICALS.slice(0, half);
@@ -291,35 +291,31 @@ export async function downloadBlankRightToTreatPdf() {
   let leftY = startY;
   for (const item of left) {
     const lines = doc.splitTextToSize("• " + item, colWidth - 8);
-    if (leftY + lines.length * 11 > pageHeight - margin) { doc.addPage(); leftY = margin; }
     doc.text(lines, margin, leftY);
-    leftY += lines.length * 11;
+    leftY += lines.length * 9.5;
   }
   let rightY = startY;
   for (const item of right) {
     const lines = doc.splitTextToSize("• " + item, colWidth - 8);
-    if (rightY + lines.length * 11 > pageHeight - margin) { doc.addPage(); rightY = margin; }
     doc.text(lines, margin + colWidth, rightY);
-    rightY += lines.length * 11;
+    rightY += lines.length * 9.5;
   }
-  y = Math.max(leftY, rightY) + 20;
+  y = Math.max(leftY, rightY) + 10;
 
   // Signature lines
-  ensure(140);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Signature", margin, y);
-  y += 18;
+  y += 16;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text("Printed Name: ______________________________________", margin, y); y += 22;
-  doc.text("Email: _____________________________________________", margin, y); y += 22;
-  doc.text("Date: ______________________________________________", margin, y); y += 28;
+  doc.text("Printed Name: ____________________________   Email: ______________________________", margin, y); y += 18;
+  doc.text("Date: ____________________", margin, y);
   doc.setDrawColor(120);
-  doc.line(margin, y + 30, margin + 280, y + 30);
+  doc.line(margin + 200, y + 14, margin + 480, y + 14);
   doc.setFontSize(9);
   doc.setTextColor(110, 110, 110);
-  doc.text("Signature", margin, y + 44);
+  doc.text("Signature", margin + 200, y + 26);
   doc.setTextColor(0, 0, 0);
 
   doc.save("right-to-treat-blank.pdf");
