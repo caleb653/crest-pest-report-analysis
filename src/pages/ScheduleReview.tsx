@@ -2357,11 +2357,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
             <Switch checked={includeCallToSchedule} onCheckedChange={(v) => setIncludeCallToSchedule(v === true)}
                     className="mt-0.5" aria-label="Include all special scheduling notes" />
             <span>
-              {includeCallToSchedule ? "Include all special scheduling notes" : "Exclude call to schedule"}
+              Include call to schedule
               <span className="block text-[11px] text-muted-foreground leading-tight">
                 {includeCallToSchedule
-                  ? "On: \"call to schedule\" customers are booked like everyone else and every one of those appointments is pushed with the note \"Call to confirm\". The rest of their note (days, windows, Route Manager) still applies."
-                  : "Off (default): \"call to schedule\" customers stay in the manual list. Flip on to plan them too — each gets a \"Call to confirm\" appointment note."}
+                  ? "ON: \"call to schedule\" customers are planned like everyone else and each of those appointments is pushed with the note \"Call to confirm\". The rest of their note (days, windows, Route Manager) still applies. On-hold accounts and overdue stops are never included by this switch."
+                  : "OFF (default): \"call to schedule\" customers stay in the manual list. Flip on to plan them too — each gets a \"Call to confirm\" appointment note."}
               </span>
             </span>
           </label>
