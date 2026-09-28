@@ -1350,6 +1350,7 @@ type FillStop = {
   moved?: boolean;               // dragged onto this day by the office
   pushed_to_fr?: boolean;        // grey — already written/queued to FieldRoutes (from the write queue; survives reloads)
   saved_to_fr?: boolean;         // amber — saved as a PENDING write to send later ("Writes awaiting approval")
+  push_failed?: boolean;         // red — the write to FieldRoutes failed (e.g. 60-writes/min cap); push again
   far_from_route_min?: number | null;  // >20-min hop from the rest of this route
   /** Escalation-ladder provenance from the engine: placed OVER the day's cap
    *  (kept with the preferred Route Manager on a pinned/full day), or switched
@@ -2242,15 +2243,21 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
       // pending rows, so this degrades to the previous behavior.
       const savedKeys = new Set(queueRows.filter((p) => p.status === "pending")
         .map((p) => `${p.subscription_id}|${p.date}`));
-      const pushedKeys = new Set(queueRows.filter((p) => p.status !== "pending")
+      const pushedKeys = new Set(queueRows.filter((p) => p.status !== "pending" && p.status !== "failed")
         .map((p) => `${p.subscription_id}|${p.date}`));
-      if (pushedKeys.size || savedKeys.size) {
+      // "failed" (2026-09-27): FieldRoutes rejected the write (its 60-writes/min
+      // cap bit 191 pushes that night while the app showed them grey). Red
+      // badge, and the stop stays pushable. The worker also re-arms these.
+      const failedKeys = new Set(queueRows.filter((p) => p.status === "failed")
+        .map((p) => `${p.subscription_id}|${p.date}`));
+      if (pushedKeys.size || savedKeys.size || failedKeys.size) {
         for (const d of res.proposed) {
           for (const s of d.stops) {
             if (s.already_scheduled) continue;
             const k = `${s.subscription_id}|${d.date}`;
             if (pushedKeys.has(k)) s.pushed_to_fr = true;
             else if (savedKeys.has(k)) s.saved_to_fr = true;
+            else if (failedKeys.has(k)) s.push_failed = true;
           }
         }
       }
@@ -4676,6 +4683,11 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
                 {s.ride_along && (
                   <Badge variant="outline" className="text-emerald-700 border-emerald-300">
                     same trip — doesn't count toward the day's stops
+                  </Badge>
+                )}
+                {s.push_failed && !s.pushed_to_fr && (
+                  <Badge variant="outline" className="text-red-700 border-red-300">
+                    push failed — FieldRoutes rejected the last write; it retries automatically, or push again
                   </Badge>
                 )}
                 {s.call_to_confirm ? (

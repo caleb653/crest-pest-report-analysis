@@ -259,7 +259,9 @@ serve(async (req) => {
         .from("fieldroutes_write_queue")
         .select("payload, status")
         .eq("entity", "appointment")
-        .in("status", ["pending", "auto", "processing", "committed"])
+        // "failed" rides too (2026-09-27): the app shows a red "push failed"
+        // badge and lets the stop be pushed again instead of greying it out.
+        .in("status", ["pending", "auto", "processing", "committed", "failed"])
         .gte("payload->>date", startDate)
         .lte("payload->>date", endDate)
         .limit(2000);

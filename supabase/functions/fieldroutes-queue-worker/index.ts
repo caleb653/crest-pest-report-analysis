@@ -30,6 +30,15 @@ const corsHeaders = {
 const WRITE_SPACING_MS = 1_500;
 const MAX_COMMITS_PER_RUN = 30;
 const WORKER_ID = "auto_worker";
+// Automatic retry cadence (Caleb 2026-09-27: "always retry the ones that
+// fail"). A TRANSIENT failure — FieldRoutes' 60-writes/min cap (upstream_502
+// from Cloud Run, fieldroutes_rate_limited), a dropped connection — is re-armed
+// as `auto` up to RETRY_MAX times within RETRY_WINDOW_H hours, so the next
+// drain picks it up with the full payload (customer, service, day, time,
+// route). Real FieldRoutes rejections (fieldroutes_error…) are never retried.
+const RETRY_MAX = 3;
+const RETRY_WINDOW_H = 48;
+const TRANSIENT_ERRORS = ["upstream_502", "upstream_503", "upstream_504", "fieldroutes_rate_limited", "request_failed"];
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -53,8 +62,39 @@ serve(async (req) => {
 
   const committed: string[] = [];
   const failed: string[] = [];
+  const retried: string[] = [];
 
   try {
+    // ── Re-arm transient failures (see RETRY_* above) ─────────────────────
+    try {
+      const since = new Date(Date.now() - RETRY_WINDOW_H * 3600_000).toISOString();
+      const { data: fails } = await supabase
+        .from("fieldroutes_write_queue")
+        .select("id, error, result")
+        .eq("status", "failed")
+        .eq("entity", "appointment")
+        .gte("decided_at", since)
+        .limit(200);
+      for (const row of fails ?? []) {
+        const err = String(row.error ?? "");
+        if (!TRANSIENT_ERRORS.some((t) => err.startsWith(t))) continue;
+        const prev = (row.result && typeof row.result === "object") ? row.result as Record<string, unknown> : {};
+        const n = Number(prev.retry_count ?? 0);
+        if (n >= RETRY_MAX) continue;
+        const { data: rearmed } = await supabase
+          .from("fieldroutes_write_queue")
+          .update({ status: "auto", error: null,
+                    result: { ...prev, retry_count: n + 1, retry_of_error: err, retried_at: new Date().toISOString() } })
+          .eq("id", row.id)
+          .eq("status", "failed")
+          .select("id")
+          .single();
+        if (rearmed) retried.push(row.id);
+      }
+    } catch (e) {
+      console.error("fieldroutes-queue-worker re-arm failed", e);
+    }
+
     const started = Date.now();
     let commits = 0;
     while (commits < MAX_COMMITS_PER_RUN && Date.now() - started < 100_000) {
@@ -93,7 +133,7 @@ serve(async (req) => {
         .update({ status: "processing", decided_by: WORKER_ID, decided_at: new Date().toISOString() })
         .eq("id", nextId)
         .eq("status", "auto")
-        .select("id, endpoint, payload")
+        .select("id, endpoint, payload, result")
         .single();
       if (!claimed) continue; // raced by another invocation — re-check the gate
 
@@ -117,9 +157,14 @@ serve(async (req) => {
         errText = `request_failed: ${String(e)}`;
       }
 
+      // Keep the retry bookkeeping (retry_count) alongside the Cloud Run response.
+      const prevResult = (claimed as { result?: unknown }).result;
+      const keep = (prevResult && typeof prevResult === "object" && (prevResult as Record<string, unknown>).retry_count != null)
+        ? { retry_count: (prevResult as Record<string, unknown>).retry_count } : {};
+      const merged = (result && typeof result === "object") ? { ...(result as Record<string, unknown>), ...keep } : result;
       await supabase
         .from("fieldroutes_write_queue")
-        .update({ status: finalStatus, result, error: errText, decided_at: new Date().toISOString() })
+        .update({ status: finalStatus, result: merged, error: errText, decided_at: new Date().toISOString() })
         .eq("id", claimed.id);
       (finalStatus === "committed" ? committed : failed).push(claimed.id);
       commits++;
@@ -149,7 +194,7 @@ serve(async (req) => {
       (globalThis as any).EdgeRuntime?.waitUntil?.(relay);
     }
 
-    return json({ ok: true, committed, failed, remaining });
+    return json({ ok: true, committed, failed, retried, remaining });
   } catch (e) {
     console.error("fieldroutes-queue-worker exception", e);
     return json({ ok: false, error: "exception", detail: String(e) });
