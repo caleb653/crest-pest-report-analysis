@@ -217,7 +217,18 @@ export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
   doc.save(`right-to-treat-${safeName}.pdf`);
 }
 
-export async function downloadBlankRightToTreatPdf() {
+export interface BlankRightToTreatOptions {
+  propertyName?: string | null;
+  propertyAddress?: string | null;
+  unitNumber?: string | null;
+}
+
+/** Blank (print-and-sign) form. Anything known about the property/unit is
+ *  pre-filled; whatever is missing stays a blank line to write on. */
+export async function downloadBlankRightToTreatPdf(opts: BlankRightToTreatOptions = {}) {
+  const propertyName = (opts.propertyName || "").trim();
+  const propertyAddress = (opts.propertyAddress || "").trim();
+  const unitNumber = (opts.unitNumber || "").trim();
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -252,9 +263,9 @@ export async function downloadBlankRightToTreatPdf() {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const fields: string[] = [
-    "Property: ______________________________________________",
-    "Address: __________________________________________________",
-    "Unit: _______________________   Date: ____________________",
+    propertyName ? `Property: ${propertyName}` : "Property: ______________________________________________",
+    propertyAddress ? `Address: ${propertyAddress}` : "Address: __________________________________________________",
+    `Unit: ${unitNumber || "_______________________"}   Date: ____________________`,
   ];
   for (const line of fields) {
     ensure(14);
@@ -341,5 +352,7 @@ export async function downloadBlankRightToTreatPdf() {
   doc.text("Signature", margin + 200, y + 26);
   doc.setTextColor(0, 0, 0);
 
-  doc.save("right-to-treat-blank.pdf");
+  const slug = [propertyName, unitNumber ? `unit-${unitNumber}` : ""]
+    .filter(Boolean).join("-").replace(/[^a-z0-9-]+/gi, "_");
+  doc.save(`right-to-treat-blank${slug ? `-${slug}` : ""}.pdf`);
 }

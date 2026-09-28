@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Copy, Loader2, ShieldCheck, Shield, Undo2 } from "lucide-react";
+import { CheckCircle2, Copy, Download, Loader2, ShieldCheck, Shield, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { SignatureCanvas, type SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PESTICIDE_NOTICE, POSSIBLE_CHEMICALS, RIGHT_TO_ENTER_TEXT } from "@/lib/rightToTreatPdf";
+import { PESTICIDE_NOTICE, POSSIBLE_CHEMICALS, RIGHT_TO_ENTER_TEXT, downloadBlankRightToTreatPdf } from "@/lib/rightToTreatPdf";
 import { useUnitAuthorizations, type UnitAuthorization } from "@/lib/unitAuthorizations";
 
 /**
@@ -245,6 +245,14 @@ export function UnitRightToTreatDialog({
                   Copy a link for the resident to sign on their phone
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground"
+                onClick={() => downloadBlankRightToTreatPdf({ propertyName: ctx.propertyName, propertyAddress: ctx.propertyAddress, unitNumber })}
+              >
+                <Download className="w-3.5 h-3.5 mr-1" />Download a blank form for unit {unitNumber} (print &amp; sign)
+              </Button>
             </>
           )}
         </div>

@@ -7547,7 +7547,7 @@ const PropertyDashboard = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => downloadBlankRightToTreatPdf()}
+                onClick={() => downloadBlankRightToTreatPdf({ propertyName: property.name, propertyAddress: property.address })}
               >
                 <Download className="w-4 h-4 mr-1.5" />Download Blank Right-to-Treat Agreement
               </Button>

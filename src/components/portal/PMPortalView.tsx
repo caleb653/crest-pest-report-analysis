@@ -3427,7 +3427,7 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                         size="sm"
                         variant="outline"
                         className="h-8 text-xs"
-                        onClick={() => downloadBlankRightToTreatPdf()}
+                        onClick={() => downloadBlankRightToTreatPdf({ propertyName: property?.name, propertyAddress: property?.address })}
                       >
                         <Download className="w-3.5 h-3.5 mr-1" />Download Blank Agreement
                       </Button>
