@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { SignatureCanvas, SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { downloadRightToTreatPdf } from "@/lib/rightToTreatPdf";
+import { Checkbox } from "@/components/ui/checkbox";
+import { downloadRightToTreatPdf, RIGHT_TO_ENTER_TEXT } from "@/lib/rightToTreatPdf";
 import { Download } from "lucide-react";
 
 interface RequestRow {
@@ -36,6 +37,7 @@ const RightToTreat = () => {
   const [error, setError] = useState<string | null>(null);
   const [signerName, setSignerName] = useState("");
   const [signature, setSignature] = useState<string | null>(null);
+  const [rightToEnter, setRightToEnter] = useState(false);
   const sigRef = useRef<SignatureCanvasRef>(null);
 
   useEffect(() => {
@@ -79,6 +81,10 @@ const RightToTreat = () => {
     }
     if (!signerName.trim()) {
       toast.error("Please type your name");
+      return;
+    }
+    if (!rightToEnter) {
+      toast.error("Please check the Right to Enter box");
       return;
     }
     setSubmitting(true);
@@ -217,6 +223,7 @@ const RightToTreat = () => {
               <div className="rounded-md border border-primary/30 bg-primary/5 p-4 text-center space-y-2">
                 <CheckCircle2 className="w-8 h-8 text-primary mx-auto" />
                 <p className="font-semibold">Authorization Received</p>
+                <p className="text-xs text-primary">✓ Right to Enter granted</p>
                 <p className="text-xs text-muted-foreground">
                   Signed{request?.right_to_treat_signer_name ? ` by ${request.right_to_treat_signer_name}` : ""}
                   {request?.right_to_treat_signed_at ? ` on ${new Date(request.right_to_treat_signed_at).toLocaleString()}` : ""}
@@ -249,6 +256,10 @@ const RightToTreat = () => {
                   <Label className="text-sm">Your Name</Label>
                   <Input value={signerName} onChange={(e) => setSignerName(e.target.value)} placeholder="Full name" maxLength={200} />
                 </div>
+                <label className="flex items-start gap-2.5 rounded-md border bg-background p-3 text-xs leading-snug cursor-pointer">
+                  <Checkbox checked={rightToEnter} onCheckedChange={(v) => setRightToEnter(!!v)} className="mt-0.5" />
+                  <span><span className="font-semibold">Right to Enter.</span> {RIGHT_TO_ENTER_TEXT.replace(/^Right to Enter — /, "")}</span>
+                </label>
                 <div className="space-y-1.5">
                   <Label className="text-sm">Signature</Label>
                   <div className="border rounded-md bg-background">

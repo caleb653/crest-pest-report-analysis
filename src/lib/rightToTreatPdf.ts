@@ -11,6 +11,8 @@ export interface RightToTreatPdfInput {
   description?: string | null;
   signedAt?: string | null;
   signatureDataUrl?: string | null;
+  /** Right to Enter box — required in the portal forms, so defaults to ticked. */
+  rightToEnter?: boolean | null;
 }
 
 export const PESTICIDE_NOTICE =
@@ -49,6 +51,25 @@ export const POSSIBLE_CHEMICALS = [
   "Invade Bio Cleaner (Citrus Oil, Microbes, Surfactants)",
   "Take Down II Soft Bait (Bromethalin)",
 ];
+
+export const RIGHT_TO_ENTER_TEXT =
+  "Right to Enter — I grant Crest Pest Control permission to enter the unit identified above to perform the treatment.";
+
+/** Draws a checkbox (optionally ticked) with a label; returns the height used. */
+function drawCheckbox(doc: jsPDF, x: number, y: number, label: string, maxWidth: number, checked: boolean, size = 10): number {
+  doc.setDrawColor(60);
+  doc.setLineWidth(0.8);
+  doc.rect(x, y - size + 2, size, size);
+  if (checked) {
+    doc.setLineWidth(1.2);
+    doc.line(x + 2, y - size / 2 + 2, x + size / 2 - 0.5, y);
+    doc.line(x + size / 2 - 0.5, y, x + size - 1.5, y - size + 4);
+  }
+  doc.setLineWidth(0.5);
+  const lines = doc.splitTextToSize(label, maxWidth - size - 6);
+  doc.text(lines, x + size + 6, y);
+  return Math.max(size, lines.length * 12) + 4;
+}
 
 export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
@@ -117,7 +138,10 @@ export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
   );
   ensure(auth.length * 12 + 4);
   doc.text(auth, margin, y);
-  y += auth.length * 12 + 12;
+  y += auth.length * 12 + 10;
+  ensure(20);
+  y += drawCheckbox(doc, margin, y, RIGHT_TO_ENTER_TEXT, usable, input.rightToEnter !== false);
+  y += 4;
 
   // Pesticide notice
   doc.setFont("helvetica", "bold");
@@ -254,7 +278,9 @@ export async function downloadBlankRightToTreatPdf() {
   );
   ensure(auth.length * 11 + 4);
   doc.text(auth, margin, y);
-  y += auth.length * 11 + 8;
+  y += auth.length * 11 + 10;
+  y += drawCheckbox(doc, margin, y, RIGHT_TO_ENTER_TEXT, usable, false);
+  y += 2;
 
   // Pesticide notice
   doc.setFont("helvetica", "bold");

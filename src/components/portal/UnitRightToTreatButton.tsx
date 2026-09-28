@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SignatureCanvas, type SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { toast } from "sonner";
-import { PESTICIDE_NOTICE, POSSIBLE_CHEMICALS } from "@/lib/rightToTreatPdf";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PESTICIDE_NOTICE, POSSIBLE_CHEMICALS, RIGHT_TO_ENTER_TEXT } from "@/lib/rightToTreatPdf";
 import { useUnitAuthorizations, type UnitAuthorization } from "@/lib/unitAuthorizations";
 
 /**
@@ -89,16 +90,16 @@ function NoticeBlocks() {
         I understand the technician will apply EPA-registered pest control products consistent with their
         professional judgment and the property's service plan.
       </div>
-      <details className="rounded-md border border-amber-300 bg-amber-50/70 p-3 text-[11px] leading-snug text-amber-950/90">
-        <summary className="font-bold uppercase tracking-wide text-amber-800 text-xs cursor-pointer">Pesticide Notice (tap to read)</summary>
-        <p className="italic mt-2">{PESTICIDE_NOTICE}</p>
-      </details>
-      <details className="rounded-md border bg-muted/30 p-3 text-[11px] leading-snug">
-        <summary className="font-bold uppercase tracking-wide text-foreground text-xs cursor-pointer">Possible Chemicals Used (tap to read)</summary>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 list-disc pl-4 text-foreground/90 mt-2">
+      <div className="rounded-md border border-amber-300 bg-amber-50/70 p-3 text-[11px] leading-snug text-amber-950/90 space-y-2">
+        <p className="font-bold uppercase tracking-wide text-amber-800 text-xs">Pesticide Notice</p>
+        <p className="italic">{PESTICIDE_NOTICE}</p>
+      </div>
+      <div className="rounded-md border bg-muted/30 p-3 text-[11px] leading-snug space-y-1.5">
+        <p className="font-bold uppercase tracking-wide text-foreground text-xs">Possible Chemicals Used</p>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-0.5 list-disc pl-4 text-foreground/90">
           {POSSIBLE_CHEMICALS.map((c) => <li key={c}>{c}</li>)}
         </ul>
-      </details>
+      </div>
     </>
   );
 }
@@ -120,6 +121,7 @@ export function UnitRightToTreatDialog({
   const [signerName, setSignerName] = useState("");
   const [signerEmail, setSignerEmail] = useState("");
   const [signature, setSignature] = useState<string | null>(null);
+  const [rightToEnter, setRightToEnter] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [linkBusy, setLinkBusy] = useState(false);
   const sigRef = useRef<SignatureCanvasRef>(null);
@@ -129,6 +131,7 @@ export function UnitRightToTreatDialog({
       setSignerName(auth?.signer_name || "");
       setSignerEmail(auth?.signer_email || "");
       setSignature(null);
+      setRightToEnter(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -139,6 +142,7 @@ export function UnitRightToTreatDialog({
     const sig = sigRef.current?.forceSave() || signature;
     if (!sig) { toast.error("Please sign before submitting"); return; }
     if (!signerName.trim()) { toast.error("Please type your name"); return; }
+    if (!rightToEnter) { toast.error("Please check the Right to Enter box"); return; }
     setSubmitting(true);
     try {
       const row = await ctx.sign(unitNumber, { signerName, signerEmail, signature: sig, via: allowStaffActions ? "admin" : "portal" });
@@ -194,6 +198,7 @@ export function UnitRightToTreatDialog({
             <div className="rounded-md border border-green-600/40 bg-green-50 p-4 text-center space-y-2">
               <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto" />
               <p className="font-semibold">Authorization on file</p>
+              <p className="text-xs text-green-800">✓ Right to Enter granted</p>
               <p className="text-xs text-muted-foreground">
                 Signed{auth?.signer_name ? ` by ${auth.signer_name}` : ""}
                 {auth?.signer_email ? ` (${auth.signer_email})` : ""}
@@ -220,6 +225,10 @@ export function UnitRightToTreatDialog({
                   <Input type="email" value={signerEmail} onChange={(e) => setSignerEmail(e.target.value)} placeholder="name@example.com" maxLength={200} />
                 </div>
               </div>
+              <label className="flex items-start gap-2.5 rounded-md border bg-background p-3 text-xs leading-snug cursor-pointer">
+                <Checkbox checked={rightToEnter} onCheckedChange={(v) => setRightToEnter(!!v)} className="mt-0.5" />
+                <span><span className="font-semibold">Right to Enter.</span> {RIGHT_TO_ENTER_TEXT.replace(/^Right to Enter — /, "")}</span>
+              </label>
               <div className="space-y-1.5">
                 <Label className="text-sm">Signature</Label>
                 <div className="h-40 border rounded-md bg-background p-1">
