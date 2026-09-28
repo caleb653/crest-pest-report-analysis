@@ -2488,6 +2488,13 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
 
           {result.proposed.length > 0 && (
             <>
+              {/* Map first, full width (Caleb 2026-09-27): one big button, no
+                  "week" wording. The bulk "Push ALL routes" button was retired the
+                  same day — pushes happen per day card. */}
+              <Button size="lg" onClick={() => setWeekMapOpen(true)}
+                      className="w-full h-16 text-lg font-semibold">
+                <MapPin className="w-6 h-6 mr-3" /> Show all stops on map
+              </Button>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <span className="text-sm font-semibold">
                   Proposed days
@@ -2495,17 +2502,6 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     drag a stop onto another day card to move it
                   </span>
                 </span>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button size="lg" variant="outline" disabled={bulkPushing}
-                          onClick={() => requestPushAll(result.proposed, "ALL open routes")}>
-                    <Send className="w-4 h-4 mr-2" />
-                    {bulkPushing ? "Queueing…"
-                      : `Push ALL routes to FR (${result.proposed.reduce((n, d) => n + bookableOf(d).length, 0)})`}
-                  </Button>
-                  <Button size="lg" onClick={() => setWeekMapOpen(true)}>
-                    <MapPin className="w-5 h-5 mr-2" /> Week map — all routes overlaid
-                  </Button>
-                </div>
               </div>
               {(() => {
                 const techsInPlan = [...new Set(result.proposed.map((d) => d.tech))].sort();
@@ -2553,7 +2549,6 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                       ].sort((a, b) =>
                         (a.kind === "day" ? a.d.date : a.date).localeCompare(b.kind === "day" ? b.d.date : b.date));
                       const total = days.reduce((n, d) => n + d.stop_count, 0);
-                      const techBookable = days.reduce((n, d) => n + bookableOf(d).length, 0);
                       return (
                         <div key={tech} className="space-y-2">
                           <div className="flex items-baseline justify-between gap-2 pt-2 border-b pb-1 flex-wrap">
@@ -2563,11 +2558,8 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                                 {days.length} days · {total} stops
                               </span>
                             </span>
-                            <Button size="sm" variant="outline" disabled={bulkPushing || techBookable === 0}
-                                    onClick={() => requestPushAll(days, `${tech}'s ${days.length} days`)}>
-                              <Send className="w-3 h-3 mr-1" />
-                              Push {tech.split(" ")[0]}'s week to FR ({techBookable})
-                            </Button>
+                            {/* Per-tech push retired 2026-09-24 (Caleb: runs are one Route
+                                Manager at a time, so it duplicated "Push ALL routes to FR"). */}
                           </div>
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                             {gridItems.map((item) => (item.kind === "day" ? (
@@ -2618,7 +2610,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                 <DialogContent className="max-w-[98vw] w-[98vw] h-[96vh] max-h-[96vh] flex flex-col">
                   <DialogHeader>
                     <DialogTitle>
-                      Week map · {result.start} – {result.end} · one color per day
+                      All stops · {result.start} – {result.end} · one color per day
                     </DialogTitle>
                   </DialogHeader>
                   <div className="flex-1 min-h-0">
