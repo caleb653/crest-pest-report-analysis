@@ -193,7 +193,7 @@ export async function downloadRightToTreatPdf(input: RightToTreatPdfInput) {
   doc.save(`right-to-treat-${safeName}.pdf`);
 }
 
-export async function downloadBlankRightToTreatPdf(propertyName?: string) {
+export async function downloadBlankRightToTreatPdf() {
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -228,7 +228,7 @@ export async function downloadBlankRightToTreatPdf(propertyName?: string) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const fields: string[] = [
-    `Property: ${propertyName || "______________________________________________"}`,
+    "Property: ______________________________________________",
     "Address: __________________________________________________",
     "Unit: _______________________   Date: ____________________",
     "Reason for Treatment: _______________________________________",
