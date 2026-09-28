@@ -1517,6 +1517,8 @@ type FillResult = {
   include_overdue?: boolean;
   overdue_days?: number;
   include_call_to_schedule?: boolean;
+  /** Day overrides the engine honoured this run: "tech|YYYY-MM-DD" keys. */
+  day_overrides?: { added: string[]; removed: string[] };
   call_to_confirm_count?: number;
   summary?: FillTopSummary;
   /** "date|tech" → FieldRoutes routeID for EVERY field tech (not just the
@@ -1572,6 +1574,36 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   const [maxStops, setMaxStops] = useState<number>(12);
   const [minStops, setMinStops] = useState<number>(6);
   const [techs, setTechs] = useState<string[]>(FILL_TECHS);
+  // DAY OVERRIDES (Caleb 2026-09-28): open or close specific tech-days for
+  // this run — "Joseph works Sat 10/10", "nobody on Nick's week of 10/5".
+  // "*" = everyone in the run. Sent to the engine as
+  // {tech: {add: [dates], remove: [dates]}}; a removed day reads as full,
+  // an added Saturday is open for that tech only.
+  type DayOverride = { tech: string; date: string; mode: "add" | "remove" };
+  const [dayOverrides, setDayOverrides] = useState<DayOverride[]>([]);
+  const [ovTech, setOvTech] = useState<string>(FILL_TECHS[0]);
+  const [ovDate, setOvDate] = useState<string>("");
+  const addOverride = (items: DayOverride[]) =>
+    setDayOverrides((cur) => {
+      const next = cur.filter((c) => !items.some((i) => i.tech === c.tech && i.date === c.date));
+      return [...next, ...items].sort((a, b) => a.date.localeCompare(b.date) || a.tech.localeCompare(b.tech));
+    });
+  const weekOf = (iso: string): string[] => {
+    const d = new Date(`${iso}T12:00:00`);
+    const dow = (d.getDay() + 6) % 7;                 // Mon=0
+    return [0, 1, 2, 3, 4].map((i) => {
+      const x = new Date(d); x.setDate(d.getDate() - dow + i); return isoFromDate(x);
+    });
+  };
+  const dayOverridesBody = (): Record<string, { add: string[]; remove: string[] }> | undefined => {
+    if (!dayOverrides.length) return undefined;
+    const out: Record<string, { add: string[]; remove: string[] }> = {};
+    for (const o of dayOverrides) {
+      out[o.tech] ??= { add: [], remove: [] };
+      out[o.tech][o.mode].push(o.date);
+    }
+    return out;
+  };
   // Overdue catch-up controls (Caleb 2026-08-03). Jobs due before the window
   // but within their own current cycle ALWAYS schedule into the window (the
   // engine handles that). These knobs govern OLDER overdue only: how far back
@@ -2224,6 +2256,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                 include_overdue: includeOverdue,
                 strategy: clumpFirst ? "clump" : "",
                 include_call_to_schedule: includeCallToSchedule,
+                day_overrides: dayOverridesBody(),
                 overdue_days: Math.min(365, Math.max(0, Math.trunc(overdueDays) || 0)) },
       });
       if (error) throw error;
@@ -2372,6 +2405,60 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
               </span>
             </span>
           </label>
+          <div className="mt-4 rounded-md border p-3 space-y-2">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Day overrides — open or close days for one Route Manager (or everyone)
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-2">
+                <Label>Route Manager</Label>
+                <Select value={ovTech} onValueChange={setOvTech}>
+                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="*">Everyone in this run</SelectItem>
+                    {FILL_TECHS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Day</Label>
+                <Input type="date" className="w-44" value={ovDate} onChange={(e) => setOvDate(e.target.value)} />
+              </div>
+              <Button variant="outline" size="sm" disabled={!ovDate}
+                      onClick={() => addOverride([{ tech: ovTech, date: ovDate, mode: "add" }])}>
+                + Open this day
+              </Button>
+              <Button variant="outline" size="sm" disabled={!ovDate}
+                      onClick={() => addOverride([{ tech: ovTech, date: ovDate, mode: "remove" }])}>
+                − Close this day
+              </Button>
+              <Button variant="outline" size="sm" disabled={!ovDate}
+                      onClick={() => addOverride(weekOf(ovDate).map((date) => ({ tech: ovTech, date, mode: "remove" as const })))}>
+                − Close the whole week
+              </Button>
+              {dayOverrides.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => setDayOverrides([])}>Clear all</Button>
+              )}
+            </div>
+            {dayOverrides.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {dayOverrides.map((o) => (
+                  <span key={`${o.tech}|${o.date}`}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${
+                          o.mode === "add" ? "bg-green-50 border-green-300 text-green-800" : "bg-red-50 border-red-300 text-red-800"}`}>
+                    {o.mode === "add" ? "+" : "−"} {o.tech === "*" ? "Everyone" : o.tech.split(" ")[0]} · {weekdayLabel(o.date)}
+                    <button type="button" className="ml-1 opacity-60 hover:opacity-100" aria-label="remove override"
+                            onClick={() => setDayOverrides((cur) => cur.filter((c) => !(c.tech === o.tech && c.date === o.date)))}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              A closed day takes no proposed stops (booked appointments stay). An opened Saturday is used by that Route
+              Manager only — it still needs a FieldRoutes route on that date before its stops can be pushed. Overrides apply
+              to this run only.
+            </p>
+          </div>
           <Button onClick={run} disabled={loading} className="mt-4">
             <Wand2 className="w-4 h-4 mr-2" />
             {loading ? "Building plan…" : "Propose schedule"}

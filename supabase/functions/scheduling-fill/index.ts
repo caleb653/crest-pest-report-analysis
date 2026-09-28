@@ -278,6 +278,10 @@ serve(async (req) => {
       body: JSON.stringify({ start_date: startDate, end_date: endDate, techs, max_stops: maxStops, min_stops: minStops,
                              include_overdue: includeOverdue, overdue_days: overdueDays,
                              include_call_to_schedule: includeCallToSchedule,
+                             // Per-Route-Manager day overrides {tech|"*": {add: [dates], remove: [dates]}}
+                             // (Caleb 2026-09-28) — forwarded verbatim; the engine validates dates.
+                             day_overrides: body?.day_overrides && typeof body.day_overrides === "object"
+                               ? body.day_overrides : undefined,
                              strategy: String(body?.strategy ?? "") === "clump" ? "clump" : "",
                              pending_pushes: pushed.map(({ date, customer_id, subscription_id }) =>
                                ({ date, customer_id, subscription_id })) }),
