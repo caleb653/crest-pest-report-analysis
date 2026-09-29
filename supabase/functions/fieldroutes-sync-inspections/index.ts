@@ -35,6 +35,7 @@ const KNOWN_STAFF = new Set([
   "David Longoria",
   "Nick Stovall",
   "Cade Carnival",
+  "Kiera Nicholson",
   "Brock Lyttle",
   "Joseph Ibarbo",
 ]);

@@ -30,6 +30,7 @@ const OWNER_TECH_EMAIL: Record<string, string> = {
   "David Longoria": "dlongoria@crestpestcontrol.com",
   "Nick Stovall": "nstovall@crestpestcontrol.com",
   "Cade Carnival": "ccarnival@crestpestcontrol.com",
+  "Kiera Nicholson": "knicholson@crestpestco.com",
   "Brock Lyttle": "blyttle@crestpestcontrol.com",
   "Joseph Ibarbo": "jibarbo@crestpestco.com",
 };

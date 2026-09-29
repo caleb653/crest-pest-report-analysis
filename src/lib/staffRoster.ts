@@ -19,6 +19,7 @@ export const STAFF: StaffMember[] = [
   { username: "dlongoria", fullName: "David Longoria",  email: "dlongoria@crestpestcontrol.com" },
   { username: "nstovall", fullName: "Nick Stovall",    email: "nstovall@crestpestcontrol.com" },
   { username: "ccarnival", fullName: "Cade Carnival",  email: "ccarnival@crestpestcontrol.com" },
+  { username: "knicholson", fullName: "Kiera Nicholson", email: "knicholson@crestpestco.com" },
   { username: "blyttle",   fullName: "Brock Lyttle",   email: "blyttle@crestpestcontrol.com" },
   { username: "jibarbo",   fullName: "Joseph Ibarbo",  email: "jibarbo@crestpestco.com" },
 ];

@@ -31,7 +31,7 @@ const corsHeaders = {
 
 const KNOWN_STAFF = new Set([
   "Darrell Tanner", "Jake Shubin", "Caleb Whalen", "Jackson Latham",
-  "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
+  "Dylan Gallegos", "Michael Muniz", "David Longoria", "Nick Stovall", "Cade Carnival", "Kiera Nicholson", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
 // Appointment Notes text for FieldRoutes (max 1000 chars there); undefined when blank.

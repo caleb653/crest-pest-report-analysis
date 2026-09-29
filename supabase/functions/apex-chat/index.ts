@@ -26,7 +26,7 @@ const KNOWN_STAFF = new Set([
   "Dylan Gallegos",
   "Michael Muniz",
   "David Longoria",
-  "Nick Stovall", "Cade Carnival", "Brock Lyttle", "Joseph Ibarbo",
+  "Nick Stovall", "Cade Carnival", "Kiera Nicholson", "Brock Lyttle", "Joseph Ibarbo",
 ]);
 
 const MAX_MESSAGES = 40;

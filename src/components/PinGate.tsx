@@ -19,6 +19,7 @@ const USERS: Record<string, { password: string; fullName: string }> = {
   dlongoria: { password: "crest02", fullName: "David Longoria" },
   nstovall: { password: "Crest75!", fullName: "Nick Stovall" },
   ccarnival: { password: "Crest125!", fullName: "Cade Carnival" },
+  knicholson: { password: "Crest500!", fullName: "Kiera Nicholson" },
   blyttle: { password: "Crest250!", fullName: "Brock Lyttle" },
   jibarbo: { password: "Crest1400!", fullName: "Joseph Ibarbo" },
 };
