@@ -1629,6 +1629,10 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
   // down the page — never day-by-day with all techs interleaved. "*" = every
   // tech (still sectioned per tech); or focus a single tech.
   const [viewTech, setViewTech] = useState<string>("*");
+  // "New stops only" (Caleb 2026-09-30): hide everything already on the books
+  // and every day with nothing to add, so approving the plan is a quick pass
+  // over just the stops Fill wants to ADD.
+  const [newOnly, setNewOnly] = useState<boolean>(false);
   // Drag-to-reorganize (Caleb 2026-07-30): a stop dragged onto another day
   // card moves instantly when it's clean; when it breaks a rule the office
   // gets a popup that says WHY and offers an explicit override.
@@ -2596,6 +2600,11 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                     drag a stop onto another day card to move it
                   </span>
                 </span>
+                <Button size="sm" variant={newOnly ? "default" : "outline"}
+                        onClick={() => setNewOnly((v) => !v)}
+                        title="Show only the stops Fill wants to ADD — hides already-scheduled stops and days with nothing new">
+                  {newOnly ? "Showing new stops only" : "New stops only"}
+                </Button>
               </div>
               {(() => {
                 const techsInPlan = [...new Set(result.proposed.map((d) => d.tech))].sort();
@@ -2621,6 +2630,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                         // Empty shells (created by a cancelled/pending reassign)
                         // render via the empty-day placeholders below instead.
                         .filter((d) => d.tech === tech && d.stops.length > 0)
+                        .filter((d) => !newOnly || d.stops.some(isNewFillStop))
                         .sort((a, b) => a.date.localeCompare(b.date));
                       // Every date in the window where this tech has a
                       // FieldRoutes route but NO stops: rendered as a drop
@@ -2639,17 +2649,20 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                       })();
                       const gridItems: Array<{ kind: "day"; d: FillDay } | { kind: "empty"; date: string }> = [
                         ...days.map((d) => ({ kind: "day" as const, d })),
-                        ...emptyDates.map((date) => ({ kind: "empty" as const, date })),
+                        ...(newOnly ? [] : emptyDates).map((date) => ({ kind: "empty" as const, date })),
                       ].sort((a, b) =>
                         (a.kind === "day" ? a.d.date : a.date).localeCompare(b.kind === "day" ? b.d.date : b.date));
-                      const total = days.reduce((n, d) => n + d.stop_count, 0);
+                      const total = newOnly
+                        ? days.reduce((n, d) => n + d.stops.filter(isNewFillStop).length, 0)
+                        : days.reduce((n, d) => n + d.stop_count, 0);
+                      if (newOnly && days.length === 0) return null;
                       return (
                         <div key={tech} className="space-y-2">
                           <div className="flex items-baseline justify-between gap-2 pt-2 border-b pb-1 flex-wrap">
                             <span className="flex items-baseline gap-2">
                               <span className="text-base font-semibold">{tech}</span>
                               <span className="text-xs text-muted-foreground">
-                                {days.length} days · {total} stops
+                                {days.length} days · {total} {newOnly ? "new stops" : "stops"}
                               </span>
                             </span>
                             {/* Per-tech push retired 2026-09-24 (Caleb: runs are one Route
@@ -2661,7 +2674,7 @@ function FillMode({ staff }: { staff: { fullName: string } | null }) {
                                            onMoveStop={requestMove} externQueued={bulkQueued}
                                            reassignTechs={FILL_TECHS} onReassign={requestReassignDay}
                                            onRemoveStop={removeStopFromDay} onDropPool={placePoolById}
-                                           onSaved={markSaved} />
+                                           onSaved={markSaved} compact={newOnly} />
                             ) : (
                               <EmptyFillDayCard key={`empty-${item.date}-${tech}`} date={item.date} tech={tech}
                                                 onDropStop={requestMoveToDate} onDropPool={placePoolById} />
@@ -4384,9 +4397,15 @@ function EmptyFillDayCard({ date, tech, onDropStop, onDropPool }: {
 // row is kept only as the audit trail; there is no approval step. X a stop to
 // REMOVE it from the day entirely (off the route + map; it parks in the Job
 // Pool below and can be re-placed).
+// A stop Fill wants to ADD: not already on the books, locked, or notified.
+const isNewFillStop = (s: FillStop) =>
+  !s.already_scheduled && !s.locked && !s.notification_sent;
+
 function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onReassign,
-                       onRemoveStop, onDropPool, onSaved }: {
+                       onRemoveStop, onDropPool, onSaved, compact }: {
   day: FillDay;
+  /** "New stops only" view: just the stops being added, no route detail. */
+  compact?: boolean;
   staff: { fullName: string } | null;
   /** A stop was SAVED to the approval queue — parent marks it saved_to_fr
    *  everywhere so bulk pushes can't double-book it. */
@@ -4626,8 +4645,13 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             </div>
           </div>
         </div>
-        <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>
-        {day.summary && (
+        {compact && (
+          <div className="text-xs text-muted-foreground">
+            {day.stops.filter((s) => !isNewFillStop(s)).length} already on this day (hidden)
+          </div>
+        )}
+        {!compact && <Badge variant="outline" className="w-fit text-indigo-700 border-indigo-300">{day.zone}</Badge>}
+        {!compact && day.summary && (
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted-foreground pt-1">
             <span>{humanTime(day.summary.est_start)}–{humanTime(day.summary.est_finish)} ({day.summary.total_hours}h)</span>
             <span>· {fmtHM(day.summary.paid_drive_min ?? day.summary.drive_min)} paid drive</span>
@@ -4645,14 +4669,16 @@ function FillDayCard({ day, staff, onMoveStop, externQueued, reassignTechs, onRe
             </span>
           </div>
         )}
-        <div className="pt-1">
-          <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}>
-            <MapPin className="w-3.5 h-3.5 mr-1" /> View map
-          </Button>
-        </div>
+        {!compact && (
+          <div className="pt-1">
+            <Button type="button" size="sm" variant="outline" onClick={() => setMapOpen(true)}>
+              <MapPin className="w-3.5 h-3.5 mr-1" /> View map
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-2 pt-0">
-        {day.stops.map((s) => {
+        {(compact ? day.stops.filter(isNewFillStop) : day.stops).map((s) => {
           const isQueued = queued.has(s.subscription_id) || !!externQueued?.has(s.subscription_id)
             || !!s.pushed_to_fr;
           const isSaved = !isQueued && (saved.has(s.subscription_id) || !!s.saved_to_fr);
