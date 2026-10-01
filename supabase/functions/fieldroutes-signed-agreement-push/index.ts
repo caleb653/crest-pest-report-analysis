@@ -190,7 +190,8 @@ async function appendSignaturePage(
 }
 
 // ── Cloud Run commit + audit row ─────────────────────────────────────────────
-type Sb = ReturnType<typeof createClient>;
+// deno-lint-ignore no-explicit-any
+type Sb = any;
 interface CommitOutcome { status: "committed" | "failed"; error: string | null; result: unknown; id: string }
 
 async function commitWrite(
