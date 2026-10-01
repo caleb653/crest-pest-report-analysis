@@ -140,6 +140,65 @@ const compareUnitLabels = (a: unknown, b: unknown): number => {
 const sortUnitRowsByNumber = <T extends { unit_number?: unknown }>(rows: T[]): T[] =>
   [...rows].sort((a, b) => compareUnitLabels(a?.unit_number, b?.unit_number));
 
+// Unit / area label field for an Areas Treated row. Keeps the text local
+// while typing and only commits on blur / Enter — saving every keystroke
+// wrote half-typed labels ("1", "11", "119"…) to the service, which then
+// came back as ghost rows and re-sorted the list under the cursor.
+const UnitLabelInput = ({ value, onCommit }: { value: string; onCommit: (next: string) => boolean }) => {
+  const [text, setText] = useState(value ?? "");
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setText(value ?? ""); }, [value]);
+  return (
+    <Input
+      className="h-9 text-lg font-bold w-40 px-2 bg-background"
+      placeholder="Area / Unit / Room"
+      value={text}
+      onChange={e => setText(e.target.value)}
+      onFocus={() => { focused.current = true; }}
+      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+      onBlur={() => {
+        focused.current = false;
+        const next = text.trim();
+        if (next === String(value ?? "").trim() || !onCommit(next)) setText(value ?? "");
+        else setText(next);
+      }}
+    />
+  );
+};
+
+// Quick-add bar under the Areas Treated list: type a unit, press Enter,
+// keep typing the next one. Commas / new lines add several at once.
+const QuickAddArea = ({ inputId, onAdd }: { inputId: string; onAdd: (labels: string[]) => void }) => {
+  const [text, setText] = useState("");
+  const submit = () => {
+    const labels = text.split(/[,\n]/).map(t => t.trim()).filter(Boolean);
+    if (labels.length === 0) return;
+    onAdd(labels);
+    setText("");
+  };
+  return (
+    <div className="flex items-center gap-2 mt-2 p-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/[0.03]">
+      <Input
+        id={inputId}
+        className="h-10 text-base font-semibold bg-background"
+        placeholder="Type a unit / area and press Enter (commas add several)"
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submit(); } }}
+        onPaste={(e) => {
+          const pasted = e.clipboardData.getData("text");
+          if (/\n/.test(pasted)) { e.preventDefault(); setText(t => (t ? t + ", " : "") + pasted.split(/\n/).map(x => x.trim()).filter(Boolean).join(", ")); }
+        }}
+        enterKeyHint="done"
+        autoComplete="off"
+      />
+      <Button size="sm" className="h-10 px-4 shrink-0" onClick={submit} disabled={!text.trim()}>
+        <Plus className="w-4 h-4 mr-1" />Add
+      </Button>
+    </div>
+  );
+};
+
 type RequestSnapshotRow = {
   id?: string;
   created_at?: string;
@@ -4417,15 +4476,62 @@ const PropertyDashboard = ({
             queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
             setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
-          const addRow = () => {
-            const current = completionDataRef.current[s.id] || cd;
-            const nextDraft = { ...current, unitRows: [...current.unitRows, { unit_number: "", target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" }] };
+          const applyUnitRows = (current: any, rows: any[]) => {
+            const nextDraft = { ...current, unitRows: sortUnitRowsByNumber(rows) };
             completionDataRef.current = { ...completionDataRef.current, [s.id]: nextDraft };
-            setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
             completionDraftLast.current[s.id] = JSON.stringify(nextDraft);
             if (completionDraftTimers.current[s.id]) clearTimeout(completionDraftTimers.current[s.id]);
             queueCompletionDraftSave(s.id, nextDraft, { toastOnError: true });
+            setCompletionData(prev => ({ ...prev, [s.id]: nextDraft }));
           };
+          // Quick-add: one row per label, skipping any already on the list.
+          const addAreas = (labels: string[]) => {
+            const current = completionDataRef.current[s.id] || cd;
+            const have = new Set(
+              current.unitRows.map((r: any) => String(r.unit_number || "").trim().toLowerCase()).filter(Boolean)
+            );
+            const fresh: string[] = [];
+            for (const label of labels) {
+              const k = label.toLowerCase();
+              if (have.has(k)) continue;
+              have.add(k);
+              fresh.push(label);
+            }
+            if (fresh.length === 0) {
+              toast({ title: labels.length === 1 ? `${labels[0]} is already on the list` : "Those areas are already on the list" });
+              return;
+            }
+            applyUnitRows(current, [
+              ...current.unitRows,
+              ...fresh.map((label) => ({ unit_number: label, target_pest: "", findings: "", pest_activity: "None", products_used: [] as ProductUsage[], status: "To Be Treated", notes: "", source: "planned" })),
+            ]);
+          };
+          // Rename a row once the tech finishes typing (blur / Enter).
+          const commitUnitLabel = (idx: number, nextLabel: string): boolean => {
+            const current = completionDataRef.current[s.id] || cd;
+            const row: any = current.unitRows[idx];
+            if (!row) return false;
+            const oldLabel = String(row.unit_number || "").trim();
+            if (nextLabel && current.unitRows.some((r: any, i: number) =>
+              i !== idx && String(r.unit_number || "").trim().toLowerCase() === nextLabel.toLowerCase())) {
+              toast({ title: `${nextLabel} is already on the list` });
+              return false;
+            }
+            // The old label is still in units_planned until the save lands —
+            // keep the auto-merge from re-adding it as a separate row.
+            if (oldLabel && row.source !== "new-work-order" && row.source !== "follow-up") {
+              setRecentlyDismissedUnits(prev => {
+                const next = new Set(prev[s.id] || []);
+                next.add(oldLabel);
+                return { ...prev, [s.id]: next };
+              });
+            }
+            const rows = [...current.unitRows];
+            rows[idx] = { ...row, unit_number: nextLabel };
+            applyUnitRows(current, rows);
+            return true;
+          };
+          const focusQuickAdd = () => document.getElementById(`quick-add-area-${s.id}`)?.focus();
           // Sort the Areas Treated list numerically by unit number. Pure
           // numerics first (ascending), then anything non-numeric falls to
           // the bottom alphabetically. Empty rows stay at the end so the
@@ -4642,7 +4748,7 @@ const PropertyDashboard = ({
                       <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={sortRowsNumerically} title="Sort areas by unit number">
                         Sort #
                       </Button>
-                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={addRow}>
+                      <Button variant="outline" size="sm" className="h-6 text-xs px-2" onClick={focusQuickAdd}>
                         <Plus className="w-3 h-3 mr-0.5" />Add Area
                       </Button>
                     </div>
@@ -4730,24 +4836,9 @@ const PropertyDashboard = ({
                               }`}>
                                 {idx + 1}
                               </div>
-                              <Input
-                                className="h-9 text-lg font-bold w-40 px-2 bg-background"
-                                placeholder="Area / Unit / Room"
-                                value={row.unit_number}
-                                onChange={e => updateRow(idx, "unit_number", e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.currentTarget.blur();
-                                  }
-                                }}
-                                onBlur={() => {
-                                  const draft = completionDataRef.current[s.id];
-                                  if (!draft) return;
-                                  const sortedDraft = { ...draft, unitRows: sortUnitRowsByNumber(draft.unitRows) };
-                                  completionDataRef.current = { ...completionDataRef.current, [s.id]: sortedDraft };
-                                  setCompletionData(prev => ({ ...prev, [s.id]: sortedDraft }));
-                                  queueCompletionDraftSave(s.id, sortedDraft, { toastOnError: true });
-                                }}
+                              <UnitLabelInput
+                                value={String(row.unit_number ?? "")}
+                                onCommit={(next) => commitUnitLabel(idx, next)}
                               />
                               {/* Visit kind toggle — click to flip Treatment <-> Inspection.
                                   Always shown so any area can be reclassified, not just
@@ -5189,10 +5280,7 @@ const PropertyDashboard = ({
                       );
                     })}
                   </div>
-                  <button className="w-full mt-1 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded border border-dashed border-border transition-colors flex items-center justify-center gap-1"
-                    onClick={addRow}>
-                    <Plus className="w-3.5 h-3.5" /> Add area
-                  </button>
+                  <QuickAddArea inputId={`quick-add-area-${s.id}`} onAdd={addAreas} />
         </div>
 
                 {/* Service-level products used (one entry per product per service date) */}
