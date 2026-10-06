@@ -4082,13 +4082,14 @@ const PropertyDashboard = ({
           );
         })()}
 
-        {/* Billing for this visit — recurring or one-time paid, its price, and
-            whether the units beyond the plan get charged. Past services only:
+        {/* Billing for this visit — paid recurring (with its price) or no
+            charge, and whether the units beyond the plan get charged. Past services only:
             an upcoming visit hasn't happened, so there is nothing to bill yet. */}
         {!isUpcoming && !isProjected && s.status === "completed" && (
           <ServiceBillingControls
             service={s}
             overage={overage}
+            recurringPrice={planCfg.base_service_price}
             invoiced={!!s.invoiced_at}
             onChanged={onRefresh}
           />

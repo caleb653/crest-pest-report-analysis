@@ -138,7 +138,8 @@ export interface DraftLine {
   taxable: boolean;
   /** Frozen unit list behind this line — what the invoice claims, forever. */
   units_snapshot: unknown | null;
-  /** null = use the default rule (everything except a recurring base line). */
+  /** null = use the default rule (everything except a recurring base line).
+   *  A paid visit's own line is a base line that says true. */
   fr_entry_required: boolean | null;
   /** Computed for preview only; the database recomputes `amount` itself. */
   amount: number;
@@ -405,8 +406,20 @@ export async function buildDraftInvoice(
   // ---- recurring base -----------------------------------------------------
   const basePrice = Number(planCfg.base_service_price || 0);
   const recurringVisits = visits.filter((v) => !v.billing_type || v.billing_type === "plan");
+  // A visit marked "paid recurring" carries the recurring price itself, so the
+  // period is not charged a second time through a base line.
+  const paidVisits = visits.filter((v) => v.billing_type === "billable" && Number(v.billing_amount) > 0);
 
-  if (basePrice > 0 && recurringVisits.length > 0) {
+  if (paidVisits.length > 0) {
+    if (recurringVisits.length > 0) {
+      warnings.push(
+        `${recurringVisits.length} visit${recurringVisits.length === 1 ? " is" : "s are"} not set to paid or no charge. ` +
+          `The recurring price is already on the visit${paidVisits.length === 1 ? "" : "s"} marked paid, so ${
+            recurringVisits.length === 1 ? "it bills" : "they bill"
+          } nothing here.`
+      );
+    }
+  } else if (basePrice > 0 && recurringVisits.length > 0) {
     if (settings.base_price_basis === "per_visit") {
       for (const v of recurringVisits) {
         push({
@@ -451,6 +464,8 @@ export async function buildDraftInvoice(
   }
 
   // ---- per-visit units overage -------------------------------------------
+  // Visits whose price already went on a 'flat' day line — not billed again below.
+  const flatPriced = new Set<string>();
   for (const v of visits) {
     serviceIds.push(v.id);
 
@@ -469,12 +484,14 @@ export async function buildDraftInvoice(
     // plan; 'summary' has nothing to say unless there is an overage.
     if (ov.unitsOver > 0 || style === "itemized" || (style === "flat" && Number(v.billing_amount) > 0)) {
       pushUnitLines(push, style, v, ov, glance, unitRows.length, Number(v.billing_amount) || 0);
+      if (style === "flat" && Number(v.billing_amount) > 0) flatPriced.add(v.id);
     }
   }
 
-  // ---- one-off / ad-hoc work ---------------------------------------------
+  // ---- paid recurring / no-charge visits ----------------------------------
   for (const v of visits) {
     if (!v.billing_type || v.billing_type === "plan") continue;
+    if (flatPriced.has(v.id)) continue;
 
     if (v.billing_type === "quoted") {
       warnings.push(
@@ -485,7 +502,7 @@ export async function buildDraftInvoice(
     const chargeable = v.billing_type === "billable";
     const amount = chargeable ? Number(v.billing_amount || 0) : 0;
     if (chargeable && amount <= 0) {
-      warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: marked billable but has no amount.`);
+      warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: marked paid but has no price.`);
     }
 
     const label: Record<string, string> = {
@@ -496,7 +513,9 @@ export async function buildDraftInvoice(
     };
 
     push({
-      line_type: "ad_hoc",
+      // A paid visit is a scheduled visit with its own price; it still has to
+      // be keyed into FieldRoutes, unlike the period base line.
+      line_type: chargeable ? "base" : "ad_hoc",
       service_id: v.id,
       description: `${v.service_type || "Service"}${label[v.billing_type] ?? ""} — ${fmtDate(v.service_date)}`,
       detail: v.po_number ? `PO ${v.po_number}` : null,
@@ -505,7 +524,7 @@ export async function buildDraftInvoice(
       unit_price: money(amount),
       taxable: false,
       units_snapshot: null,
-      fr_entry_required: null,
+      fr_entry_required: chargeable ? true : null,
     });
   }
 
@@ -755,7 +774,7 @@ export async function buildOneTimeInvoice(
         const amount = Number(v.billing_amount || 0);
         if (amount <= 0) warnings.push(`${fmtDate(v.service_date)} — ${v.service_type}: no amount set.`);
         push({
-          line_type: "ad_hoc",
+          line_type: "base",
           service_id: v.id,
           description: `${v.service_type} — ${fmtDate(v.service_date)}`,
           detail: v.po_number ? `PO ${v.po_number}` : null,
@@ -764,7 +783,7 @@ export async function buildOneTimeInvoice(
           unit_price: money(amount),
           taxable: false,
           units_snapshot: glance.length ? { units: glance, total: unitRows.length, included: ov.includedUnits } : null,
-          fr_entry_required: null,
+          fr_entry_required: true,
         });
       } else if (ov.unitsOver > 0) {
         pushUnitLines(push, style, v, ov, glance, unitRows.length);
@@ -1016,7 +1035,7 @@ export async function addVisitsToInvoice(
         pushUnitLines(push, style === "itemized" ? "itemized" : "flat", v, ov, glance, unitRows.length, priced);
       } else {
         push({
-          line_type: "ad_hoc",
+          line_type: "base",
           service_id: v.id,
           description: `${v.service_type || "Service"} — ${fmtDate(v.service_date)}`,
           detail: v.po_number ? `PO ${v.po_number}` : null,
@@ -1025,7 +1044,7 @@ export async function addVisitsToInvoice(
           unit_price: money(priced),
           taxable: false,
           units_snapshot: null,
-          fr_entry_required: null,
+          fr_entry_required: true,
         });
       }
     } else if (ov.unitsOver > 0 || style === "itemized") {

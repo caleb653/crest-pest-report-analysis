@@ -4,9 +4,12 @@
  * Everything that decides what a visit costs lives here, on the visit itself,
  * so Previous Services and the Billing tab can never disagree:
  *
- *   - is it a RECURRING visit (covered by the plan's period price) or a
- *     ONE-TIME PAID visit with its own price?
+ *   - is it a PAID RECURRING visit (it carries a price, which starts at the
+ *     property's recurring price and can be typed over) or a NO CHARGE visit?
  *   - do the units beyond the plan get charged on this visit, or not?
+ *
+ * A visit nobody has set yet is neither: it is left to the property's billing
+ * cycle, exactly as before these two buttons existed.
  *
  * Nothing here creates an invoice. It decides what the visit is worth; the
  * Billing tab decides which invoice it lands on.
@@ -18,28 +21,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Repeat, Receipt, Check } from "lucide-react";
+import { Repeat, Check } from "lucide-react";
 import { formatOverageMoney, type OverageResult } from "@/lib/unitOverage";
 
 type BillingType = "plan" | "billable" | "no_charge" | "warranty" | "quoted";
+/** What the two buttons show. Older values fold in: a hand-priced visit reads
+ *  as paid, a warranty visit as no charge. */
+type Choice = "paid" | "no_charge" | "unset";
+
+const choiceOf = (t: BillingType): Choice =>
+  t === "billable" || t === "quoted" ? "paid" : t === "no_charge" || t === "warranty" ? "no_charge" : "unset";
 
 export function ServiceBillingControls({
   service,
   overage,
+  recurringPrice,
   invoiced,
   onChanged,
 }: {
   service: any;
   overage: OverageResult;
+  /** The property's recurring price — what a paid visit costs unless typed over. */
+  recurringPrice?: number | null;
   /** Already on a sent invoice — the decision is locked in. */
   invoiced?: boolean;
   onChanged: () => void;
 }) {
   const current: BillingType = (service?.billing_type as BillingType) || "plan";
   const [type, setType] = useState<BillingType>(current);
+  const defaultPrice = Number(recurringPrice) > 0 ? String(Number(recurringPrice)) : "";
   const [price, setPrice] = useState<string>(
     service?.billing_amount != null ? String(service.billing_amount) : ""
   );
+  const choice = choiceOf(type);
   const [busy, setBusy] = useState(false);
 
   const save = async (patch: Record<string, unknown>) => {
@@ -54,13 +68,17 @@ export function ServiceBillingControls({
     return true;
   };
 
-  const setKind = async (next: BillingType) => {
-    setType(next);
-    await save(
-      next === "billable"
-        ? { billing_type: "billable", billing_amount: price === "" ? null : Number(price) }
-        : { billing_type: next, billing_amount: null }
-    );
+  const choose = async (next: "paid" | "no_charge") => {
+    if (next === "paid") {
+      // First time a visit is marked paid it takes the recurring price.
+      const amount = price.trim() === "" ? defaultPrice : price;
+      setPrice(amount);
+      setType("billable");
+      await save({ billing_type: "billable", billing_amount: amount === "" ? null : Number(amount) || 0 });
+    } else {
+      setType("no_charge");
+      await save({ billing_type: "no_charge", billing_amount: null });
+    }
   };
 
   const savePrice = async () => {
@@ -93,31 +111,29 @@ export function ServiceBillingControls({
       <div className="flex flex-wrap gap-1.5">
         {(
           [
-            ["plan", "Recurring visit", Repeat],
-            ["billable", "One-time paid visit", Receipt],
-            ["no_charge", "No charge", null],
-            ["warranty", "Warranty", null],
-          ] as [BillingType, string, any][]
+            ["paid", "Paid recurring visit", Repeat],
+            ["no_charge", "No charge visit", null],
+          ] as ["paid" | "no_charge", string, any][]
         ).map(([value, label, Icon]) => (
           <Button
             key={value}
             type="button"
             size="sm"
-            variant={type === value ? "default" : "outline"}
+            variant={choice === value ? "default" : "outline"}
             className="h-8 text-xs"
             disabled={busy || invoiced}
-            onClick={() => setKind(value)}
+            onClick={() => choose(value)}
           >
             {Icon && <Icon className="w-3 h-3 mr-1" />}
             {label}
-            {type === value && <Check className="w-3 h-3 ml-1" />}
+            {choice === value && <Check className="w-3 h-3 ml-1" />}
           </Button>
         ))}
       </div>
 
-      {/* price, when it has one of its own */}
-      {type === "billable" && (
-        <div className="flex items-center gap-2">
+      {/* price — starts at the recurring price, typed over when it differs */}
+      {choice === "paid" && (
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold">Price for this visit</span>
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
@@ -131,6 +147,18 @@ export function ServiceBillingControls({
               placeholder="0"
             />
           </div>
+          {defaultPrice !== "" && Number(price) !== Number(defaultPrice) && !invoiced && (
+            <button
+              type="button"
+              className="text-[11px] text-muted-foreground underline underline-offset-2"
+              onClick={async () => {
+                setPrice(defaultPrice);
+                await save({ billing_type: "billable", billing_amount: Number(defaultPrice) });
+              }}
+            >
+              Use the recurring price ({formatOverageMoney(Number(defaultPrice))})
+            </button>
+          )}
         </div>
       )}
 
@@ -159,22 +187,27 @@ export function ServiceBillingControls({
 
       {/* what this visit actually bills */}
       <div className="border-t pt-2.5 text-xs">
-        {type === "plan" && (
+        {choice === "unset" && (
           <>
-            <span className="text-muted-foreground">Covered by the recurring price</span>
+            <span className="text-muted-foreground">{invoiced ? "Covered by the recurring price" : "Not set yet — pick one"}</span>
             {unitCharge > 0 && (
-              <span className="font-semibold"> · plus {formatOverageMoney(unitCharge)} for extra units</span>
+              <span className="font-semibold"> · {formatOverageMoney(unitCharge)} for extra units</span>
             )}
           </>
         )}
-        {type === "billable" && (
+        {choice === "paid" && (
           <span className="font-semibold">
             Bills {formatOverageMoney(Number(price) || 0)}
             {unitCharge > 0 ? ` · plus ${formatOverageMoney(unitCharge)} for extra units` : ""}
           </span>
         )}
-        {(type === "no_charge" || type === "warranty") && (
-          <span className="text-muted-foreground">Shows on the invoice at $0</span>
+        {choice === "no_charge" && (
+          <span className="text-muted-foreground">
+            Shows on the invoice at $0{type === "warranty" ? " (warranty)" : ""}
+            {unitCharge > 0 && (
+              <span className="font-semibold text-foreground"> · plus {formatOverageMoney(unitCharge)} for extra units</span>
+            )}
+          </span>
         )}
       </div>
     </div>
