@@ -4,7 +4,7 @@
 // the property name and address are on it, any reference numbers they asked
 // for sit at the top, and every unit we treated is listed so the charge can
 // be verified without phoning the office.
-import jsPDF from "jspdf";
+import jsPDF, { type TextOptionsLight } from "jspdf";
 import { groupLinesBySection } from "./invoiceSections";
 
 const C = {
@@ -30,6 +30,19 @@ const CONTENT_W = PAGE_W - MARGIN * 2;
  *  render time as well as at build time. */
 export function customerUnitText(s: string | null | undefined): string {
   return String(s ?? "").replace(/\s*•\s*Follow-up needed/gi, "");
+}
+
+/** jsPDF's built-in Helvetica only knows Windows-1252. A single character
+ *  outside it — a true minus sign, a non-breaking hyphen pasted from Word, an
+ *  emoji in a note — makes jsPDF re-encode the WHOLE string, which prints as
+ *  a stray quote mark followed by letter-spaced text. Swap the look-alikes
+ *  for their plain equivalents and drop anything else it cannot draw. */
+export function pdfSafeText(s: string | null | undefined): string {
+  return String(s ?? "")
+    .replace(/[‐-‒−]/g, "-")
+    .replace(/[ -   ]/g, " ")
+    .replace(/→/g, "->")
+    .replace(/[^\t\n\x20-\x7E\xA0-\xFF€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]/g, "");
 }
 
 export interface InvoicePdfLine {
@@ -101,6 +114,9 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   const setFill = (c: readonly number[]) => pdf.setFillColor(c[0], c[1], c[2]);
   const setText = (c: readonly number[]) => pdf.setTextColor(c[0], c[1], c[2]);
   const setDraw = (c: readonly number[]) => pdf.setDrawColor(c[0], c[1], c[2]);
+  // Everything printed goes through pdfSafeText — see the note on it.
+  const text = (s: string, x: number, ty: number, opts?: TextOptionsLight) =>
+    pdf.text(pdfSafeText(s), x, ty, opts);
 
   const pageBackground = () => {
     setFill(C.white);
@@ -112,7 +128,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
       setText(C.ink);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(84);
-      pdf.text(data.watermark, PAGE_W / 2, PAGE_H / 2, { align: "center", angle: 32 });
+      text(data.watermark, PAGE_W / 2, PAGE_H / 2, { align: "center", angle: 32 });
       pdf.restoreGraphicsState();
     }
   };
@@ -124,8 +140,8 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.faint);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(7.5);
-    pdf.text("Crest Pest Control  ·  2709 S Orange Ave STE C, Santa Ana, CA 92707  ·  949-424-5000  ·  License #9859", MARGIN, PAGE_H - 32);
-    pdf.text(data.invoiceNumber, PAGE_W - MARGIN, PAGE_H - 32, { align: "right" });
+    text("Crest Pest Control  ·  2709 S Orange Ave STE C, Santa Ana, CA 92707  ·  949-424-5000  ·  License #9859", MARGIN, PAGE_H - 32);
+    text(data.invoiceNumber, PAGE_W - MARGIN, PAGE_H - 32, { align: "right" });
   };
 
   const newPage = () => {
@@ -150,28 +166,28 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   setText(C.ink);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(21);
-  pdf.text("CREST PEST CONTROL", MARGIN, 46);
+  text("CREST PEST CONTROL", MARGIN, 46);
 
   setText(C.muted);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
-  pdf.text("2709 S Orange Ave STE C  ·  Santa Ana, CA 92707", MARGIN, 62);
-  pdf.text("949-424-5000  ·  office@crestpestcontrol.com  ·  License #9859", MARGIN, 75);
+  text("2709 S Orange Ave STE C  ·  Santa Ana, CA 92707", MARGIN, 62);
+  text("949-424-5000  ·  office@crestpestcontrol.com  ·  License #9859", MARGIN, 75);
 
   setText(C.darkSage);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(28);
-  pdf.text("INVOICE", PAGE_W - MARGIN, 46, { align: "right" });
+  text("INVOICE", PAGE_W - MARGIN, 46, { align: "right" });
 
   setText(C.soft);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.text(data.invoiceNumber, PAGE_W - MARGIN, 64, { align: "right" });
+  text(data.invoiceNumber, PAGE_W - MARGIN, 64, { align: "right" });
   if (data.title) {
     setText(C.muted);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9.5);
-    pdf.text(pdf.splitTextToSize(data.title, CONTENT_W * 0.45)[0], PAGE_W - MARGIN, 80, { align: "right" });
+    text(pdf.splitTextToSize(data.title, CONTENT_W * 0.45)[0], PAGE_W - MARGIN, 80, { align: "right" });
   }
 
   y = 140;
@@ -182,12 +198,12 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   setText(C.faint);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(7.5);
-  pdf.text("BILL TO", MARGIN, y);
+  text("BILL TO", MARGIN, y);
 
   setText(C.ink);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
-  pdf.text(data.propertyName, MARGIN, y + 17);
+  text(data.propertyName, MARGIN, y + 17);
 
   let by = y + 17;
   if (data.propertyAddress) {
@@ -196,14 +212,14 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     pdf.setFontSize(9.5);
     for (const l of pdf.splitTextToSize(data.propertyAddress, CONTENT_W * 0.5)) {
       by += 13;
-      pdf.text(l, MARGIN, by);
+      text(l, MARGIN, by);
     }
   }
   if (data.clientName && data.clientName !== data.propertyName) {
     setText(C.muted);
     pdf.setFontSize(9);
     by += 13;
-    pdf.text(data.clientName, MARGIN, by);
+    text(data.clientName, MARGIN, by);
   }
 
   // Due on or before the issue date reads as "upon receipt", never as a date.
@@ -239,11 +255,11 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.faint);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7.5);
-    pdf.text(k.toUpperCase(), colR, dy);
+    text(k.toUpperCase(), colR, dy);
     setText(C.ink);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9.5);
-    pdf.text(v, PAGE_W - MARGIN, dy, { align: "right" });
+    text(v, PAGE_W - MARGIN, dy, { align: "right" });
     dy += 19;
   }
 
@@ -262,11 +278,11 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.muted);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7.5);
-    pdf.text("DATE", xDate, y + 2);
-    pdf.text("DESCRIPTION", xDesc, y + 2);
-    pdf.text("QTY", xQty, y + 2, { align: "right" });
-    pdf.text("RATE", xRate, y + 2, { align: "right" });
-    pdf.text("AMOUNT", xAmt, y + 2, { align: "right" });
+    text("DATE", xDate, y + 2);
+    text("DESCRIPTION", xDesc, y + 2);
+    text("QTY", xQty, y + 2, { align: "right" });
+    text("RATE", xRate, y + 2, { align: "right" });
+    text("AMOUNT", xAmt, y + 2, { align: "right" });
     y += 24;
   };
 
@@ -285,7 +301,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.darkSage);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7.5);
-    pdf.text(label.toUpperCase(), MARGIN + 6, y + 1);
+    text(label.toUpperCase(), MARGIN + 6, y + 1);
     y += 20;
   };
 
@@ -309,13 +325,13 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.ink);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8.5);
-    if (line.service_date) pdf.text(shortDate(line.service_date), xDate, y);
+    if (line.service_date) text(shortDate(line.service_date), xDate, y);
 
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9.5);
     let ly = y;
     for (const l of descLines) {
-      pdf.text(l, xDesc, ly);
+      text(l, xDesc, ly);
       ly += 13;
     }
 
@@ -323,7 +339,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8);
     for (const l of detailLines) {
-      pdf.text(l, xDesc, ly);
+      text(l, xDesc, ly);
       ly += 11;
     }
 
@@ -332,7 +348,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
       const snap = line.units_snapshot!;
       setText(C.muted);
       pdf.setFontSize(8);
-      pdf.text(
+      text(
         `${snap.total ?? units.length} units treated · ${snap.included ?? 0} included in the plan`,
         xDesc,
         ly
@@ -345,7 +361,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
           newPage();
           ly = y = MARGIN + 6;
         }
-        pdf.text(`Unit ${u.unit_number} — ${customerUnitText(u.service)}`, xDesc + 10, ly);
+        text(`Unit ${u.unit_number} — ${customerUnitText(u.service)}`, xDesc + 10, ly);
         ly += 10;
       }
     }
@@ -353,10 +369,10 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.ink);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9.5);
-    pdf.text(String(line.quantity % 1 === 0 ? line.quantity : line.quantity.toFixed(2)), xQty, y, { align: "right" });
-    pdf.text(money(line.unit_price), xRate, y, { align: "right" });
+    text(String(line.quantity % 1 === 0 ? line.quantity : line.quantity.toFixed(2)), xQty, y, { align: "right" });
+    text(money(line.unit_price), xRate, y, { align: "right" });
     pdf.setFont("helvetica", "bold");
-    pdf.text(money(line.amount), xAmt, y, { align: "right" });
+    text(money(line.amount), xAmt, y, { align: "right" });
 
     y = Math.max(ly, y + 13) + 7;
     setDraw(C.rule);
@@ -373,11 +389,11 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.muted);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8);
-    pdf.text(`${section.label} subtotal`, xRate, y - 2, { align: "right" });
+    text(`${section.label} subtotal`, xRate, y - 2, { align: "right" });
     setText(C.soft);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(8.5);
-    pdf.text(money(section.subtotal), xAmt, y - 2, { align: "right" });
+    text(money(section.subtotal), xAmt, y - 2, { align: "right" });
     y += 14;
   }
   }
@@ -390,9 +406,9 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(bold ? tone : C.muted);
     pdf.setFont("helvetica", bold ? "bold" : "normal");
     pdf.setFontSize(bold ? 10.5 : 9.5);
-    pdf.text(label, tx, y);
+    text(label, tx, y);
     setText(tone);
-    pdf.text(value, PAGE_W - MARGIN, y, { align: "right" });
+    text(value, PAGE_W - MARGIN, y, { align: "right" });
     y += bold ? 20 : 16;
   };
 
@@ -407,7 +423,7 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
   row("Total", money(data.total), true);
 
   if (data.amountPaid > 0) {
-    row("Paid", `− ${money(data.amountPaid)}`);
+    row("Paid", `-${money(data.amountPaid)}`);
     y += 2;
     setFill(C.sageTint);
     pdf.rect(tx - 12, y - 14, PAGE_W - MARGIN - tx + 12, 28, "F");
@@ -420,18 +436,18 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.faint);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7.5);
-    pdf.text("PLEASE REMIT PAYMENT TO", MARGIN, ry);
+    text("PLEASE REMIT PAYMENT TO", MARGIN, ry);
     ry += 14;
     setText(C.ink);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(9.5);
-    pdf.text("Crest Pest Control", MARGIN, ry);
+    text("Crest Pest Control", MARGIN, ry);
     ry += 13;
     setText(C.soft);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9.5);
     for (const l of ["2709 S Orange Ave STE C", "Santa Ana, CA 92707"]) {
-      pdf.text(l, MARGIN, ry);
+      text(l, MARGIN, ry);
       ry += 13;
     }
     y = Math.max(y, ry);
@@ -444,14 +460,14 @@ export function buildInvoicePdf(data: InvoicePdfData): jsPDF {
     setText(C.faint);
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(7.5);
-    pdf.text("NOTES", MARGIN, y);
+    text("NOTES", MARGIN, y);
     y += 14;
     setText(C.soft);
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(9);
     for (const l of pdf.splitTextToSize(data.customerNote, CONTENT_W)) {
       room(16);
-      pdf.text(l, MARGIN, y);
+      text(l, MARGIN, y);
       y += 13;
     }
   }
