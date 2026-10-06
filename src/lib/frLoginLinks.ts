@@ -57,3 +57,27 @@ export function saveLoginLink(
       if (error) console.warn("saveLoginLink failed:", error.message);
     });
 }
+
+// ─── Billing portals ─────────────────────────────────────────────────────
+//
+// A customer billing portal (/billing/<token>) can carry a "pay or add a card"
+// button pointing at the customer's FieldPortals account. The admin pastes the
+// link; it lives in this same cache under a key made from the portal_links id,
+// because that table has no column for it and the schema only changes through
+// Lovable. Clearing writes "" (the table has no delete policy); every reader
+// already treats an empty link as none.
+
+export const billingPortalLinkKey = (portalLinkId: string) => `billing-portal:${portalLinkId}`;
+
+export async function setBillingPortalPaymentLink(
+  portalLinkId: string,
+  url: string | null | undefined,
+): Promise<string | null> {
+  const clean = String(url ?? "").trim();
+  if (clean && !/^https?:\/\//i.test(clean)) return "That doesn't look like a web link — it should start with https://";
+  const { error } = await linksTable().upsert(
+    { customer_id: billingPortalLinkKey(portalLinkId), login_link: clean, source: "billing-portal-admin" },
+    { onConflict: "customer_id" },
+  );
+  return error ? (error as { message: string }).message : null;
+}

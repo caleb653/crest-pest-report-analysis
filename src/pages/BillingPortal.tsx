@@ -19,7 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import crestLogo from "@/assets/crest-logo.png";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 import { periodMonthKey, monthLabel, fetchInvoiceExtras } from "@/lib/invoiceBuilder";
-import { Building2, CheckCircle2, Clock, Receipt, MapPin } from "lucide-react";
+import { fetchLoginLinks, billingPortalLinkKey } from "@/lib/frLoginLinks";
+import { Building2, CheckCircle2, Clock, Receipt, MapPin, CreditCard, ExternalLink } from "lucide-react";
 
 const money = (n: number | null | undefined) =>
   `$${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -39,6 +40,8 @@ const BillingPortal = () => {
   const [error, setError] = useState("");
   const [label, setLabel] = useState<string | null>(null);
   const [clientName, setClientName] = useState<string | null>(null);
+  /** Their FieldPortals account — where a card is added and a payment made. */
+  const [paymentLink, setPaymentLink] = useState<string | null>(null);
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
 
@@ -74,7 +77,7 @@ const BillingPortal = () => {
         .in("id", ids)
         .is("archived_at", null)
         .order("name"),
-      supabase.from("portal_clients").select("name, company").eq("id", link.client_id).maybeSingle(),
+      supabase.from("portal_clients").select("name, company, fieldroutes_customer_id").eq("id", link.client_id).maybeSingle(),
       supabase
         .from("portal_invoices")
         .select(
@@ -87,6 +90,12 @@ const BillingPortal = () => {
 
     setLabel(link.label);
     setClientName(client?.company || client?.name || null);
+
+    // The link pasted for this portal wins; otherwise the customer's own
+    // FieldPortals link, if FieldRoutes has ever handed us one.
+    const portalKey = billingPortalLinkKey(link.id);
+    const links = await fetchLoginLinks([portalKey, client?.fieldroutes_customer_id]);
+    setPaymentLink(links[portalKey] || (client?.fieldroutes_customer_id ? links[client.fieldroutes_customer_id] : null) || null);
     setProperties((props as PropertyRow[]) ?? []);
     // Hidden invoices are an admin choice (Billing tab → "Hide from customer");
     // names ("August invoice") come from the same log.
@@ -165,6 +174,18 @@ const BillingPortal = () => {
                 {label || clientName || "Your invoices"}
               </h1>
               {clientName && label && <p className="text-sm text-[#6e746e] mt-1">{clientName}</p>}
+              {paymentLink && (
+                <a
+                  href={paymentLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-5 rounded-lg bg-[#2a2a2a] text-white text-sm font-semibold px-4 py-2.5 hover:bg-[#444] transition-colors"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Make a payment or add a card
+                  <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+                </a>
+              )}
             </div>
 
             {/* portal-wide totals */}
