@@ -49,9 +49,10 @@ export function BillingPortalsAdmin() {
   const [newProps, setNewProps] = useState<string[]>([]);
   const [search, setSearch] = useState("");
 
-  // editing an existing portal's property list
+  // editing an existing portal's name and property list
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editProps, setEditProps] = useState<string[]>([]);
+  const [editLabel, setEditLabel] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -115,13 +116,18 @@ export function BillingPortalsAdmin() {
     await load();
   };
 
-  const saveProps = async (id: string) => {
-    const { error } = await supabase.from("portal_links").update({ assigned_property_ids: editProps }).eq("id", id);
+  const saveEdit = async (p: LinkRow) => {
+    // A blank name keeps the one it had — the customer's page needs a heading.
+    const label = editLabel.trim() || p.label;
+    const { error } = await supabase
+      .from("portal_links")
+      .update({ assigned_property_ids: editProps, label })
+      .eq("id", p.id);
     if (error) {
       toast({ title: "Could not save", description: error.message, variant: "destructive" });
       return;
     }
-    toast({ title: "Properties updated" });
+    toast({ title: "Portal updated" });
     setEditingId(null);
     await load();
   };
@@ -260,9 +266,9 @@ export function BillingPortalsAdmin() {
                       {!editing && (
                         <Button
                           variant="ghost" size="sm" className="h-7 text-xs"
-                          onClick={() => { setEditingId(p.id); setEditProps(ids); setSearch(""); }}
+                          onClick={() => { setEditingId(p.id); setEditProps(ids); setEditLabel(p.label ?? ""); setSearch(""); }}
                         >
-                          <Pencil className="w-3 h-3 mr-1" /> Properties
+                          <Pencil className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       )}
                       <Button
@@ -277,9 +283,21 @@ export function BillingPortalsAdmin() {
 
                   {editing && (
                     <div className="rounded-lg border bg-muted/20 p-3 space-y-3">
-                      <PropertyPicker value={editProps} onChange={setEditProps} />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Portal name (shows on their page)</Label>
+                        <Input
+                          className="h-9 bg-background"
+                          value={editLabel}
+                          onChange={(e) => setEditLabel(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && saveEdit(p)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Properties on this portal</Label>
+                        <PropertyPicker value={editProps} onChange={setEditProps} />
+                      </div>
                       <div className="flex gap-2">
-                        <Button size="sm" className="h-8" onClick={() => saveProps(p.id)}>
+                        <Button size="sm" className="h-8" onClick={() => saveEdit(p)}>
                           <Check className="w-3 h-3 mr-1" /> Save
                         </Button>
                         <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditingId(null)}>
