@@ -191,6 +191,14 @@ const SERVICE_CONFIG: Record<
     defaultInitial: 575,
     defaultRecurring: 0,
   },
+  "Install Door Sweeps": {
+    frequency: 0,
+    targetPests: ["Rodents"],
+    proposedServices:
+      `<b>Install Door Sweeps:</b><br>• Install commercial-grade door sweeps (pictured below) on exterior doors to close the gap beneath the door and block rodent and insect entry<br>• Measure each door and fit a sweep sized for the threshold so it seals without dragging<br>• Sweeps are priced per door<br><br><b>Additional Details:</b> Door sweeps are one of the most effective exclusion measures for rodents, which can squeeze through a gap as small as 1/4 inch. We are a licensed pest control company, not a licensed contractor; we attach sweeps to the existing door and do not alter, replace, or repair the door, frame, or threshold.`,
+    defaultInitial: 0,
+    defaultRecurring: 0,
+  },
   "Rodent Trapping": {
     frequency: 0,
     targetPests: ["Rodents"],
