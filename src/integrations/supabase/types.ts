@@ -1618,6 +1618,7 @@ export type Database = {
           representative_signature: string | null
           representative_signed_date: string | null
           representative_title: string | null
+          status: string
           updated_at: string
           work_location: string | null
         }
@@ -1636,6 +1637,7 @@ export type Database = {
           representative_signature?: string | null
           representative_signed_date?: string | null
           representative_title?: string | null
+          status?: string
           updated_at?: string
           work_location?: string | null
         }
@@ -1654,6 +1656,7 @@ export type Database = {
           representative_signature?: string | null
           representative_signed_date?: string | null
           representative_title?: string | null
+          status?: string
           updated_at?: string
           work_location?: string | null
         }

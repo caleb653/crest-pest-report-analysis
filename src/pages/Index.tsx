@@ -49,8 +49,8 @@ const reportTypes = [
   },
   {
     id: "team-docs",
-    title: "Crest Team Docs",
-    description: "Internal team documents & resources",
+    title: "Signature Sheets",
+    description: "Right to Treat & other signed forms",
     icon: BookOpen,
     path: "/team-docs",
     color: "text-violet-600",
