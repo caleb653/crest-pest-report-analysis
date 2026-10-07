@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import crestLogo from "@/assets/crest-logo.png";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 import { periodMonthKey, monthLabel, fetchInvoiceExtras } from "@/lib/invoiceBuilder";
-import { fetchLoginLinks, billingPortalLinkKey } from "@/lib/frLoginLinks";
+import { fetchLoginLinks, billingPropertyLinkKey } from "@/lib/frLoginLinks";
 import { Building2, CheckCircle2, Clock, Receipt, MapPin, CreditCard, ExternalLink } from "lucide-react";
 
 const money = (n: number | null | undefined) =>
@@ -30,6 +30,7 @@ interface PropertyRow {
   name: string;
   address: string | null;
   client_id: string;
+  fieldroutes_customer_id: string | null;
 }
 
 const ISSUED = ["sent", "paid", "partial"];
@@ -40,8 +41,8 @@ const BillingPortal = () => {
   const [error, setError] = useState("");
   const [label, setLabel] = useState<string | null>(null);
   const [clientName, setClientName] = useState<string | null>(null);
-  /** Their FieldPortals account — where a card is added and a payment made. */
-  const [paymentLink, setPaymentLink] = useState<string | null>(null);
+  /** property id -> its FieldPortals account, where a card is added and a payment made. */
+  const [paymentLinks, setPaymentLinks] = useState<Record<string, string>>({});
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
 
@@ -73,11 +74,11 @@ const BillingPortal = () => {
     const [{ data: props }, { data: client }, { data: inv }] = await Promise.all([
       supabase
         .from("portal_properties")
-        .select("id, name, address, client_id")
+        .select("id, name, address, client_id, fieldroutes_customer_id")
         .in("id", ids)
         .is("archived_at", null)
         .order("name"),
-      supabase.from("portal_clients").select("name, company, fieldroutes_customer_id").eq("id", link.client_id).maybeSingle(),
+      supabase.from("portal_clients").select("name, company").eq("id", link.client_id).maybeSingle(),
       supabase
         .from("portal_invoices")
         .select(
@@ -91,11 +92,19 @@ const BillingPortal = () => {
     setLabel(link.label);
     setClientName(client?.company || client?.name || null);
 
-    // The link pasted for this portal wins; otherwise the customer's own
-    // FieldPortals link, if FieldRoutes has ever handed us one.
-    const portalKey = billingPortalLinkKey(link.id);
-    const links = await fetchLoginLinks([portalKey, client?.fieldroutes_customer_id]);
-    setPaymentLink(links[portalKey] || (client?.fieldroutes_customer_id ? links[client.fieldroutes_customer_id] : null) || null);
+    // Per property: the link pasted for it wins; otherwise the FieldPortals
+    // link of the FieldRoutes customer it is matched to, if we have one.
+    const propRows = ((props as PropertyRow[]) ?? []);
+    const links = await fetchLoginLinks([
+      ...propRows.map((p) => billingPropertyLinkKey(p.id)),
+      ...propRows.map((p) => p.fieldroutes_customer_id),
+    ]);
+    const byProperty: Record<string, string> = {};
+    for (const p of propRows) {
+      const l = links[billingPropertyLinkKey(p.id)] || (p.fieldroutes_customer_id ? links[p.fieldroutes_customer_id] : "");
+      if (l) byProperty[p.id] = l;
+    }
+    setPaymentLinks(byProperty);
     setProperties((props as PropertyRow[]) ?? []);
     // Hidden invoices are an admin choice (Billing tab → "Hide from customer");
     // names ("August invoice") come from the same log.
@@ -174,18 +183,6 @@ const BillingPortal = () => {
                 {label || clientName || "Your invoices"}
               </h1>
               {clientName && label && <p className="text-sm text-[#6e746e] mt-1">{clientName}</p>}
-              {paymentLink && (
-                <a
-                  href={paymentLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 mt-5 rounded-lg bg-[#2a2a2a] text-white text-sm font-semibold px-4 py-2.5 hover:bg-[#444] transition-colors"
-                >
-                  <CreditCard className="w-4 h-4" />
-                  Make a payment or add a card
-                  <ExternalLink className="w-3.5 h-3.5 opacity-70" />
-                </a>
-              )}
             </div>
 
             {/* portal-wide totals */}
@@ -238,6 +235,18 @@ const BillingPortal = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap md:justify-end">
+                    {paymentLinks[p.id] && (
+                      <a
+                        href={paymentLinks[p.id]}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-[#2a2a2a] text-white text-xs font-semibold px-3.5 py-1.5 hover:bg-[#444] transition-colors"
+                      >
+                        <CreditCard className="w-3.5 h-3.5" />
+                        Make a payment or add a card
+                        <ExternalLink className="w-3 h-3 opacity-70" />
+                      </a>
+                    )}
                     {t.count === 0 ? (
                       // A property we service but haven't billed yet: say so plainly
                       // instead of "Paid $0.00 · Nothing outstanding".

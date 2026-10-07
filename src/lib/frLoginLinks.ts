@@ -60,24 +60,29 @@ export function saveLoginLink(
 
 // ─── Billing portals ─────────────────────────────────────────────────────
 //
-// A customer billing portal (/billing/<token>) can carry a "pay or add a card"
-// button pointing at the customer's FieldPortals account. The admin pastes the
-// link; it lives in this same cache under a key made from the portal_links id,
-// because that table has no column for it and the schema only changes through
-// Lovable. Clearing writes "" (the table has no delete policy); every reader
-// already treats an empty link as none.
+// Each property tile on a customer billing portal (/billing/<token>) can carry
+// a "pay or add a card" button pointing at that property's FieldPortals
+// account — one per property, since each apartment complex is its own
+// FieldRoutes customer. The admin pastes the link; it lives in this same cache
+// under a key made from the portal_properties id, because that table has no
+// column for it and the schema only changes through Lovable. When the property
+// is matched to a FieldRoutes customer the link is also stored under that
+// customer id, so the rest of the app learns it too. Clearing writes "" (the
+// table has no delete policy); every reader already treats an empty link as none.
 
-export const billingPortalLinkKey = (portalLinkId: string) => `billing-portal:${portalLinkId}`;
+export const billingPropertyLinkKey = (propertyId: string) => `billing-property:${propertyId}`;
 
-export async function setBillingPortalPaymentLink(
-  portalLinkId: string,
+export async function setBillingPropertyPaymentLink(
+  propertyId: string,
   url: string | null | undefined,
+  fieldroutesCustomerId?: string | null,
 ): Promise<string | null> {
   const clean = String(url ?? "").trim();
   if (clean && !/^https?:\/\//i.test(clean)) return "That doesn't look like a web link — it should start with https://";
-  const { error } = await linksTable().upsert(
-    { customer_id: billingPortalLinkKey(portalLinkId), login_link: clean, source: "billing-portal-admin" },
-    { onConflict: "customer_id" },
-  );
+  const rows = [{ customer_id: billingPropertyLinkKey(propertyId), login_link: clean, source: "billing-portal-admin" }];
+  if (clean && fieldroutesCustomerId) {
+    rows.push({ customer_id: String(fieldroutesCustomerId), login_link: clean, source: "billing-portal-admin" });
+  }
+  const { error } = await linksTable().upsert(rows, { onConflict: "customer_id" });
   return error ? (error as { message: string }).message : null;
 }

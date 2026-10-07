@@ -21,10 +21,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Copy, ExternalLink, Plus, Receipt, Power, Pencil, Check, X, CreditCard } from "lucide-react";
-import { fetchLoginLinks, billingPortalLinkKey, setBillingPortalPaymentLink } from "@/lib/frLoginLinks";
+import { fetchLoginLinks, billingPropertyLinkKey, setBillingPropertyPaymentLink } from "@/lib/frLoginLinks";
 
 interface ClientRow { id: string; name: string; company: string | null }
-interface PropertyRow { id: string; name: string; address: string | null; client_id: string }
+interface PropertyRow { id: string; name: string; address: string | null; client_id: string; fieldroutes_customer_id: string | null }
 interface LinkRow {
   id: string;
   client_id: string;
@@ -41,7 +41,7 @@ export function BillingPortalsAdmin() {
   const [clients, setClients] = useState<ClientRow[]>([]);
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [portals, setPortals] = useState<LinkRow[]>([]);
-  /** portal id -> pasted payment link (their FieldPortals account). */
+  /** property id -> pasted payment link (that property's FieldPortals account). */
   const [paymentLinks, setPaymentLinks] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
@@ -56,23 +56,25 @@ export function BillingPortalsAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editProps, setEditProps] = useState<string[]>([]);
   const [editLabel, setEditLabel] = useState("");
-  const [editPayLink, setEditPayLink] = useState("");
+  const [editPayLinks, setEditPayLinks] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     const [{ data: c }, { data: p }, { data: l }] = await Promise.all([
       supabase.from("portal_clients").select("id, name, company").order("name"),
-      supabase.from("portal_properties").select("id, name, address, client_id").is("archived_at", null).order("name"),
+      supabase.from("portal_properties").select("id, name, address, client_id, fieldroutes_customer_id").is("archived_at", null).order("name"),
       supabase.from("portal_links").select("*").eq("link_type", "billing").order("created_at", { ascending: false }),
     ]);
     setClients((c as ClientRow[]) ?? []);
     setProperties((p as PropertyRow[]) ?? []);
     const rows = (l as LinkRow[]) ?? [];
     setPortals(rows);
-    const keyed = await fetchLoginLinks(rows.map((r) => billingPortalLinkKey(r.id)));
-    const byPortal: Record<string, string> = {};
-    for (const r of rows) if (keyed[billingPortalLinkKey(r.id)]) byPortal[r.id] = keyed[billingPortalLinkKey(r.id)];
-    setPaymentLinks(byPortal);
+    // Payment links for every property that sits on any billing portal.
+    const propIds = [...new Set(rows.flatMap((r) => (Array.isArray(r.assigned_property_ids) ? (r.assigned_property_ids as string[]) : [])))];
+    const keyed = await fetchLoginLinks(propIds.map(billingPropertyLinkKey));
+    const byProperty: Record<string, string> = {};
+    for (const id of propIds) if (keyed[billingPropertyLinkKey(id)]) byProperty[id] = keyed[billingPropertyLinkKey(id)];
+    setPaymentLinks(byProperty);
     setLoading(false);
   }, []);
 
@@ -136,10 +138,13 @@ export function BillingPortalsAdmin() {
       toast({ title: "Could not save", description: error.message, variant: "destructive" });
       return;
     }
-    if (editPayLink.trim() !== (paymentLinks[p.id] ?? "")) {
-      const linkErr = await setBillingPortalPaymentLink(p.id, editPayLink);
+    for (const propId of editProps) {
+      const next = (editPayLinks[propId] ?? "").trim();
+      if (next === (paymentLinks[propId] ?? "")) continue;
+      const fr = properties.find((x) => x.id === propId)?.fieldroutes_customer_id ?? null;
+      const linkErr = await setBillingPropertyPaymentLink(propId, next, fr);
       if (linkErr) {
-        toast({ title: "Portal saved, but not the payment link", description: linkErr, variant: "destructive" });
+        toast({ title: `Portal saved, but not the payment link for ${propName(propId)}`, description: linkErr, variant: "destructive" });
         return;
       }
     }
@@ -259,22 +264,19 @@ export function BillingPortalsAdmin() {
                         {!p.is_active && <Badge variant="outline" className="text-[10px]">off</Badge>}
                       </div>
                       <div className="text-xs text-muted-foreground">{clientName(p.client_id)}</div>
-                      {!editing && (
-                        <div className="text-[11px] mt-0.5 flex items-center gap-1">
-                          <CreditCard className="w-3 h-3" />
-                          {paymentLinks[p.id] ? (
-                            <a href={paymentLinks[p.id]} target="_blank" rel="noopener noreferrer" className="text-emerald-700 underline underline-offset-2">
-                              Pay / add a card button is on their page
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">No payment link yet — Edit to paste one</span>
-                          )}
-                        </div>
-                      )}
+
                       {!editing && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           {ids.map((id) => (
-                            <Badge key={id} variant="secondary" className="text-[10px] font-normal">{propName(id)}</Badge>
+                            <Badge
+                              key={id}
+                              variant="secondary"
+                              className="text-[10px] font-normal gap-1"
+                              title={paymentLinks[id] ? "Has a pay / add-a-card button" : "No payment link yet"}
+                            >
+                              {propName(id)}
+                              {paymentLinks[id] && <CreditCard className="w-3 h-3 text-emerald-700" />}
+                            </Badge>
                           ))}
                           {ids.length === 0 && <span className="text-[11px] text-amber-700">No properties yet</span>}
                         </div>
@@ -294,7 +296,7 @@ export function BillingPortalsAdmin() {
                       {!editing && (
                         <Button
                           variant="ghost" size="sm" className="h-7 text-xs"
-                          onClick={() => { setEditingId(p.id); setEditProps(ids); setEditLabel(p.label ?? ""); setEditPayLink(paymentLinks[p.id] ?? ""); setSearch(""); }}
+                          onClick={() => { setEditingId(p.id); setEditProps(ids); setEditLabel(p.label ?? ""); setEditPayLinks(Object.fromEntries(ids.map((id) => [id, paymentLinks[id] ?? ""]))); setSearch(""); }}
                         >
                           <Pencil className="w-3 h-3 mr-1" /> Edit
                         </Button>
@@ -321,19 +323,30 @@ export function BillingPortalsAdmin() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Payment link (their customer portal, where they add a card)</Label>
-                        <Input
-                          className="h-9 bg-background"
-                          placeholder="Paste their FieldPortals login link — it becomes a “Make a payment or add a card” button"
-                          value={editPayLink}
-                          onChange={(e) => setEditPayLink(e.target.value)}
-                        />
-                        <p className="text-[11px] text-muted-foreground">Leave empty for no button.</p>
-                      </div>
-                      <div className="space-y-1.5">
                         <Label className="text-xs font-semibold">Properties on this portal</Label>
                         <PropertyPicker value={editProps} onChange={setEditProps} />
                       </div>
+                      {editProps.length > 0 && (
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Payment links (each property's customer portal, where they add a card)</Label>
+                          <div className="border rounded-lg divide-y bg-background">
+                            {editProps.map((id) => (
+                              <div key={id} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 p-2.5">
+                                <div className="text-sm font-medium sm:w-56 shrink-0 truncate">{propName(id)}</div>
+                                <Input
+                                  className="h-8 text-xs"
+                                  placeholder="Paste this property's FieldPortals login link"
+                                  value={editPayLinks[id] ?? ""}
+                                  onChange={(e) => setEditPayLinks((prev) => ({ ...prev, [id]: e.target.value }))}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Each one becomes a “Make a payment or add a card” button on that property's tile. Leave empty for no button.
+                          </p>
+                        </div>
+                      )}
                       <div className="flex gap-2">
                         <Button size="sm" className="h-8" onClick={() => saveEdit(p)}>
                           <Check className="w-3 h-3 mr-1" /> Save
