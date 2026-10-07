@@ -748,13 +748,17 @@ const Report = () => {
     }
   }, [serviceTypesKey]);
 
-  // Auto-populate proposed services text from all proposals
+  // Auto-populate the Option A proposed-services text from Option A's own
+  // services ONLY. Options B+ build their text from their own services via
+  // getProposalServicesText(); pulling every proposal's services in here
+  // used to dump Option B's descriptions into the Option A box.
+  const firstProposalServiceTypesKey = (proposals[0]?.services ?? []).map((s) => s.serviceType).join(",");
   useEffect(() => {
     const isNewReport = !reportId;
     if (!isNewReport && !reportLoadedRef.current) return;
 
     const currentServiceTypes = new Set<string>();
-    allServices.forEach((service) => {
+    (proposals[0]?.services ?? []).forEach((service) => {
       if (service.serviceType) currentServiceTypes.add(service.serviceType);
     });
 
@@ -794,7 +798,7 @@ const Report = () => {
         addedServiceTypesRef.current.delete(serviceType);
       }
     });
-  }, [serviceTypesKey, editableFindings]);
+  }, [firstProposalServiceTypesKey, editableFindings]);
 
   const [equipmentDropdownOpen, setEquipmentDropdownOpen] = useState(false);
   const equipmentDropdownRef = useRef<HTMLDivElement>(null);
