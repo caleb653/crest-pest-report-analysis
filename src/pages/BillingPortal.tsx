@@ -238,14 +238,22 @@ const BillingPortal = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap md:justify-end">
-                    <Pill icon={Receipt}>
-                      {t.count} invoice{t.count === 1 ? "" : "s"} · {money(t.billed)}
-                    </Pill>
-                    <Pill icon={CheckCircle2} tone="good">Paid {money(t.paid)}</Pill>
-                    {t.due > 0 ? (
-                      <Pill icon={Clock} tone="due">Due {money(t.due)}</Pill>
+                    {t.count === 0 ? (
+                      // A property we service but haven't billed yet: say so plainly
+                      // instead of "Paid $0.00 · Nothing outstanding".
+                      <Pill icon={Receipt}>No invoices yet</Pill>
                     ) : (
-                      <Pill icon={CheckCircle2} tone="good">Nothing outstanding</Pill>
+                      <>
+                        <Pill icon={Receipt}>
+                          {t.count} invoice{t.count === 1 ? "" : "s"} · {money(t.billed)}
+                        </Pill>
+                        <Pill icon={CheckCircle2} tone="good">Paid {money(t.paid)}</Pill>
+                        {t.due > 0 ? (
+                          <Pill icon={Clock} tone="due">Due {money(t.due)}</Pill>
+                        ) : (
+                          <Pill icon={CheckCircle2} tone="good">Nothing outstanding</Pill>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -254,7 +262,7 @@ const BillingPortal = () => {
               {/* invoices by month */}
               <div className="px-4 sm:px-7 py-5 space-y-6">
                 {mine.length === 0 && (
-                  <p className="text-sm text-[#6e746e] py-4 text-center">No invoices issued for this property yet.</p>
+                  <p className="text-sm text-[#6e746e] py-4 text-center">No invoices yet — your first one will appear here once it is issued.</p>
                 )}
                 {byMonth.map(([key, group]) => (
                   <div key={key}>
