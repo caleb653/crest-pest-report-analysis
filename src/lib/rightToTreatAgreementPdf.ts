@@ -99,16 +99,12 @@ export function buildRightToTreatAgreementPdf(input: RightToTreatAgreementPdfInp
 
   // Parties / premises
   const half = (usable - 16) / 2;
-  field("Customer / Property Name", input.property_name, M, half, y);
-  field("Date", input.form_date, M + half + 16, half, y);
-  y += 30;
   field("Service Address (Premises)", input.service_address, M, usable, y);
   y += 30;
-  field("Unit / Suite / Area", input.unit_or_area, M, half, y);
+  field("Date", input.form_date, M, half, y);
   field("Crest Representative", input.crest_representative, M + half + 16, half, y);
   y += 30;
-  field("Authorizing Party (Printed Name)", input.signer_name, M, half, y);
-  field("Relationship to Premises", input.signer_relationship, M + half + 16, half, y);
+  field("Authorizing Party (Printed Name)", input.signer_name, M, usable, y);
   y += 30;
   field("Email", input.signer_email, M, half, y);
   field("Phone", input.signer_phone, M + half + 16, half, y);
@@ -172,7 +168,7 @@ export function buildRightToTreatAgreementPdf(input: RightToTreatAgreementPdfInp
 
 export function downloadRightToTreatAgreementPdf(input: RightToTreatAgreementPdfInput) {
   const doc = buildRightToTreatAgreementPdf(input);
-  const base = (input.property_name || input.signer_name || "blank").replace(/[^a-z0-9-]+/gi, "_");
+  const base = (input.signer_name || input.service_address || "blank").slice(0, 40).replace(/[^a-z0-9-]+/gi, "_");
   const kind = input.signatureDataUrl ? "signed" : "blank";
   doc.save(`right-to-treat-${kind}-${base}.pdf`);
 }

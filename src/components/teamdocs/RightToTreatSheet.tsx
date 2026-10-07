@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SignatureCanvas, type SignatureCanvasRef } from "@/components/SignatureCanvas";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
-  COMPANY, RELATIONSHIP_OPTIONS, RTT_INTRO, RTT_RIGHT_TO_ENTER_ACK, RTT_SECTIONS, RTT_TERMS_ACK,
+  COMPANY, RTT_INTRO, RTT_RIGHT_TO_ENTER_ACK, RTT_SECTIONS, RTT_TERMS_ACK,
   RTT_TERMS_VERSION, RTT_TITLE, type RightToTreatFormData,
 } from "@/lib/rightToTreatTerms";
 import { downloadRightToTreatAgreementPdf } from "@/lib/rightToTreatAgreementPdf";
@@ -18,11 +17,8 @@ import { downloadRightToTreatAgreementPdf } from "@/lib/rightToTreatAgreementPdf
 export type RttDraft = Partial<RightToTreatFormData>;
 
 export const emptyRttDraft = (): RightToTreatFormData => ({
-  property_name: "",
   service_address: "",
-  unit_or_area: "",
   signer_name: "",
-  signer_relationship: "",
   signer_email: "",
   signer_phone: "",
   form_date: format(new Date(), "yyyy-MM-dd"),
@@ -89,14 +85,12 @@ export function RightToTreatSheet({ initial, mode, submitting, onSubmit }: Props
   const set = <K extends keyof RightToTreatFormData>(k: K, v: RightToTreatFormData[K]) => setD((p) => ({ ...p, [k]: v }));
 
   const submit = async () => {
-    if (!d.property_name.trim()) { toast.error("Customer / property name is required"); return; }
     if (!d.service_address.trim()) { toast.error("Service address is required"); return; }
     if (mode === "prepare") {
       await onSubmit({ ...d, terms_version: RTT_TERMS_VERSION }, null);
       return;
     }
     if (!d.signer_name.trim()) { toast.error("Please type the signer's full name"); return; }
-    if (!d.signer_relationship) { toast.error("Please choose the signer's relationship to the premises"); return; }
     if (!d.right_to_enter) { toast.error("Please check the Right to Enter box"); return; }
     if (!d.terms_agreed) { toast.error("Please check the Terms & Conditions box"); return; }
     const sig = sigRef.current?.forceSave() || signature;
@@ -119,16 +113,8 @@ export function RightToTreatSheet({ initial, mode, submitting, onSubmit }: Props
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5 sm:col-span-2">
-            <Label>Customer / Property Name <span className="text-destructive">*</span></Label>
-            <Input value={d.property_name} onChange={(e) => set("property_name", e.target.value)} placeholder="e.g. Sunset Villas Apartments or Jane Smith" maxLength={200} />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
             <Label>Service Address <span className="text-destructive">*</span></Label>
             <Input value={d.service_address} onChange={(e) => set("service_address", e.target.value)} placeholder="Street, City, CA ZIP" maxLength={300} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Unit / Suite / Area <span className="text-muted-foreground font-normal">(optional)</span></Label>
-            <Input value={d.unit_or_area || ""} onChange={(e) => set("unit_or_area", e.target.value)} placeholder="e.g. Unit 204, Kitchen, Whole property" maxLength={120} />
           </div>
           <div className="space-y-1.5">
             <Label>Date</Label>
@@ -137,15 +123,6 @@ export function RightToTreatSheet({ initial, mode, submitting, onSubmit }: Props
           <div className="space-y-1.5">
             <Label>Crest Representative <span className="text-muted-foreground font-normal">(optional)</span></Label>
             <Input value={d.crest_representative || ""} onChange={(e) => set("crest_representative", e.target.value)} placeholder="Technician or office member" maxLength={120} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Signer's Relationship to Premises {!prepare && <span className="text-destructive">*</span>}</Label>
-            <Select value={d.signer_relationship} onValueChange={(v) => set("signer_relationship", v)}>
-              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
-              <SelectContent>
-                {RELATIONSHIP_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Signer's Full Name {!prepare && <span className="text-destructive">*</span>}</Label>
