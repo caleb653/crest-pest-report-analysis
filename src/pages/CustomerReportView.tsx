@@ -10,6 +10,7 @@ import { ReadOnlyMapCanvas } from "@/components/ReadOnlyMapCanvas";
 import crestLogo from "@/assets/crest-logo.png";
 import crestLogoVideo from "@/assets/crest-logo-video.png";
 import { buildSignedReportPDF } from "@/lib/pdfExport";
+import { contractTermsText, crestGuaranteeText } from "@/lib/contractTerms";
 import {
   parseSignatureStore,
   resolveProposalSignature,
@@ -146,6 +147,8 @@ interface StructuredNotes {
   additionalDetails?: string;
   propertyType?: string;
   companyName?: string;
+  oneYearContract?: boolean;
+  cancellationFee?: string | number | null;
   preferredServiceDay?: string;
   preferredServiceTime?: string;
   mainPointOfContact?: string;
@@ -1737,9 +1740,18 @@ export default function CustomerReportView() {
         <div className="border-2 border-border rounded-lg p-5 text-center bg-muted/30">
           <h3 className="text-sm font-bold text-foreground mb-2">The Crest Guarantee</h3>
           <p className="text-xs text-foreground leading-relaxed max-w-2xl mx-auto">
-            If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
+            {crestGuaranteeText(structuredNotes?.oneYearContract)}
           </p>
         </div>
+        {structuredNotes?.oneYearContract && (
+          <p className="text-xs text-foreground text-center mt-2 leading-relaxed max-w-2xl mx-auto">
+            {contractTermsText({
+              oneYearContract: true,
+              cancellationFee: structuredNotes.cancellationFee,
+              propertyType: displayPropertyType,
+            })}
+          </p>
+        )}
         {parsedProposals.some((p) => p.services.some((s) => {
           const f = typeof s.frequency === "string" ? parseInt(s.frequency, 10) : s.frequency;
           return f === 7 || f === 14 || f === 28;

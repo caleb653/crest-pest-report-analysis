@@ -62,6 +62,8 @@ import { inferImageUploadMeta } from "@/lib/imageUpload";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DEFAULT_CANCELLATION_FEE, contractTermsText, contractTermLabel, crestGuaranteeText } from "@/lib/contractTerms";
 import { Switch } from "@/components/ui/switch";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ImageAnnotator from "@/components/ImageAnnotator";
@@ -871,6 +873,11 @@ const Report = () => {
   ] as const;
   const [propertyType, setPropertyType] = useState<string>("Residential");
   const [companyName, setCompanyName] = useState<string>("");
+  // 1-year contract option: when checked, the proposal carries an agreement
+  // term with an early-cancellation fee (defaults to $50) and, for commercial
+  // accounts, 30-day notice language.
+  const [oneYearContract, setOneYearContract] = useState<boolean>(false);
+  const [cancellationFee, setCancellationFee] = useState<string>(DEFAULT_CANCELLATION_FEE);
   
   // Auto-update title when customer/company name changes
   useEffect(() => {
@@ -1350,6 +1357,12 @@ const Report = () => {
               setAdditionalDetails(parsed.additionalDetails || "");
               setPropertyType(parsed.propertyType || "Residential");
               setCompanyName(parsed.companyName || "");
+              setOneYearContract(!!parsed.oneYearContract);
+              setCancellationFee(
+                parsed.cancellationFee !== undefined && parsed.cancellationFee !== null && String(parsed.cancellationFee) !== ""
+                  ? String(parsed.cancellationFee)
+                  : DEFAULT_CANCELLATION_FEE,
+              );
               setPreferredServiceDay(parsed.preferredServiceDay || "");
               setPreferredServiceTime(parsed.preferredServiceTime || "");
               setMainPointOfContact(parsed.mainPointOfContact || "");
@@ -1547,6 +1560,8 @@ const Report = () => {
       proposalGuaranteeBoxes,
       propertyType,
       companyName,
+      oneYearContract,
+      cancellationFee,
       preferredServiceDay,
       preferredServiceTime,
       mainPointOfContact,
@@ -2002,6 +2017,8 @@ const Report = () => {
       serviceDate: editableServiceDate,
       propertyType,
       companyName,
+      oneYearContract,
+      cancellationFee,
       technicianName: editableTech || "",
       licenseNumber: editableLicenseNumber,
       scheduling: {
@@ -3864,6 +3881,12 @@ Crest Pest Control`;
                     <span className="text-foreground font-medium">{companyName}</span>
                   </div>
                 )}
+                {oneYearContract && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground w-16">Term:</span>
+                    <span className="text-foreground font-medium">{contractTermLabel({ oneYearContract, cancellationFee })}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -3951,6 +3974,43 @@ Crest Pest Control`;
                     )}
                   </div>
                 )}
+                {/* 1-year contract option + early cancellation fee */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-muted-foreground w-16">Term:</span>
+                  {isReadOnly ? (
+                    <span className="text-foreground font-medium">{contractTermLabel({ oneYearContract, cancellationFee }) || "No contract"}</span>
+                  ) : (
+                    <>
+                      <label className="flex items-center gap-1.5 text-xs text-foreground cursor-pointer select-none">
+                        <Checkbox
+                          checked={oneYearContract}
+                          onCheckedChange={(v) => {
+                            const on = v === true;
+                            setOneYearContract(on);
+                            if (on && String(cancellationFee ?? "").trim() === "") setCancellationFee(DEFAULT_CANCELLATION_FEE);
+                          }}
+                          className="h-3.5 w-3.5"
+                        />
+                        1-Year Contract
+                      </label>
+                      {oneYearContract && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          Cancellation fee $
+                          <Input
+                            type="number"
+                            min={0}
+                            step={1}
+                            inputMode="numeric"
+                            value={cancellationFee}
+                            onChange={(e) => setCancellationFee(e.target.value)}
+                            onBlur={() => { if (String(cancellationFee ?? "").trim() === "") setCancellationFee(DEFAULT_CANCELLATION_FEE); }}
+                            className="bg-transparent border-b border-border text-foreground px-1 h-6 text-xs w-16 focus-visible:ring-0"
+                          />
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -4144,10 +4204,15 @@ Crest Pest Control`;
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
             <p className="crest-guarantee-text text-base print:text-sm text-foreground leading-snug">
               <span className="font-bold">The Crest Guarantee:</span>{" "}
-              If pests return, we will return at no charge. We don't lock you into a long-term contract. We want our service quality to keep you as a customer, not a contract.
+              {crestGuaranteeText(oneYearContract)}
             </p>
             <img src={crestBugBlack} alt="" className="w-8 h-8 print:w-7 print:h-7 opacity-60 flex-shrink-0" />
           </div>
+          {oneYearContract && (
+            <p className="text-[12px] print:text-[11px] text-foreground text-center mt-1.5 leading-snug">
+              {contractTermsText({ oneYearContract, cancellationFee, propertyType })}
+            </p>
+          )}
           {proposals.some((p) => p.services.some((s) => s.frequency === 7 || s.frequency === 14 || s.frequency === 28)) && (
             <p className="text-[11px] print:text-[10px] italic text-muted-foreground text-center mt-1.5 leading-snug">
               * Scheduling and billing run on four-week cycles to help ensure consistency (e.g., the same day and time for each visit). Invoices are sent upon completion of each service.

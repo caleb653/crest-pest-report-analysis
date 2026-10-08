@@ -11,6 +11,7 @@ import jsPDF from "jspdf";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import crestLogoUrl from "@/assets/crest-logo.png";
 import crestBugUrl from "@/assets/crest-bug-black.png";
+import { contractTermsText, contractTermLabel, crestGuaranteeText } from "@/lib/contractTerms";
 
 // ─── Public data model ──────────────────────────────────────────────────
 
@@ -54,6 +55,10 @@ export interface SalesProposalPdfData {
   serviceDate: string;
   propertyType?: string;
   companyName?: string;
+  /** 1-year contract option: adds the agreement-term paragraph (+30-day notice for commercial). */
+  oneYearContract?: boolean;
+  /** Early cancellation fee in whole dollars (defaults to $50 when blank). */
+  cancellationFee?: string | number | null;
   technicianName: string;
   licenseNumber?: string;
   scheduling?: { day?: string; time?: string; contact?: string; phone?: string } | null;
@@ -114,9 +119,6 @@ const PESTICIDE_CONTACTS =
   'Commissioner (714-955-0100) and for Regulatory Information--the Structural Pest Control Board (800-737-8188, ' +
   '2005 Evergreen Street, Ste. 1500, Sacramento, CA 95815).';
 
-const CREST_GUARANTEE =
-  "If pests return, we will return at no charge. We don't lock you into a long-term contract. " +
-  'We want our service quality to keep you as a customer, not a contract.';
 
 const FOUR_WEEK_NOTE =
   '* Scheduling and billing run on four-week cycles to help ensure consistency (e.g., the same day and time for ' +
@@ -534,6 +536,7 @@ export async function buildSalesProposalPdf(
         ["Date", fmtDate(data.serviceDate)],
         ["Type", data.propertyType || ""],
         ["Company", data.propertyType !== "Residential" ? data.companyName || "" : ""],
+        ["Term", contractTermLabel(data) || ""],
       ] as [string, string][]).filter(([, v]) => !!v && v !== "—"),
     },
     {
@@ -775,8 +778,18 @@ export async function buildSalesProposalPdf(
   let rowTop = y;
   const gutter = 14;
 
+  // Agreement-term paragraph (1-year contract) drawn right under the band.
+  const CREST_GUARANTEE = crestGuaranteeText(data.oneYearContract);
+  const contractText = contractTermsText(data);
+  const measureContract = (): number => {
+    if (!contractText) return 0;
+    setFont(7.8, "normal", C.ink);
+    return (pdf.splitTextToSize(contractText, CONTENT_W - 80) as string[]).length * 9.6 + 4;
+  };
+  const contractH = measureContract();
+
   const drawGuaranteeBand = () => {
-    ensure(40 + (data.fourWeekCycleNote ? 22 : 0) + 22);
+    ensure(40 + contractH + (data.fourWeekCycleNote ? 22 : 0) + 22);
     const bandH = 40;
     stroke(C.rule);
     fill(C.sageTint);
@@ -805,6 +818,10 @@ export async function buildSalesProposalPdf(
       gy += 11;
     });
     y += bandH + 8;
+    if (contractText) {
+      writeText(contractText, MARGIN + 40, CONTENT_W - 80, 7.8, { color: C.ink, align: "center", lineH: 9.6 });
+      y += 4;
+    }
     if (data.fourWeekCycleNote) {
       writeText(FOUR_WEEK_NOTE, MARGIN + 40, CONTENT_W - 80, 7.2, { style: "italic", color: C.muted, align: "center", lineH: 9 });
       y += 2;
@@ -844,7 +861,7 @@ export async function buildSalesProposalPdf(
   };
 
   const PRODUCT_SIZES: [number, number][] = [[6.6, 8], [6.2, 7.5], [5.8, 7], [5.4, 6.6]];
-  const bandBlockH = 12 + 40 + 8 + (data.fourWeekCycleNote ? 20 : 0) + 12;
+  const bandBlockH = 12 + 40 + 8 + contractH + (data.fourWeekCycleNote ? 20 : 0) + 12;
   const schedColH = hasSched ? 21 + schedItems.length * 13 : 0;
   // Stacked mode puts the sched label/value pairs ON the section-title row
   // (wrapping below it only when they run long) — measure that packing.
