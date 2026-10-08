@@ -17,17 +17,22 @@ import { RightToTreatSheet, RttHeader, RttTermsBody } from "@/components/teamdoc
 import { RTT_RIGHT_TO_ENTER_ACK, RTT_TERMS_ACK, type RightToTreatFormData } from "@/lib/rightToTreatTerms";
 import { downloadRightToTreatAgreementPdf } from "@/lib/rightToTreatAgreementPdf";
 
+// Everyone currently at Crest (office + field). "Other" lets any name be typed in.
 const EMPLOYEES = [
   "Caleb Whalen",
   "Jake Shubin",
+  "Cade Carnival",
+  "Kiera Nicholson",
   "Darrell Tanner",
   "Jackson Latham",
   "Dylan Gallegos",
   "Michael Muniz",
+  "David Longoria",
   "Nick Stovall",
   "Brock Lyttle",
   "Joseph Ibarbo",
 ];
+const OTHER_EMPLOYEE = "__other__";
 
 const SUBMITTED_DOCS_PASSWORD = "18444";
 
@@ -77,6 +82,8 @@ const TeamDocs = () => {
 
   // Waiver form state
   const [employeeName, setEmployeeName] = useState("");
+  // Dropdown choice; OTHER_EMPLOYEE reveals a free-text name field.
+  const [employeeChoice, setEmployeeChoice] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [workLocation, setWorkLocation] = useState("");
   const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -130,6 +137,7 @@ const TeamDocs = () => {
 
   const resetForm = () => {
     setEmployeeName("");
+    setEmployeeChoice("");
     setJobTitle("");
     setWorkLocation("");
     setFormDate(format(new Date(), "yyyy-MM-dd"));
@@ -144,8 +152,8 @@ const TeamDocs = () => {
   };
 
   const handleSubmitWaiver = async () => {
-    if (!employeeName) {
-      toast.error("Please select an employee");
+    if (!employeeName.trim()) {
+      toast.error(employeeChoice === OTHER_EMPLOYEE ? "Please type the employee's name" : "Please select an employee");
       return;
     }
     if (!waiverConfirmed) {
@@ -160,7 +168,7 @@ const TeamDocs = () => {
     try {
       const { data: inserted, error } = await supabase.from("team_documents").insert({
         document_type: "meal_period_waiver",
-        employee_name: employeeName,
+        employee_name: employeeName.trim(),
         job_title: jobTitle || null,
         work_location: workLocation || null,
         form_date: formDate || null,
@@ -756,14 +764,29 @@ const TeamDocs = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Employee Name</Label>
-                <Select value={employeeName} onValueChange={setEmployeeName}>
+                <Select
+                  value={employeeChoice}
+                  onValueChange={(v) => {
+                    setEmployeeChoice(v);
+                    setEmployeeName(v === OTHER_EMPLOYEE ? "" : v);
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Select employee" /></SelectTrigger>
                   <SelectContent>
                     {EMPLOYEES.map((name) => (
                       <SelectItem key={name} value={name}>{name}</SelectItem>
                     ))}
+                    <SelectItem value={OTHER_EMPLOYEE}>Other (type a name)</SelectItem>
                   </SelectContent>
                 </Select>
+                {employeeChoice === OTHER_EMPLOYEE && (
+                  <Input
+                    value={employeeName}
+                    onChange={(e) => setEmployeeName(e.target.value)}
+                    placeholder="Type the employee's full name"
+                    autoFocus
+                  />
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>Work Date</Label>
