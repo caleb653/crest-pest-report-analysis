@@ -1,3 +1,4 @@
+import { useState } from "react";
 /**
  * Shared building blocks used on commercial service reports in BOTH the
  * admin dashboard and the PM (customer) portal. Keeping these here so the
@@ -94,10 +95,24 @@ export function CommercialNonChemEquipment({
     }
   };
 
-  const updateQty = (name: string, qty: number) => {
+  // Quantity edits are kept as raw text while typing so the field can be
+  // cleared (typing "4" over the default "1" used to produce "14" because the
+  // value snapped back to 1 on every keystroke). The number is committed on blur.
+  const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({});
+  const qtyDisplay = (e: NonChemEquipmentEntry) => qtyDrafts[e.name] ?? String(e.qty);
+  const editQty = (name: string, raw: string) => {
     if (readOnly || !onChange) return;
-    const safe = Math.max(1, Math.floor(qty) || 1);
-    onChange(value.map((e) => (e.name === name ? { ...e, qty: safe } : e)));
+    setQtyDrafts((d) => ({ ...d, [name]: raw }));
+    const n = parseInt(raw, 10);
+    if (Number.isFinite(n) && n >= 1) {
+      onChange(value.map((e) => (e.name === name ? { ...e, qty: n } : e)));
+    }
+  };
+  const commitQty = (name: string) => {
+    setQtyDrafts((d) => {
+      const { [name]: _drop, ...rest } = d;
+      return rest;
+    });
   };
 
   if (dropdown && !readOnly) {
@@ -130,8 +145,11 @@ export function CommercialNonChemEquipment({
                 <Input
                   type="number"
                   min={1}
-                  value={e.qty}
-                  onChange={(ev) => updateQty(e.name, Number(ev.target.value))}
+                  inputMode="numeric"
+                  value={qtyDisplay(e)}
+                  onChange={(ev) => editQty(e.name, ev.target.value)}
+                  onBlur={() => commitQty(e.name)}
+                  onFocus={(ev) => ev.currentTarget.select()}
                   className="h-7 w-14 text-xs"
                 />
                 <button
@@ -184,8 +202,11 @@ export function CommercialNonChemEquipment({
                 <Input
                   type="number"
                   min={1}
-                  value={e.qty}
-                  onChange={(ev) => updateQty(e.name, Number(ev.target.value))}
+                  inputMode="numeric"
+                  value={qtyDisplay(e)}
+                  onChange={(ev) => editQty(e.name, ev.target.value)}
+                  onBlur={() => commitQty(e.name)}
+                  onFocus={(ev) => ev.currentTarget.select()}
                   className="h-8 w-16 text-xs"
                 />
               </div>

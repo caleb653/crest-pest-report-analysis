@@ -401,6 +401,44 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
     toast({ title: "Service deleted" });
   };
 
+  // Client-side "hold off" on a unit Crest flagged for a follow-up. Mirrors
+  // the admin dismissal: the unit is recorded in the most recent past
+  // service's report_data.dismissed_follow_ups, which getFollowUpDetailsFromPast
+  // honors on BOTH portals, so it stops rolling into the next visit. A new
+  // work order for the unit still brings it back.
+  const [holdingOffUnit, setHoldingOffUnit] = useState<string | null>(null);
+  const holdOffFollowUp = async (unitLabel: string) => {
+    const label = String(unitLabel || "").trim();
+    const mostRecent = pastServices[0];
+    if (!label || !mostRecent?.id) return;
+    if (!window.confirm(`Hold off on treating unit ${label}? It will be removed from the next visit's follow-up list.`)) return;
+    setHoldingOffUnit(label);
+    const existingRD =
+      (mostRecent as any).report_data && typeof (mostRecent as any).report_data === "object"
+        ? { ...((mostRecent as any).report_data as any) }
+        : {};
+    const rawFollow = Array.isArray(existingRD.dismissed_follow_ups) ? (existingRD.dismissed_follow_ups as any[]) : [];
+    const kept = rawFollow.filter((e) => {
+      const u = typeof e === "string" ? e : e && typeof e === "object" ? (e as any).unit : "";
+      return String(u || "").trim() !== label;
+    });
+    const nextRD = {
+      ...existingRD,
+      dismissed_follow_ups: [...kept, { unit: label, at: new Date().toISOString(), by: "client" }],
+    };
+    const { error } = await supabase
+      .from("portal_services")
+      .update({ report_data: nextRD })
+      .eq("id", mostRecent.id);
+    setHoldingOffUnit(null);
+    if (error) {
+      toast({ title: "Could not update", description: error.message, variant: "destructive" });
+      return;
+    }
+    setServices(prev => prev.map(svc => (svc.id === mostRecent.id ? { ...svc, report_data: nextRD } as any : svc)));
+    toast({ title: `Unit ${label} on hold`, description: "Crest will skip the follow-up for this unit unless you submit a new request." });
+  };
+
   const loadAll = async () => {
     setLoading(true);
 
@@ -2953,6 +2991,47 @@ const PMPortalView = ({ propertyId, linkId, embedded = false, initialTab = "map"
                               </div>
                             </div>
                           )}
+
+                          {/* Follow-up units with a client "hold off" control —
+                              lets the property skip a recommended follow-up
+                              (e.g. unit not ready) without calling the office. */}
+                          {!isHOA && isFirst && fuCount > 0 && (() => {
+                            const fuUnits = unitContexts.filter(u => u.source === "follow_up");
+                            return (
+                              <div className="rounded-xl border-2 border-amber-300 bg-amber-50/60 p-4">
+                                <p className="text-xs font-bold text-amber-900 uppercase tracking-wide mb-1">
+                                  Recommended follow-ups ({fuUnits.length})
+                                </p>
+                                <p className="text-xs text-muted-foreground mb-2.5">
+                                  Not ready for a unit to be treated? Tap <span className="font-semibold">Hold off</span> and we will leave it off this visit.
+                                </p>
+                                <ul className="space-y-1.5">
+                                  {fuUnits.map((u) => {
+                                    const label = String(u.unit_number || "").trim();
+                                    const pest = u.target_pest || (u as any)?.request?.pest_type || "";
+                                    return (
+                                      <li key={label} className="flex items-center justify-between gap-3 rounded-md bg-white border border-amber-200 px-3 py-1.5">
+                                        <span className="text-sm">
+                                          <span className="font-semibold">Unit {label}</span>
+                                          {pest ? <span className="text-muted-foreground"> · {pest}</span> : null}
+                                        </span>
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant="outline"
+                                          className="h-7 text-xs border-amber-400 text-amber-900 hover:bg-amber-100"
+                                          disabled={holdingOffUnit === label}
+                                          onClick={() => holdOffFollowUp(label)}
+                                        >
+                                          {holdingOffUnit === label ? "Saving…" : "Hold off"}
+                                        </Button>
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              </div>
+                            );
+                          })()}
 
                           {/* General Requests — work orders without a specific
                               unit. Shown as their own line items, NEVER counted

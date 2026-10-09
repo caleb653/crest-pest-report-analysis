@@ -51,6 +51,12 @@ export const PRESET_NOTES: PresetNote[] = [
       "Performed a comprehensive bed bug treatment including liquid residual, outlet dusting, and aerosol application. Pest monitors placed throughout. Will assess during the next visit.",
   },
   {
+    id: "fogging",
+    label: "Fogging Treatment",
+    text:
+      "We performed a fogging treatment for German roaches in the kitchen, bathroom, and other affected areas, along with an application of residual and IGR (insect growth regulator) products.",
+  },
+  {
     id: "sanitation",
     label: "Sanitation Concern",
     text:
